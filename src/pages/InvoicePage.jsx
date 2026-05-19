@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { DEMO_INVOICES, INVOICE_STATUS_MAP } from '../data'
+import { useState, useEffect } from 'react'
+import { INVOICE_STATUS_MAP } from '../data'
 
 function dnes() {
   return new Date().toLocaleDateString('cs-CZ', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -304,11 +304,22 @@ function ProfilModal({ profil, onSave, onClose }) {
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 export default function InvoicePage() {
-  const [invoices, setInvoices] = useState(DEMO_INVOICES.map(i=>({
-    ...i, sluzba:i.title, castka:i.amount, zakaznik:i.customer,
-    datumVystaveni:i.created, datumPlneni:i.created, splatnost:i.due,
-    poznamka:'', zakaznikAdresa:'', zakaznikIco:'',
-  })))
+  const [invoices, setInvoices] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/invoices')
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('API ' + r.status)))
+      .then(rows => setInvoices(rows.map(i => ({
+        ...i,
+        amount: Number(i.amount),
+        sluzba: i.title, castka: Number(i.amount), zakaznik: i.customer,
+        datumVystaveni: i.created, datumPlneni: i.created, splatnost: i.due,
+        poznamka: '', zakaznikAdresa: '', zakaznikIco: '',
+      }))))
+      .catch(err => console.error('Načítání faktur selhalo:', err))
+      .finally(() => setLoading(false))
+  }, [])
   const [profil, setProfil] = useState(INIT_PROFIL)
   const [showNova, setShowNova] = useState(false)
   const [showProfil, setShowProfil] = useState(false)
