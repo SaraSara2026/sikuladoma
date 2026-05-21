@@ -6,7 +6,7 @@
 // JWT_SECRET musí být nastaven ve Vercel env vars (a v .env.local lokálně).
 // Doporučená délka: alespoň 32 náhodných znaků (lze generovat: openssl rand -base64 32).
 
-import bcrypt from 'bcryptjs';
+import { hash as bcryptHash, compare as bcryptCompare } from 'bcryptjs';
 import { SignJWT, jwtVerify } from 'jose';
 import { sql } from './_db.js';
 
@@ -23,11 +23,11 @@ function getSecret() {
 }
 
 export async function hashPassword(plain) {
-  return bcrypt.hash(plain, 12);
+  return bcryptHash(plain, 12);
 }
 
 export async function verifyPassword(plain, hash) {
-  return bcrypt.compare(plain, hash);
+  return bcryptCompare(plain, hash);
 }
 
 export async function signToken(payload) {

@@ -2,7 +2,7 @@ import { config } from 'dotenv';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { neon } from '@neondatabase/serverless';
-import bcrypt from 'bcryptjs';
+import { hash as bcryptHash } from 'bcryptjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 config({ path: resolve(__dirname, '../.env.local') });
@@ -55,7 +55,7 @@ console.log(`🌱 Seeding ${DEMO_USERS.length} demo users (heslo: ${DEMO_PASSWOR
 
 for (const u of DEMO_USERS) {
   try {
-    const hash = await bcrypt.hash(DEMO_PASSWORD, 12);
+    const hash = await bcryptHash(DEMO_PASSWORD, 12);
     await sql`
       INSERT INTO users (email, password_hash, role, name, phone, city, avatar,
                          ico, services, plan, verified, rating, jobs_count, bio)
