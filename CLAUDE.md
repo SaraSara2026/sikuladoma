@@ -28,8 +28,24 @@ Provozovatel: Stavira s.r.o. · IČ: 29228379 · info@sikuladoma.cz
 
 ## API endpointy (aktuální)
 
+**Auth (od 2026-05-21):**
+- `POST /api/auth/register` — vytvoří uživatele, nastaví session cookie
+- `POST /api/auth/login` — ověří heslo, nastaví session cookie
+- `POST /api/auth/logout` — smaže cookie
+- `GET  /api/auth/me` — vrátí přihlášeného uživatele (nebo `{user: null}`)
+
+**Faktury:**
 - `GET /api/invoices` → seznam faktur (volá `InvoicePage.jsx`)
 - `POST /api/invoices` → vytvoření faktury (zatím bez autentizace!)
+
+## Auth architektura
+
+- `api/_auth.js` — sdílené utility (hash, JWT sign/verify, cookie helpers)
+- `bcryptjs` (12 rounds) pro hesla, `jose` pro JWT (HS256, 7 dní TTL)
+- Session cookie: `sikuladoma_session`, httpOnly, SameSite=Strict, Secure v produkci
+- Klient: `src/contexts/AuthContext.jsx` (Provider + `useAuth` hook), `src/lib/auth.js` (fetch wrappery)
+- `JWT_SECRET` env var je povinný (≥32 znaků) — vygenerovat `openssl rand -base64 48`
+- Demo uživatelé v seed scriptu, heslo `demo1234` pro všechny
 
 ## Známé pre-existing bugy
 
@@ -38,10 +54,11 @@ Provozovatel: Stavira s.r.o. · IČ: 29228379 · info@sikuladoma.cz
 ## TODO před spuštěním projektu
 
 - [ ] **Otočit Neon credentials** — connection string byl sdílen v chatu (heslo `npg_Lr9iAoxjJ3EO`). Postup: Neon Console → Roles → reset password pro `neondb_owner` → aktualizovat `.env.local` i Vercel env var
-- [ ] Autentizace (žádná teď, všechny API endpointy jsou veřejné)
-- [ ] Validace vstupů v `/api/*` (zatím jen základní required-check)
-- [ ] Rate limiting na veřejných endpointech
-- [ ] Doplnit API endpointy pro orders, offers, users, messages, contact (vzor: `api/invoices.js`)
+- [x] ~~Autentizace~~ — **hotovo 2026-05-21**: vlastní auth na `users` tabulce, viz výše
+- [ ] Validace vstupů v `/api/*` (zatím jen základní required-check; auth endpointy validují)
+- [ ] Rate limiting na veřejných endpointech (zvláště `/api/auth/login` proti brute-force)
+- [ ] Doplnit API endpointy pro orders, offers, messages, contact (vzor: `api/invoices.js`)
+- [ ] Email verifikace + reset hesla
 
 ## Uživatelská preference
 

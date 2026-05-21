@@ -12,7 +12,7 @@
 - **B) DIY / kutilský obsahový portál** — návody, tipy, eshop s nářadím, komunita.
 - **C) Hybrid** *(doporučeno)* — obsah + služby + eshop. SEO traffic z obsahu → konverze na placené služby.
 
-**👉 Rozhodnutí:** *(zatím neurčeno)*
+**👉 Rozhodnutí (2026-05-21):** **C — Hybrid (A + B).** Marketplace služeb + obsahový portál (návody, blog, SEO). Obsah přivádí organickou návštěvnost z Googlu, ta se konvertuje na placené poptávky.
 
 ---
 
