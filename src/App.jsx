@@ -14,7 +14,8 @@ import PodminkyPouzitiPage from "./pages/PodminkyPouzitiPage";
 import GDPRPage from "./pages/GDPRPage";
 import CookiesPage from "./pages/CookiesPage";
 import Layout from "./components/Layout";
-import SikulaDashboardLegacy from "./pages/dashboards/SikulaDashboardLegacy.jsx";
+import SikulaDashboard from "./pages/dashboards/SikulaDashboard.jsx";
+import SendOfferPage from "./pages/SendOfferPage.jsx";
 
 // Modaly
 import OrderForm  from "./modals/OrderForm.jsx";
@@ -50,9 +51,22 @@ export default function App() {
   const [loginModal,  setLoginModal]   = useState(false);
   const [priority,    setPriority]     = useState(null);
   const [dashboardTab, setDashboardTab] = useState("prehled");
+  const [currentOrder, setCurrentOrder] = useState(null); // pro SendOffer/OrderDetail navigaci
   const [sikulaUser,  setSikulaUser]   = useState(() => {
     try { const s = localStorage.getItem("sd_user"); return s ? JSON.parse(s) : null; } catch { return null; }
   });
+
+  // Navigace ze sub-stránek (dashboard, send-offer apod.).
+  // Konvence: onNav('cílová-stránka', payload)
+  const handleNav = (target, payload) => {
+    if (target === "send-offer") { setCurrentOrder(payload); setPage("send-offer"); window.scrollTo(0, 0); return; }
+    if (target === "dash-sikula") { setPage("dashboard"); window.scrollTo(0, 0); return; }
+    if (target === "back" || target === "home") { setPage("home"); window.scrollTo(0, 0); return; }
+    if (target === "logout") { logoutSikula(); return; }
+    // fallback: setPage napřímo (musí být známá stránka)
+    setPage(target);
+    window.scrollTo(0, 0);
+  };
 
   // Login: uloží uživatele do localStorage + state.
   const loginSikula = (user) => {
@@ -126,7 +140,9 @@ export default function App() {
       >
 
       {page === "dashboard" ? (
-        <SikulaDashboardLegacy user={sikulaUser} onLogout={logoutSikula} initTab={dashboardTab} />
+        <SikulaDashboard currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} />
+      ) : page === "send-offer" ? (
+        <SendOfferPage order={currentOrder} onNav={handleNav} onSend={() => { setCurrentOrder(null); }} />
       ) : page === "cookies" ? (
         <CookiesPage onBack={() => { setPage("home"); window.scrollTo(0,0); }} />
       ) : page === "gdpr" ? (

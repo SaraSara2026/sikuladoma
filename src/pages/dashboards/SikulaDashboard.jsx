@@ -110,17 +110,22 @@ function CalendarSection() {
   )
 }
 
-export default function SikulaDashboard({ currentUser, onNav }) {
+export default function SikulaDashboard({ currentUser, onNav, onLogout }) {
   const [activePage, setActivePage] = useState('overview')
   const [available, setAvailable] = useState(true)
   const { orders, loading: ordersLoading, error: ordersError } = useOpenOrders()
+
+  // Field-name kompatibilita: nový backend vrací `jobs_count`, demo data místy `jobs`.
+  const jobsCount = currentUser?.jobs_count ?? currentUser?.jobs ?? 0
+  const initials = (currentUser?.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+  const avatar = currentUser?.avatar || initials
 
   return (
     <div className="dash-layout">
       <div className="dash-sidebar">
         <div className="dash-user">
-          <div className="dash-user-avatar">{currentUser.avatar}</div>
-          <div className="dash-user-name">{currentUser.name}</div>
+          <div className="dash-user-avatar">{avatar}</div>
+          <div className="dash-user-name">{currentUser?.name}</div>
           <div className="dash-user-role" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span className="online-dot" style={{ background: available ? 'var(--green)' : 'var(--text3)' }} />
             {available ? 'Dostupný' : 'Nedostupný'}
@@ -131,6 +136,12 @@ export default function SikulaDashboard({ currentUser, onNav }) {
             <span>{m.icon}</span>{m.label}
           </button>
         ))}
+        {onLogout && (
+          <button className="dash-nav-item" onClick={onLogout}
+            style={{ marginTop: 'auto', color: 'var(--red, #B91C1C)' }}>
+            <span>🚪</span>Odhlásit
+          </button>
+        )}
       </div>
 
       <div className="dash-content">
@@ -138,8 +149,8 @@ export default function SikulaDashboard({ currentUser, onNav }) {
           <div className="page-enter">
             <div className="dash-header">
               <div>
-                <div className="dash-title">Ahoj, {currentUser.name.split(' ')[0]}! 🛠️</div>
-                <div className="dash-subtitle">{currentUser.plan} · {currentUser.jobs} zakázek celkem</div>
+                <div className="dash-title">Ahoj, {(currentUser?.name || '').split(' ')[0] || 'šikulo'}! 🛠️</div>
+                <div className="dash-subtitle">{currentUser?.plan || 'start'} · {jobsCount} zakázek celkem</div>
               </div>
               <div className="avail-toggle">
                 <span style={{ fontSize: 14, fontWeight: 600 }}>{available ? 'Dostupný' : 'Nedostupný'}</span>
@@ -284,14 +295,14 @@ export default function SikulaDashboard({ currentUser, onNav }) {
             <div className="dash-title" style={{ marginBottom: 24 }}>Profil šikuly</div>
             <div className="card" style={{ marginBottom: 16 }}>
               <div className="profile-hero">
-                <div className="profile-avatar-big">{currentUser.avatar}</div>
+                <div className="profile-avatar-big">{avatar}</div>
                 <div className="profile-info">
-                  <h2>{currentUser.name}</h2>
-                  <p>📍 {currentUser.city} · {currentUser.price}</p>
+                  <h2>{currentUser?.name}</h2>
+                  <p>📍 {currentUser?.city || '—'}</p>
                   <div className="profile-badges">
-                    {currentUser.verified && <span className="badge badge-green">✓ Ověřený šikula</span>}
-                    <span className="badge badge-blue">👑 {currentUser.plan}</span>
-                    <span className="badge badge-orange">⭐ {currentUser.rating} ({currentUser.jobs} recenzí)</span>
+                    {currentUser?.verified && <span className="badge badge-green">✓ Ověřený šikula</span>}
+                    {currentUser?.plan && <span className="badge badge-blue">👑 {currentUser.plan}</span>}
+                    {currentUser?.rating && <span className="badge badge-orange">⭐ {currentUser.rating} ({jobsCount} recenzí)</span>}
                   </div>
                 </div>
               </div>
@@ -303,7 +314,7 @@ export default function SikulaDashboard({ currentUser, onNav }) {
                 <div className="form-group">
                   <label className="form-label">Moje služby</label>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
-                    {(currentUser.services ?? []).map(s => <span key={s} className="pill-tag">{s}</span>)}
+                    {(currentUser?.services ?? []).map(s => <span key={s} className="pill-tag">{s}</span>)}
                   </div>
                 </div>
                 <div className="form-row">
