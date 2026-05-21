@@ -13,6 +13,51 @@ Provozovatel: Stavira s.r.o. · IČ: 29228379 · info@sikuladoma.cz
 - **Deploy:** Vercel → `https://sikuladoma.vercel.app`
 - **Repo:** `https://github.com/SaraSara2026/sikuladoma`
 
+## Struktura zdrojáků
+
+```
+src/
+├── App.jsx                          # routing + homepage (~370 řádků)
+├── main.jsx                         # entrypoint (AuthProvider wrapper)
+├── data.js                          # demo data + INVOICE_STATUS_MAP, ORDER_STATUS_MAP
+├── ui/                              # design system
+│   ├── theme.js                     # T (tokeny), S (modal styly), inp/lbl/hint
+│   ├── Button.jsx                   # BtnPrimary/Secondary/Ghost/Blue, IconBtn
+│   └── icons/
+│       ├── ServiceIcons.jsx         # 22 SVG ikon kategorií
+│       └── UIIcons.jsx              # 15 inline UI glyfů
+├── lib/                             # data konstanty + utility
+│   ├── categories.js                # CATEGORIES (s Icon), SUBCATEGORIES, CAT_COLORS, SERVICES
+│   ├── plans.js                     # PLANS (tarify)
+│   ├── auth.js                      # apiLogin, apiRegister, apiLogout, apiMe
+│   └── api.js                       # ordersApi, offersApi, conversationsApi, messagesApi, contactApi
+├── contexts/AuthContext.jsx         # <AuthProvider> + useAuth()
+├── modals/
+│   ├── OrderForm.jsx                # 6krokový formulář poptávky
+│   ├── RegForm.jsx                  # registrace šikuly
+│   ├── LoginModal.jsx               # přihlášení
+│   └── HodnoceniForm.jsx            # hodnocení šikuly
+├── pages/                           # samostatné stránky (mountuje App.jsx přes page state)
+│   ├── HomePage.jsx                 # alternativní homepage (nevyužitá v aktuálním routingu)
+│   ├── NewOrderPage.jsx             # rozšířený formulář (napojený na /api/orders)
+│   ├── OrderDetailPage.jsx
+│   ├── SendOfferPage.jsx
+│   ├── ChatPage.jsx
+│   ├── InvoicePage.jsx
+│   ├── KontaktPage.jsx
+│   ├── ProSikulyPage.jsx
+│   ├── Login/RegisterPage.jsx
+│   ├── *Page.jsx (právní stránky)
+│   └── dashboards/
+│       ├── CustomerDashboard.jsx           # API-wired, použito v alternativním routingu
+│       ├── SikulaDashboard.jsx             # API-wired (zatím nemountováno v App.jsx)
+│       ├── SikulaDashboardLegacy.jsx       # ★ tento App.jsx renderuje pro page="dashboard"
+│       └── AdminDashboard.jsx
+└── components/                       # menší sdílené komponenty (Header, Footer, Layout…)
+```
+
+**Pozor:** existují dvě verze sikula dashboardu — Legacy (renderuje se teď) a nová API-wired. Při přechodu na novou se musí změnit import v `App.jsx`.
+
 ## Databáze
 
 - Schéma: `db/schema.sql` — tabulky: `users`, `orders`, `offers`, `conversations`, `messages`, `invoices`, `contact_messages`
