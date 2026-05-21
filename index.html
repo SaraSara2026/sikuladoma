@@ -3,13 +3,88 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ŠikulaDoma – Doma se vždycky něco najde</title>
+    <meta name="theme-color" content="#F07800" />
+
+    <!-- SEO -->
+    <title>ŠikulaDoma – najděte šikulu pro montáž, opravu nebo úklid</title>
+    <meta name="description" content="ŠikulaDoma propojuje zákazníky s ověřenými šikuly v celé ČR. Zadáte poptávku zdarma a šikulové z okolí vám pošlou nabídky. Bez registrace, bez provize." />
+    <meta name="keywords" content="šikula, řemeslník, opravy doma, hodinový manžel, instalatér, elektrikář, malíř, úklid, Praha, Brno, montáž nábytku, IKEA, drobné opravy" />
+    <meta name="author" content="Stavira s.r.o." />
+    <meta name="robots" content="index,follow" />
+    <link rel="canonical" href="https://sikuladoma.cz/" />
+
+    <!-- Open Graph (Facebook, LinkedIn, atd.) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="cs_CZ" />
+    <meta property="og:url" content="https://sikuladoma.cz/" />
+    <meta property="og:site_name" content="ŠikulaDoma" />
+    <meta property="og:title" content="ŠikulaDoma – najděte šikulu pro montáž, opravu nebo úklid" />
+    <meta property="og:description" content="Doma se vždycky něco najde. My najdeme šikulu. Ověření řemeslníci v celé ČR, bezplatné nabídky." />
+    <meta property="og:image" content="https://sikuladoma.cz/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="ŠikulaDoma – platforma pro hledání řemeslníků v ČR" />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ŠikulaDoma – najděte šikulu pro montáž, opravu nebo úklid" />
+    <meta name="twitter:description" content="Ověření řemeslníci v celé ČR, bezplatné nabídky, žádná provize." />
+    <meta name="twitter:image" content="https://sikuladoma.cz/og-image.png" />
+
+    <!-- Schema.org structured data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "LocalBusiness",
+      "name": "ŠikulaDoma",
+      "alternateName": "Stavira s.r.o.",
+      "description": "Platforma propojující zákazníky s ověřenými řemeslníky v celé ČR. Montáž, opravy, úklid a další domácí služby.",
+      "url": "https://sikuladoma.cz",
+      "logo": "https://sikuladoma.cz/logo.png",
+      "image": "https://sikuladoma.cz/og-image.png",
+      "telephone": "",
+      "email": "info@sikuladoma.cz",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "CZ",
+        "addressLocality": "Praha"
+      },
+      "areaServed": {
+        "@type": "Country",
+        "name": "Česká republika"
+      },
+      "priceRange": "Zdarma pro zákazníky",
+      "sameAs": []
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "url": "https://sikuladoma.cz",
+      "name": "ŠikulaDoma",
+      "inLanguage": "cs-CZ",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://sikuladoma.cz/?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <p style="padding:32px;text-align:center;font-family:system-ui;">
+        ŠikulaDoma vyžaduje povolený JavaScript. Prosím povolte ho v nastavení prohlížeče.
+      </p>
+    </noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
