@@ -34,6 +34,14 @@ Provozovatel: Stavira s.r.o. · IČ: 29228379 · info@sikuladoma.cz
 - `POST /api/auth/logout` — smaže cookie
 - `GET  /api/auth/me` — vrátí přihlášeného uživatele (nebo `{user: null}`)
 
+**Objednávky (od 2026-05-21):**
+- `POST /api/orders` — vytvoří poptávku (anonymní i přihlášený)
+- `GET  /api/orders` — list (filtrováno podle role: customer = vlastní, sikula = otevřené, admin = vše); query params `?category=`, `?city=`, `?status=`
+- `POST /api/offers` — šikula posílá nabídku na poptávku
+- `GET  /api/offers?order_id=` — nabídky na konkrétní poptávku (filtrované rolí)
+- `GET  /api/offers` — šikula vidí všechny své nabídky
+- `PATCH /api/offers/:id` — akce `accept` / `reject` (customer) / `withdraw` (sikula). Accept automaticky odmítne ostatní pending nabídky a uzavře poptávku.
+
 **Faktury:**
 - `GET /api/invoices` → seznam faktur (volá `InvoicePage.jsx`)
 - `POST /api/invoices` → vytvoření faktury (zatím bez autentizace!)
@@ -57,7 +65,9 @@ Provozovatel: Stavira s.r.o. · IČ: 29228379 · info@sikuladoma.cz
 - [x] ~~Autentizace~~ — **hotovo 2026-05-21**: vlastní auth na `users` tabulce, viz výše
 - [ ] Validace vstupů v `/api/*` (zatím jen základní required-check; auth endpointy validují)
 - [ ] Rate limiting na veřejných endpointech (zvláště `/api/auth/login` proti brute-force)
-- [ ] Doplnit API endpointy pro orders, offers, messages, contact (vzor: `api/invoices.js`)
+- [x] ~~API endpointy pro orders + offers~~ — **hotovo 2026-05-21**, viz výše
+- [ ] Doplnit API endpointy pro messages, contact (vzor: `api/invoices.js`)
+- [ ] Napojit SikulaDashboard "Nové zakázky" na `GET /api/orders` místo DEMO_ORDERS
 - [ ] Email verifikace + reset hesla
 
 ## Uživatelská preference

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { CATEGORIES } from '../data'
 import Icon from '../components/Icon'
+import { ordersApi } from '../lib/api'
 
 const TOTAL_STEPS = 5
 const STEP_LABELS = ['Popis', 'Lokalita a termín', 'Detaily', 'Váš kontakt', 'Souhrn']
@@ -13,22 +14,40 @@ export default function NewOrderPage({ onNav, onSubmit }) {
     // contact – collected last
     name: '', email: '', phone: '',
   })
+  const [busy, setBusy] = useState(false)
+  const [err, setErr]   = useState(null)
 
   const update = (k, v) => setData(p => ({ ...p, [k]: v }))
 
-  const handleSubmit = () => {
-    const cat = CATEGORIES.find(c => c.id === data.category)
-    const newOrder = {
-      id: Date.now(),
-      ...data,
-      status: 'new',
-      created: 'Právě teď',
-      offers: 0,
-      icon: cat?.icon ?? '🔧',
-      customer: data.name || 'Anonymní zákazník',
+  const handleSubmit = async () => {
+    setErr(null)
+    setBusy(true)
+    try {
+      const cat = CATEGORIES.find(c => c.id === data.category)
+      const { order } = await ordersApi.create({
+        title:           data.title,
+        category:        data.category,
+        description:     data.desc,
+        city:            data.city,
+        budget:          data.budget,
+        urgent:          data.urgent,
+        preferred_date:  data.date || null,
+        gender:          data.gender,
+        floor:           data.floor,
+        parking:         data.parking,
+        note:            data.note,
+        customer_name:   data.name,
+        customer_email:  data.email,
+        customer_phone:  data.phone,
+      })
+      // Předáme nadřazenému stavu i emoji ikonu z lokálních CATEGORIES (UI optimalizace).
+      onSubmit?.({ ...order, icon: cat?.icon ?? '🔧' })
+      onNav('order-confirm')
+    } catch (e) {
+      setErr(e.message || 'Odeslání poptávky selhalo.')
+    } finally {
+      setBusy(false)
     }
-    onSubmit(newOrder)
-    onNav('order-confirm')
   }
 
   return (
@@ -221,18 +240,26 @@ export default function NewOrderPage({ onNav, onSubmit }) {
             </div>
           )}
 
+          {/* CHYBOVÁ HLÁŠKA */}
+          {err && (
+            <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C',
+              padding: '10px 12px', borderRadius: 10, fontSize: 13, marginTop: 16 }}>
+              {err}
+            </div>
+          )}
+
           {/* NAVIGATION */}
           <div style={{ display: 'flex', gap: 10, marginTop: 24, justifyContent: 'space-between' }}>
             {step > 1
-              ? <button className="btn btn-outline" onClick={() => setStep(s => s - 1)}>← Zpět</button>
-              : <button className="btn btn-ghost" onClick={() => onNav('home')}>← Zpět na úvod</button>
+              ? <button className="btn btn-outline" onClick={() => setStep(s => s - 1)} disabled={busy}>← Zpět</button>
+              : <button className="btn btn-ghost" onClick={() => onNav('home')} disabled={busy}>← Zpět na úvod</button>
             }
             {step < TOTAL_STEPS
               ? <button className="btn btn-primary" onClick={() => setStep(s => s + 1)}>
                   Pokračovat <Icon name="arrow" size={16} />
                 </button>
-              : <button className="btn btn-green" onClick={handleSubmit}>
-                  <Icon name="check" size={16} /> Odeslat poptávku
+              : <button className="btn btn-green" onClick={handleSubmit} disabled={busy}>
+                  {busy ? 'Odesílám…' : <><Icon name="check" size={16} /> Odeslat poptávku</>}
                 </button>
             }
           </div>
