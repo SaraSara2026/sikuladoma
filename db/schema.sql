@@ -137,6 +137,22 @@ CREATE INDEX IF NOT EXISTS idx_invoices_sikula ON invoices(sikula_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
 
 -- ============================================================
+-- MAGIC_LINKS — bezheslové přihlášení odkazem v e-mailu
+-- ============================================================
+CREATE TABLE IF NOT EXISTS magic_links (
+  token       TEXT PRIMARY KEY,
+  email       TEXT NOT NULL,
+  expires_at  TIMESTAMPTZ NOT NULL,
+  used_at     TIMESTAMPTZ,
+  ip          TEXT,
+  user_agent  TEXT,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_magic_links_email ON magic_links(email, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_magic_links_expires ON magic_links(expires_at);
+
+-- ============================================================
 -- CONTACT_MESSAGES — zprávy z kontaktního formuláře
 -- ============================================================
 CREATE TABLE IF NOT EXISTS contact_messages (

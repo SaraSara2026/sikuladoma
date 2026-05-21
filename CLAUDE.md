@@ -57,12 +57,15 @@ Provozovatel: Stavira s.r.o. · IČ: 29228379 · info@sikuladoma.cz
 
 ## Auth architektura
 
+- **Pouze e-mail + heslo.** Žádný magic-link, žádný OAuth, žádné e-maily ze strany platformy (rozhodnutí uživatelky 2026-05-21).
 - `api/_auth.js` — sdílené utility (hash, JWT sign/verify, cookie helpers)
-- `bcryptjs` (12 rounds) pro hesla, `jose` pro JWT (HS256, 7 dní TTL)
+- `bcryptjs` (12 rounds) pro hesla — **named importy** (`{ hash, compare }`), default na Vercel serverless padá
+- `jose` pro JWT (HS256, 7 dní TTL)
 - Session cookie: `sikuladoma_session`, httpOnly, SameSite=Strict, Secure v produkci
 - Klient: `src/contexts/AuthContext.jsx` (Provider + `useAuth` hook), `src/lib/auth.js` (fetch wrappery)
 - `JWT_SECRET` env var je povinný (≥32 znaků) — vygenerovat `openssl rand -base64 48`
 - Demo uživatelé v seed scriptu, heslo `demo1234` pro všechny
+- Tabulka `magic_links` v DB existuje (idempotentní CREATE), ale není používaná — pro budoucí použití
 
 ## Známé pre-existing bugy
 

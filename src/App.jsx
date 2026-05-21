@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { apiLogin, apiRegister } from "./lib/auth.js";
 import InvoicePage from "./pages/InvoicePage";
 import KontaktPage from "./pages/KontaktPage";
 import ProSikulyPage from "./pages/ProSikulyPage.jsx";
@@ -632,9 +633,32 @@ function OrderForm({ initialService, onClose }) {
 
 function RegForm({ plan, onClose, onRegistered }) {
   const [step, setStep] = useState(0);
-  const [form, setForm] = useState({ name: "", ico: "", email: "", street: "", city: "", psc: "", services: [], plan: plan?.id || "start" });
+  const [form, setForm] = useState({ name: "", ico: "", email: "", password: "", street: "", city: "", psc: "", services: [], plan: plan?.id || "start" });
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
   const upd = (k, v) => setForm(p => ({ ...p, [k]: v }));
   const toggleSvc = id => setForm(p => ({ ...p, services: p.services.includes(id) ? p.services.filter(x => x !== id) : [...p.services, id] }));
+
+  const submitRegistration = async () => {
+    setErr(null);
+    setBusy(true);
+    try {
+      const { user } = await apiRegister({
+        email:    form.email,
+        password: form.password,
+        name:     form.name,
+        role:     "sikula",
+        city:     [form.street, form.psc, form.city].filter(Boolean).join(", ") || form.city,
+      });
+      // Doplníme lokální atributy, které backend zatím neukládá (services, plan, ico).
+      onRegistered({ ...user, services: form.services, plan: form.plan, ico: form.ico });
+      setStep(2);
+    } catch (e) {
+      setErr(e.message || "Registrace selhala.");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   if (step === 2) return (
     <div style={S.overlay} onClick={onClose}>
@@ -648,7 +672,7 @@ function RegForm({ plan, onClose, onRegistered }) {
             Vítejte v ŠikulaDoma, <strong>{form.name}</strong>.<br />
             Tarif <strong>{PLANS.find(p => p.id === form.plan)?.name}</strong> je aktivní.
           </p>
-          <button onClick={() => { onRegistered(form); onClose(); }}
+          <button onClick={onClose}
             style={{ height: 46, padding: "0 28px", borderRadius: 10, border: "none", background: T.orange, color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8 }}>
             Přejít do profilu šikuly <IcArrow />
           </button>
@@ -674,7 +698,8 @@ function RegForm({ plan, onClose, onRegistered }) {
             <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
               <div><label style={lbl}>Jméno / název *</label><input value={form.name} onChange={e => upd("name", e.target.value)} placeholder="Pavel Šikovný" style={inp} autoFocus /></div>
               <div><label style={lbl}>IČO (volitelné)</label><input value={form.ico} onChange={e => upd("ico", e.target.value)} placeholder="12345678" style={inp} /></div>
-              <div><label style={lbl}>E-mail *</label><input value={form.email} onChange={e => upd("email", e.target.value)} placeholder="vas@email.cz" type="email" style={inp} /></div>
+              <div><label style={lbl}>E-mail *</label><input value={form.email} onChange={e => upd("email", e.target.value)} placeholder="vas@email.cz" type="email" autoComplete="email" style={inp} /></div>
+              <div><label style={lbl}>Heslo * (min. 8 znaků)</label><input value={form.password} onChange={e => upd("password", e.target.value)} placeholder="••••••••" type="password" autoComplete="new-password" style={inp} /></div>
               <div><label style={lbl}>Ulice a číslo popisné</label><input value={form.street || ""} onChange={e => upd("street", e.target.value)} placeholder="Hlavní 42" style={inp} /></div>
               <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
                 <div><label style={lbl}>Město / oblast *</label><input value={form.city} onChange={e => upd("city", e.target.value)} placeholder="Praha a okolí" style={inp} /></div>
@@ -721,10 +746,25 @@ function RegForm({ plan, onClose, onRegistered }) {
             </div>
           )}
         </div>
+        {err && (
+          <div style={{ margin: "0 20px", padding: "9px 12px", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, fontSize: 12, color: "#B91C1C" }}>
+            {err}
+          </div>
+        )}
         <div style={{ padding: "14px 20px", borderTop: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between" }}>
           {step > 0 ? <BtnGhost size="sm" onClick={() => setStep(0)}>Zpět</BtnGhost> : <span />}
-          <BtnBlue size="sm" onClick={() => { if (step === 0 && form.name && form.email) setStep(1); else if (step === 1) setStep(2); }}>
-            {step === 0 ? <>Pokračovat <IcArrow /></> : "Vytvořit profil"}
+          <BtnBlue size="sm" onClick={() => {
+            setErr(null);
+            if (step === 0) {
+              if (!form.name?.trim())               return setErr("Zadejte jméno.");
+              if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return setErr("Zadejte platný e-mail.");
+              if ((form.password || "").length < 8) return setErr("Heslo musí mít alespoň 8 znaků.");
+              if (!form.city?.trim())               return setErr("Zadejte město.");
+              return setStep(1);
+            }
+            if (step === 1 && !busy) submitRegistration();
+          }}>
+            {step === 0 ? <>Pokračovat <IcArrow /></> : (busy ? "Vytvářím…" : "Vytvořit profil")}
           </BtnBlue>
         </div>
       </div>
@@ -742,135 +782,107 @@ const S = {
 
 
 
-// ─── LOGIN MODAL – magic link ─────────────────────────────────────────────────
+// ─── LOGIN MODAL – e-mail + heslo ─────────────────────────────────────────────
 
 function LoginModal({ onClose, onReg, onOrder, onFaktury, onDemoLogin, onGetDemo }) {
-  const [view, setView] = useState("pick"); // "pick" | "magic"
   const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
-  const [notFound, setNotFound] = useState(false);
-  const [emailError, setEmailError] = useState(false);
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
+
+  const submit = async () => {
+    setErr(null);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return setErr("Zadejte platnou e-mailovou adresu.");
+    if (password.length < 1) return setErr("Zadejte heslo.");
+    setBusy(true);
+    try {
+      const { user } = await apiLogin({ email, password });
+      onDemoLogin(user);  // zachováváme prop name kvůli zbytku App.jsx
+      onClose();
+    } catch (e) {
+      setErr(e.message || "Přihlášení selhalo.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const loginAsDemoSikula = async () => {
+    setEmail("pavel@example.com");
+    setPassword("demo1234");
+    setErr(null);
+    setBusy(true);
+    try {
+      const { user } = await apiLogin({ email: "pavel@example.com", password: "demo1234" });
+      onDemoLogin(user);
+      onClose();
+    } catch (e) {
+      setErr(e.message || "Demo přihlášení selhalo. Spusť `npm run db:seed`?");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <div style={S.overlay} onClick={onClose}>
-      <div style={{ ...S.modal, maxWidth: 400 }} onClick={e => e.stopPropagation()}>
+      <div style={{ ...S.modal, maxWidth: 420 }} onClick={e => e.stopPropagation()}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${T.border}` }}>
-          <div style={{ fontSize: 17, fontWeight: 700, color: T.ink }}>
-            {view === "pick" ? "Přihlášení" : "Přihlášení šikuly"}
-          </div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: T.ink }}>Přihlášení</div>
           <IconBtn onClick={onClose}><IcX /></IconBtn>
         </div>
 
-        {view === "pick" && (
-          <div style={{ padding: "20px" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-
-              {/* Šikula – magic link */}
-              <button onClick={() => setView("magic")}
-                style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 18px", borderRadius: 12, border: `1.5px solid ${T.border}`, background: "#fff", cursor: "pointer", fontFamily: "inherit", transition: "all .14s", textAlign: "left" }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = T.orange; e.currentTarget.style.background = T.orangeLt; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.background = "#fff"; }}>
-                <div style={{ width: 40, height: 40, borderRadius: 10, background: T.orangeLt, display: "flex", alignItems: "center", justifyContent: "center", color: T.orange, flexShrink: 0 }}>
-                  <IcWrench />
-                </div>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: T.ink, marginBottom: 2 }}>Přihlásit se jako šikula</div>
-                  <div style={{ fontSize: 12, color: T.ink4 }}>Zadáte e-mail, pošleme přihlašovací odkaz</div>
-                </div>
-              </button>
-
-
-            </div>
-
-            {/* Demo přístup */}
-            <div style={{ marginTop: 10, padding: "12px 14px", background: "#F8FAFC", border: "1px dashed #CBD5E1", borderRadius: 10 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#94A3B8", letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 8 }}>Testovací přístup</div>
-              <button onClick={() => { onDemoLogin(onGetDemo()); onClose(); }}
-                style={{ width: "100%", height: 38, borderRadius: 9, border: "1px solid #CBD5E1", background: "#fff", color: "#1A1F2E", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, transition: "all .14s" }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "#F97316"; e.currentTarget.style.background = "#FFF7ED"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "#CBD5E1"; e.currentTarget.style.background = "#fff"; }}>
-                🔑 Přihlásit jako demo šikula
-              </button>
-              <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6, textAlign: "center" }}>
-                demo@sikuladoma.cz · Tarif Profi
-              </div>
-            </div>
-
-            <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${T.border}`, fontSize: 12, color: T.ink4, textAlign: "center", lineHeight: 1.7 }}>
-              Zákazník?{" "}
-              <span style={{ color: T.orange, fontWeight: 600, cursor: "pointer" }} onClick={() => { onClose(); onOrder(); }}>
-                Zadejte poptávku zdarma
-              </span>
-              {" "}– registrace není nutná.<br />
-              Nový šikula?{" "}
-              <span style={{ color: T.blue, fontWeight: 600, cursor: "pointer" }} onClick={() => { onClose(); onReg(); }}>
-                Zaregistrujte se
-              </span>.
-            </div>
+        <div style={{ padding: "22px 22px 14px" }}>
+          <div style={{ marginBottom: 14 }}>
+            <label style={lbl}>E-mail</label>
+            <input autoFocus value={email} onChange={e => { setEmail(e.target.value); setErr(null); }}
+              type="email" placeholder="vas@email.cz" autoComplete="email" style={inp}
+              onKeyDown={e => e.key === "Enter" && submit()} />
           </div>
-        )}
-
-        {view === "magic" && (
-          <div style={{ padding: "24px 20px" }}>
-            {!sent ? (
-              <>
-                <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "12px 14px", marginBottom: 18, fontSize: 13, color: "#1D4ED8", lineHeight: 1.55 }}>
-                  Bez hesla. Zadejte e-mail – v ostré verzi pošleme přihlašovací odkaz.
-                </div>
-                <div style={{ marginBottom: 14 }}>
-                  <label style={lbl}>Váš e-mail</label>
-                  <input autoFocus value={email} onChange={e => { setEmail(e.target.value); setNotFound(false); setEmailError(false); }}
-                    type="email" placeholder="vas@email.cz" style={inp} />
-                  {emailError && (
-                    <div style={{ marginTop: 8, padding: "8px 12px", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, fontSize: 12, color: "#DC2626" }}>
-                      Zadejte platnou e-mailovou adresu.
-                    </div>
-                  )}
-                  {notFound && (
-                    <div style={{ marginTop: 8, padding: "8px 12px", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, fontSize: 12, color: "#DC2626" }}>
-                      Účet s tímto e-mailem zatím neexistuje. Nejdříve se prosím zaregistrujte.
-                    </div>
-                  )}
-                </div>
-                <button
-                  onClick={() => { if (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { setEmailError(false); setSent(true); } else { setEmailError(true); } }}
-                  style={{ width: "100%", height: 44, borderRadius: 10, border: "none", background: /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) ? T.blue : T.border, color: /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) ? "#fff" : T.ink4, fontWeight: 600, fontSize: 14, cursor: /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) ? "pointer" : "not-allowed", fontFamily: "inherit", transition: "all .15s" }}>
-                  Pokračovat
-                </button>
-                <button onClick={() => setView("pick")} style={{ marginTop: 10, width: "100%", background: "none", border: "none", fontSize: 13, color: T.ink3, cursor: "pointer", fontFamily: "inherit" }}>
-                  ← Zpět
-                </button>
-              </>
-            ) : (
-              <div style={{ padding: "8px 0" }}>
-                <div style={{ background: "#FFFBEB", border: "1px solid #FEF08A", borderRadius: 10, padding: "12px 14px", marginBottom: 16, fontSize: 13, color: "#92400E", lineHeight: 1.6 }}>
-                  V ostré verzi vám pošleme přihlašovací odkaz na e-mail.<br />
-                  <strong>V této testovací verzi pokračujte kliknutím níže.</strong>
-                </div>
-                <button
-                  onClick={() => {
-                    try {
-                      const profiles = JSON.parse(localStorage.getItem("sd_profiles") || "{}");
-                      const existing = profiles[email];
-                      if (existing) {
-                        onDemoLogin(existing); onClose();
-                      } else {
-                        setNotFound(true);
-                      }
-                    } catch {
-                      onDemoLogin({ name: email.split("@")[0], email, services: [], plan: "start" }); onClose();
-                    }
-                  }}
-                  style={{ width: "100%", height: 46, borderRadius: 10, border: "none", background: T.orange, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                  Pokračovat jako šikula <IcArrow />
-                </button>
-                <button onClick={() => setView("pick")} style={{ marginTop: 10, width: "100%", background: "none", border: "none", fontSize: 13, color: T.ink3, cursor: "pointer", fontFamily: "inherit" }}>
-                  ← Zpět
-                </button>
-              </div>
-            )}
+          <div style={{ marginBottom: 14 }}>
+            <label style={lbl}>Heslo</label>
+            <input value={password} onChange={e => { setPassword(e.target.value); setErr(null); }}
+              type="password" placeholder="••••••••" autoComplete="current-password" style={inp}
+              onKeyDown={e => e.key === "Enter" && submit()} />
           </div>
-        )}
+
+          {err && (
+            <div style={{ marginBottom: 14, padding: "9px 12px", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, fontSize: 12, color: "#B91C1C" }}>
+              {err}
+            </div>
+          )}
+
+          <button onClick={submit} disabled={busy}
+            style={{ width: "100%", height: 46, borderRadius: 10, border: "none",
+              background: busy ? T.border : T.orange, color: "#fff",
+              fontWeight: 700, fontSize: 14, cursor: busy ? "wait" : "pointer",
+              fontFamily: "inherit", display: "flex", alignItems: "center",
+              justifyContent: "center", gap: 8, transition: "all .15s" }}>
+            {busy ? "Přihlašuji…" : <>Přihlásit se <IcArrow /></>}
+          </button>
+        </div>
+
+        {/* Demo přístup */}
+        <div style={{ margin: "0 22px 16px", padding: "12px 14px", background: "#F8FAFC", border: "1px dashed #CBD5E1", borderRadius: 10 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#94A3B8", letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 8 }}>Demo přístup</div>
+          <button onClick={loginAsDemoSikula} disabled={busy}
+            style={{ width: "100%", height: 36, borderRadius: 9, border: "1px solid #CBD5E1", background: "#fff", color: "#1A1F2E", fontWeight: 600, fontSize: 13, cursor: busy ? "wait" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            🔑 Přihlásit jako demo šikula
+          </button>
+          <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6, textAlign: "center" }}>
+            pavel@example.com · heslo demo1234
+          </div>
+        </div>
+
+        <div style={{ padding: "12px 22px 22px", borderTop: `1px solid ${T.border}`, fontSize: 12, color: T.ink4, textAlign: "center", lineHeight: 1.7 }}>
+          Zákazník?{" "}
+          <span style={{ color: T.orange, fontWeight: 600, cursor: "pointer" }} onClick={() => { onClose(); onOrder(); }}>
+            Zadejte poptávku zdarma
+          </span>
+          {" "}– registrace není nutná.<br />
+          Nový šikula?{" "}
+          <span style={{ color: T.blue, fontWeight: 600, cursor: "pointer" }} onClick={() => { onClose(); onReg(); }}>
+            Zaregistrujte se
+          </span>.
+        </div>
       </div>
     </div>
   );
