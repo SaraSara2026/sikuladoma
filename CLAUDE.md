@@ -40,7 +40,16 @@ Provozovatel: Stavira s.r.o. · IČ: 29228379 · info@sikuladoma.cz
 - `POST /api/offers` — šikula posílá nabídku na poptávku
 - `GET  /api/offers?order_id=` — nabídky na konkrétní poptávku (filtrované rolí)
 - `GET  /api/offers` — šikula vidí všechny své nabídky
-- `PATCH /api/offers/:id` — akce `accept` / `reject` (customer) / `withdraw` (sikula). Accept automaticky odmítne ostatní pending nabídky a uzavře poptávku.
+- `PATCH /api/offers/:id` — akce `accept` / `reject` (customer) / `withdraw` (sikula). Accept automaticky odmítne ostatní pending nabídky, uzavře poptávku a založí konverzaci customer ↔ sikula.
+
+**Chat (od 2026-05-21):**
+- `GET  /api/conversations` — mé konverzace + last message + unread count
+- `POST /api/conversations` — založí (nebo vrátí existující) konverzaci mezi customer ↔ sikula
+- `GET  /api/messages?conversation_id=` — zprávy + auto-mark-as-read
+- `POST /api/messages` — odeslat zprávu (jen účastník, max 4000 znaků)
+
+**Kontakt (od 2026-05-21):**
+- `POST /api/contact` — uloží zprávu z kontaktního formuláře do `contact_messages`
 
 **Faktury:**
 - `GET /api/invoices` → seznam faktur (volá `InvoicePage.jsx`)
@@ -65,9 +74,9 @@ Provozovatel: Stavira s.r.o. · IČ: 29228379 · info@sikuladoma.cz
 - [x] ~~Autentizace~~ — **hotovo 2026-05-21**: vlastní auth na `users` tabulce, viz výše
 - [ ] Validace vstupů v `/api/*` (zatím jen základní required-check; auth endpointy validují)
 - [ ] Rate limiting na veřejných endpointech (zvláště `/api/auth/login` proti brute-force)
-- [x] ~~API endpointy pro orders + offers~~ — **hotovo 2026-05-21**, viz výše
-- [ ] Doplnit API endpointy pro messages, contact (vzor: `api/invoices.js`)
-- [ ] Napojit SikulaDashboard "Nové zakázky" na `GET /api/orders` místo DEMO_ORDERS
+- [x] ~~API endpointy pro orders + offers~~ — **hotovo 2026-05-21**
+- [x] ~~API endpointy pro messages, contact~~ — **hotovo 2026-05-21**
+- [x] ~~Napojit SikulaDashboard, CustomerDashboard, OrderDetailPage, ChatPage, KontaktPage na reálné API~~ — **hotovo 2026-05-21**
 - [ ] Email verifikace + reset hesla
 
 ## Uživatelská preference

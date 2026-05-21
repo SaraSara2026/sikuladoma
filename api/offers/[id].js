@@ -55,6 +55,14 @@ export default async function handler(req, res) {
       SET status = 'accepted', accepted_offer_id = ${offerId}, updated_at = NOW()
       WHERE id = ${offer.order_id}
     `;
+
+    // Auto-založ konverzaci customer ↔ sikula (idempotentně přes UNIQUE constraint).
+    await sql`
+      INSERT INTO conversations (customer_id, sikula_id, order_id)
+      VALUES (${offer.order_customer_id}, ${offer.sikula_id}, ${offer.order_id})
+      ON CONFLICT (customer_id, sikula_id, order_id) DO NOTHING
+    `;
+
     const [row] = await sql`SELECT * FROM offers WHERE id = ${offerId}`;
     return res.status(200).json({ offer: row });
   } catch (err) {

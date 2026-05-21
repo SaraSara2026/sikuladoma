@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { contactApi } from '../lib/api'
 
 // ─── SVG ikony ───────────────────────────────────────────────────────────────
 const IcMail    = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>
@@ -37,9 +38,29 @@ export default function KontaktPage({ onBack }) {
   const [tema, setTema] = useState(null)
   const [form, setForm] = useState({ jmeno: '', email: '', predmet: '', zprava: '', souhlas: false })
   const [sent, setSent] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr]   = useState(null)
   const u = (k, v) => setForm(p => ({ ...p, [k]: v }))
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)
   const ok = form.jmeno.trim().length >= 1 && emailOk && form.zprava.trim().length >= 1 && form.souhlas
+
+  const odeslat = async () => {
+    if (!ok || busy) return
+    setBusy(true); setErr(null)
+    try {
+      await contactApi.send({
+        name:    form.jmeno,
+        email:   form.email,
+        subject: form.predmet || tema || null,
+        message: form.zprava,
+      })
+      setSent(true)
+    } catch (e) {
+      setErr(e.message || 'Odeslání se nezdařilo.')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   // ── Potvrzení ──────────────────────────────────────────────────────────────
   if (sent) return (
@@ -133,6 +154,13 @@ export default function KontaktPage({ onBack }) {
                 </span>
               </div>
 
+              {err && (
+                <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C',
+                  padding: '10px 12px', borderRadius: 10, fontSize: 13 }}>
+                  {err}
+                </div>
+              )}
+
               <button
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -160,9 +188,10 @@ export default function KontaktPage({ onBack }) {
                   e.currentTarget.style.boxShadow = '0 4px 18px rgba(249,115,22,.38)'
                   e.currentTarget.style.transform = 'translateY(0)'
                 }}
-                onClick={() => { if (ok) setSent(true) }}>
-                Odeslat zprávu
-                {ok && (
+                disabled={busy}
+                onClick={odeslat}>
+                {busy ? 'Odesílám…' : 'Odeslat zprávu'}
+                {ok && !busy && (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
                   </svg>

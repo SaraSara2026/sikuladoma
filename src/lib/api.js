@@ -30,8 +30,29 @@ export const offersApi = {
   patch:     (id, action) => fetch(`/api/offers/${id}`, opts({ method: 'PATCH', headers: json, body: JSON.stringify({ action }) })).then(unwrap),
 };
 
+// ─── Conversations ──────────────────────────────────────────────────────────
+export const conversationsApi = {
+  list:   () => fetch('/api/conversations', opts()).then(unwrap),
+  create: ({ other_user_id, order_id }) => fetch('/api/conversations', opts({
+    method: 'POST', headers: json, body: JSON.stringify({ other_user_id, order_id }),
+  })).then(unwrap),
+};
+
+// ─── Messages ───────────────────────────────────────────────────────────────
+export const messagesApi = {
+  list: (conversationId) => fetch(`/api/messages?conversation_id=${conversationId}`, opts()).then(unwrap),
+  send: ({ conversation_id, text }) => fetch('/api/messages', opts({
+    method: 'POST', headers: json, body: JSON.stringify({ conversation_id, text }),
+  })).then(unwrap),
+};
+
 // ─── Invoices (existing /api/invoices) ──────────────────────────────────────
 export const invoicesApi = {
   list:   () => fetch('/api/invoices', opts()).then(unwrap),
   create: (data) => fetch('/api/invoices', opts({ method: 'POST', headers: json, body: JSON.stringify(data) })).then(unwrap),
+};
+
+// ─── Contact ────────────────────────────────────────────────────────────────
+export const contactApi = {
+  send: (data) => fetch('/api/contact', opts({ method: 'POST', headers: json, body: JSON.stringify(data) })).then(unwrap),
 };
