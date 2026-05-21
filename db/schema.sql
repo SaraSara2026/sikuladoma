@@ -137,6 +137,25 @@ CREATE INDEX IF NOT EXISTS idx_invoices_sikula ON invoices(sikula_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
 
 -- ============================================================
+-- REVIEWS — hodnocení po dokončené zakázce
+-- ============================================================
+CREATE TABLE IF NOT EXISTS reviews (
+  id              SERIAL PRIMARY KEY,
+  order_id        INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  reviewer_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  target_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  stars           SMALLINT NOT NULL CHECK (stars BETWEEN 1 AND 5),
+  ratings         JSONB,                                   -- per-kategorie hvězdičky, např. {"domluva":5,"kvalita":4}
+  recommend       BOOLEAN,
+  comment         TEXT,
+  created_at      TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (order_id, reviewer_id)                           -- jedna recenze per zakázka per autor
+);
+
+CREATE INDEX IF NOT EXISTS idx_reviews_target ON reviews(target_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_reviews_order  ON reviews(order_id);
+
+-- ============================================================
 -- MAGIC_LINKS — bezheslové přihlášení odkazem v e-mailu
 -- ============================================================
 CREATE TABLE IF NOT EXISTS magic_links (

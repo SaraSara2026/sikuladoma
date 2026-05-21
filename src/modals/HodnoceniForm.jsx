@@ -1,10 +1,11 @@
 // Hodnocení šikuly po dokončené zakázce. 5 kategorií × 5 hvězd + doporučení + komentář.
-// API napojení zatím chybí — formulář jen vizuálně potvrdí odeslání.
+// Volá POST /api/reviews. orderId je povinný prop.
 
 import { useState } from "react";
 import { T, S, inp, lbl } from "../ui/theme";
 import { IconBtn } from "../ui/Button";
 import { IcX, IcCheckCircle } from "../ui/icons/UIIcons";
+import { reviewsApi } from "../lib/api";
 
 const HODNOCENI_KATEGORIE = [
   { id: "domluva",    label: "Dodržení domluvy" },
@@ -14,14 +15,42 @@ const HODNOCENI_KATEGORIE = [
   { id: "cena",       label: "Cena odpovídala domluvě" },
 ];
 
-export default function HodnoceniForm({ onClose }) {
+export default function HodnoceniForm({ orderId, onClose, onSubmitted }) {
   const [hodnoceni, setHodnoceni] = useState({});
   const [doporuceni, setDoporuceni] = useState(null);
   const [komentar, setKomentar] = useState("");
   const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr]   = useState(null);
 
   const setH = (id, val) => setHodnoceni(p => ({ ...p, [id]: val }));
   const vsechnyVyplneny = HODNOCENI_KATEGORIE.every(k => hodnoceni[k.id]) && doporuceni !== null;
+
+  const odeslat = async () => {
+    if (!vsechnyVyplneny || busy) return;
+    if (!orderId) { setErr("Chybí orderId — nelze odeslat."); return; }
+    setErr(null);
+    setBusy(true);
+    try {
+      // Průměr 5 hvězd z kategorií = celkové stars
+      const avg = Math.round(
+        HODNOCENI_KATEGORIE.reduce((s, k) => s + (hodnoceni[k.id] || 0), 0) / HODNOCENI_KATEGORIE.length
+      );
+      await reviewsApi.create({
+        order_id:  orderId,
+        stars:     avg,
+        ratings:   hodnoceni,
+        recommend: doporuceni === "ano",
+        comment:   komentar || null,
+      });
+      setDone(true);
+      onSubmitted?.();
+    } catch (e) {
+      setErr(e.message || "Odeslání hodnocení selhalo.");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   if (done) return (
     <div style={S.overlay} onClick={onClose}>
@@ -99,11 +128,17 @@ export default function HodnoceniForm({ onClose }) {
           </div>
         </div>
 
+        {err && (
+          <div style={{ margin: "0 20px 12px", padding: "9px 12px", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, fontSize: 12, color: "#B91C1C" }}>
+            {err}
+          </div>
+        )}
+
         <div style={{ padding: "14px 20px", borderTop: `1px solid ${T.border}`, display: "flex", justifyContent: "flex-end" }}>
           <button
-            onClick={() => { if (vsechnyVyplneny) setDone(true); }}
-            style={{ height: 44, padding: "0 24px", borderRadius: 10, border: "none", background: vsechnyVyplneny ? T.orange : T.border, color: vsechnyVyplneny ? "#fff" : T.ink4, fontWeight: 600, fontSize: 14, cursor: vsechnyVyplneny ? "pointer" : "not-allowed", fontFamily: "inherit", transition: "all .15s" }}>
-            Odeslat hodnocení
+            onClick={odeslat} disabled={!vsechnyVyplneny || busy}
+            style={{ height: 44, padding: "0 24px", borderRadius: 10, border: "none", background: vsechnyVyplneny && !busy ? T.orange : T.border, color: vsechnyVyplneny && !busy ? "#fff" : T.ink4, fontWeight: 600, fontSize: 14, cursor: vsechnyVyplneny && !busy ? "pointer" : "not-allowed", fontFamily: "inherit", transition: "all .15s" }}>
+            {busy ? "Odesílám…" : "Odeslat hodnocení"}
           </button>
         </div>
       </div>

@@ -57,3 +57,10 @@ export const invoicesApi = {
 export const contactApi = {
   send: (data) => fetch('/api/contact', opts({ method: 'POST', headers: json, body: JSON.stringify(data) })).then(unwrap),
 };
+
+// ─── Reviews ────────────────────────────────────────────────────────────────
+export const reviewsApi = {
+  create: (data) => fetch('/api/reviews', opts({ method: 'POST', headers: json, body: JSON.stringify(data) })).then(unwrap),
+  byTarget: (targetId) => fetch(`/api/reviews?target_id=${targetId}`, opts()).then(unwrap),
+  byOrder:  (orderId)  => fetch(`/api/reviews?order_id=${orderId}`,   opts()).then(unwrap),
+};

@@ -3,6 +3,7 @@ import { CATEGORIES, ORDER_STATUS_MAP } from '../../data'
 import Icon from '../../components/Icon'
 import ChatPage from '../ChatPage'
 import { ordersApi, offersApi } from '../../lib/api.js'
+import HodnoceniForm from '../../modals/HodnoceniForm.jsx'
 
 const menuItems = [
   { id: 'overview',  icon: '📊', label: 'Přehled' },
@@ -86,6 +87,7 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout }) {
   const completedCount = orders.filter(o => o.status === 'completed').length
   const initials = (currentUser?.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
   const avatar = currentUser?.avatar || initials
+  const [reviewOrderId, setReviewOrderId] = useState(null)
 
   const handleAcceptOffer = async (offerId) => {
     try { await offersApi.patch(offerId, 'accept'); reload() } catch (e) { alert(e.message) }
@@ -120,6 +122,11 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout }) {
         {o.status === 'accepted' && (
           <button className="btn btn-green btn-sm" onClick={(e) => { e.stopPropagation(); handleCompleteOrder(o.id) }}>
             ✓ Dokončeno
+          </button>
+        )}
+        {o.status === 'completed' && (
+          <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); setReviewOrderId(o.id) }}>
+            ⭐ Hodnotit
           </button>
         )}
         {(o.status === 'new' || o.status === 'in_progress') && (
@@ -271,6 +278,12 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout }) {
           </div>
         )}
       </div>
+
+      {reviewOrderId && (
+        <HodnoceniForm orderId={reviewOrderId}
+          onClose={() => setReviewOrderId(null)}
+          onSubmitted={() => { setReviewOrderId(null); reload() }} />
+      )}
     </div>
   )
 }
