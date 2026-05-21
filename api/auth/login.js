@@ -27,6 +27,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ user: safe });
   } catch (err) {
     console.error('[/api/auth/login]', err);
-    return res.status(500).json({ error: 'Přihlášení selhalo.', debug: String(err?.message || err) });
+    return res.status(500).json({ error: 'Přihlášení selhalo.' });
   }
 }
