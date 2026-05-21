@@ -4,7 +4,7 @@ import Icon from '../../components/Icon'
 import InvoicePage from '../InvoicePage'
 import PricingPage from '../PricingPage'
 import ChatPage from '../ChatPage'
-import { ordersApi } from '../../lib/api'
+import { ordersApi, offersApi } from '../../lib/api'
 
 // Mapování id kategorie → emoji ikona (pro hezké zobrazení v dashboardu).
 const CAT_ICON = Object.fromEntries(CATEGORIES.map(c => [c.id, c.icon]))
@@ -41,6 +41,26 @@ function useOpenOrders() {
   }, [])
 
   return { orders, loading, error }
+}
+
+// Hook: vrátí všechny mé nabídky (sikula). Pro 'Odeslané nabídky' a 'Aktivní zakázky' taby.
+function useMyOffers() {
+  const [offers, setOffers]   = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError]     = useState(null)
+  const [bump, setBump]       = useState(0)
+
+  useEffect(() => {
+    let alive = true
+    setLoading(true)
+    offersApi.myOffers()
+      .then(({ offers }) => { if (alive) { setOffers(offers); setError(null) } })
+      .catch(e => { if (alive) setError(e.message) })
+      .finally(() => { if (alive) setLoading(false) })
+    return () => { alive = false }
+  }, [bump])
+
+  return { offers, loading, error, reload: () => setBump(x => x + 1) }
 }
 
 const menuItems = [
@@ -114,6 +134,19 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout }) {
   const [activePage, setActivePage] = useState('overview')
   const [available, setAvailable] = useState(true)
   const { orders, loading: ordersLoading, error: ordersError } = useOpenOrders()
+  const { offers: myOffers, reload: reloadMyOffers } = useMyOffers()
+
+  const acceptedJobs = myOffers.filter(o => o.status === 'accepted')
+
+  const markComplete = async (orderId) => {
+    if (!confirm('Označit zakázku jako hotovou?')) return
+    try {
+      await ordersApi.patch(orderId, 'complete')
+      reloadMyOffers()
+    } catch (e) {
+      alert(e.message)
+    }
+  }
 
   // Field-name kompatibilita: nový backend vrací `jobs_count`, demo data místy `jobs`.
   const jobsCount = currentUser?.jobs_count ?? currentUser?.jobs ?? 0
@@ -231,6 +264,72 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout }) {
           </div>
         )}
 
+        {activePage === 'active' && (
+          <div className="page-enter">
+            <div className="dash-title" style={{ marginBottom: 24 }}>Aktivní zakázky</div>
+            {acceptedJobs.length === 0 && (
+              <div className="empty-state" style={{ padding: 40 }}>
+                <div className="empty-icon">📭</div>
+                <h3>Žádné aktivní zakázky</h3>
+                <p>Jakmile zákazník přijme některou z vašich nabídek, zobrazí se zde.</p>
+              </div>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {acceptedJobs.map(o => (
+                <div key={o.id} className="order-card">
+                  <div className="order-info">
+                    <div className="order-title">{o.order_title || 'Zakázka'}</div>
+                    <div className="order-meta">
+                      <span><Icon name="map" size={13} /> {o.order_city}</span>
+                      <span><Icon name="wallet" size={13} /> {o.price} Kč (dohodnutá cena)</span>
+                      {o.available_date && <span><Icon name="calendar" size={13} /> {o.available_date}</span>}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                    <span className="badge badge-green">Přijato</span>
+                    <button className="btn btn-green btn-sm" onClick={() => markComplete(o.order_id)}>
+                      ✓ Označit jako hotovou
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activePage === 'offers-sent' && (
+          <div className="page-enter">
+            <div className="dash-title" style={{ marginBottom: 24 }}>Odeslané nabídky</div>
+            {myOffers.length === 0 && (
+              <div className="empty-state" style={{ padding: 40 }}>
+                <div className="empty-icon">📤</div>
+                <h3>Žádné odeslané nabídky</h3>
+                <p>Vyberte zakázku ze záložky „Nové zakázky" a pošlete svou první nabídku.</p>
+              </div>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {myOffers.map(o => (
+                <div key={o.id} className="order-card">
+                  <div className="order-info">
+                    <div className="order-title">{o.order_title || 'Zakázka'}</div>
+                    <div className="order-meta">
+                      <span><Icon name="map" size={13} /> {o.order_city}</span>
+                      <span><Icon name="wallet" size={13} /> {o.price} Kč</span>
+                    </div>
+                    {o.message && <p style={{ fontSize: 13, color: 'var(--text2)', marginTop: 6 }}>{o.message}</p>}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
+                    {o.status === 'pending'  && <span className="badge badge-orange">Čeká na odpověď</span>}
+                    {o.status === 'accepted' && <span className="badge badge-green">Přijato ✓</span>}
+                    {o.status === 'rejected' && <span className="badge badge-gray">Odmítnuto</span>}
+                    {o.status === 'withdrawn' && <span className="badge badge-gray">Staženo</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {activePage === 'invoices' && <InvoicePage />}
         {activePage === 'calendar' && <CalendarSection />}
         {activePage === 'membership' && <PricingPage onNav={onNav} inDash />}
@@ -331,7 +430,17 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout }) {
           <div className="empty-state">
             <div className="empty-icon">🚧</div>
             <h3>Tato sekce se připravuje</h3>
-            <p>V prototypu je nachystána k dalšímu rozvoji.</p>
+            <p>Bude napojena v dalším kroku.</p>
+          </div>
+        )}
+        {activePage === 'history' && (
+          <div className="page-enter">
+            <div className="dash-title" style={{ marginBottom: 24 }}>Historie</div>
+            <div className="empty-state" style={{ padding: 40 }}>
+              <div className="empty-icon">📚</div>
+              <h3>Historie zakázek</h3>
+              <p>Brzy zde uvidíte všechny dokončené zakázky.</p>
+            </div>
           </div>
         )}
       </div>

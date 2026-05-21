@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { CATEGORIES, ORDER_STATUS_MAP } from '../../data'
 import Icon from '../../components/Icon'
 import ChatPage from '../ChatPage'
-import { ordersApi, offersApi } from '../../lib/api'
+import { ordersApi, offersApi } from '../../lib/api.js'
 
 const menuItems = [
   { id: 'overview',  icon: '📊', label: 'Přehled' },
@@ -91,11 +91,20 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout }) {
     try { await offersApi.patch(offerId, 'accept'); reload() } catch (e) { alert(e.message) }
   }
 
+  const handleCompleteOrder = async (orderId) => {
+    if (!confirm('Označit zakázku jako dokončenou? Toto potvrzuje, že šikula svou práci dokončil.')) return
+    try { await ordersApi.patch(orderId, 'complete'); reload() } catch (e) { alert(e.message) }
+  }
+
+  const handleCancelOrder = async (orderId) => {
+    if (!confirm('Opravdu zrušit tuto poptávku?')) return
+    try { await ordersApi.patch(orderId, 'cancel'); reload() } catch (e) { alert(e.message) }
+  }
+
   const renderOrderCard = (o, opts = {}) => (
-    <div key={o.id} className="order-card" style={{ cursor: 'pointer', ...(opts.flat && { margin: 0, borderRadius: 0, border: 'none', borderBottom: '1px solid var(--border)' }) }}
-      onClick={() => onNav('order-detail', o)}>
+    <div key={o.id} className="order-card" style={{ ...(opts.flat && { margin: 0, borderRadius: 0, border: 'none', borderBottom: '1px solid var(--border)' }) }}>
       <div className="order-cat-icon">{CAT_ICON[o.category] || '🔧'}</div>
-      <div className="order-info">
+      <div className="order-info" style={{ cursor: 'pointer' }} onClick={() => onNav?.('order-detail', o)}>
         <div className="order-title">{o.title}</div>
         <div className="order-meta">
           <span><Icon name="map" size={13} /> {o.city}</span>
@@ -103,11 +112,21 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout }) {
           <span><Icon name="clock" size={13} /> {relativni(o.created_at)}</span>
         </div>
       </div>
-      <div className="order-actions">
+      <div className="order-actions" style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
         <div className={`badge ${ORDER_STATUS_MAP[o.status]?.color || 'badge-gray'}`}>
           {ORDER_STATUS_MAP[o.status]?.label || o.status}
         </div>
         {o.offers_count > 0 && <div className="badge badge-orange">{o.offers_count} nabídek</div>}
+        {o.status === 'accepted' && (
+          <button className="btn btn-green btn-sm" onClick={(e) => { e.stopPropagation(); handleCompleteOrder(o.id) }}>
+            ✓ Dokončeno
+          </button>
+        )}
+        {(o.status === 'new' || o.status === 'in_progress') && (
+          <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); handleCancelOrder(o.id) }} style={{ color: '#B91C1C' }}>
+            Zrušit
+          </button>
+        )}
       </div>
     </div>
   )
