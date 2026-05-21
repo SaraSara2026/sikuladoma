@@ -15,6 +15,7 @@ import GDPRPage from "./pages/GDPRPage";
 import CookiesPage from "./pages/CookiesPage";
 import Layout from "./components/Layout";
 import SikulaDashboard from "./pages/dashboards/SikulaDashboard.jsx";
+import CustomerDashboard from "./pages/dashboards/CustomerDashboard.jsx";
 import SendOfferPage from "./pages/SendOfferPage.jsx";
 
 // Modaly
@@ -140,7 +141,9 @@ export default function App() {
       >
 
       {page === "dashboard" ? (
-        <SikulaDashboard currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} />
+        sikulaUser?.role === "customer"
+          ? <CustomerDashboard currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} />
+          : <SikulaDashboard   currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} />
       ) : page === "send-offer" ? (
         <SendOfferPage order={currentOrder} onNav={handleNav} onSend={() => { setCurrentOrder(null); }} />
       ) : page === "cookies" ? (

@@ -78,12 +78,14 @@ function useAllMyOffers(myOrders) {
   return { offers, loading }
 }
 
-export default function CustomerDashboard({ currentUser, onNav }) {
+export default function CustomerDashboard({ currentUser, onNav, onLogout }) {
   const [activePage, setActivePage] = useState('overview')
   const { orders, loading, error, reload } = useMyOrders()
   const { offers: allOffers } = useAllMyOffers(orders)
 
   const completedCount = orders.filter(o => o.status === 'completed').length
+  const initials = (currentUser?.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+  const avatar = currentUser?.avatar || initials
 
   const handleAcceptOffer = async (offerId) => {
     try { await offersApi.patch(offerId, 'accept'); reload() } catch (e) { alert(e.message) }
@@ -114,8 +116,8 @@ export default function CustomerDashboard({ currentUser, onNav }) {
     <div className="dash-layout">
       <div className="dash-sidebar">
         <div className="dash-user">
-          <div className="dash-user-avatar">{currentUser.avatar}</div>
-          <div className="dash-user-name">{currentUser.name}</div>
+          <div className="dash-user-avatar">{avatar}</div>
+          <div className="dash-user-name">{currentUser?.name}</div>
           <div className="dash-user-role">Zákazník</div>
         </div>
         {menuItems.map(m => (
@@ -123,6 +125,12 @@ export default function CustomerDashboard({ currentUser, onNav }) {
             <span>{m.icon}</span>{m.label}
           </button>
         ))}
+        {onLogout && (
+          <button className="dash-nav-item" onClick={onLogout}
+            style={{ marginTop: 'auto', color: 'var(--red, #B91C1C)' }}>
+            <span>🚪</span>Odhlásit
+          </button>
+        )}
       </div>
 
       <div className="dash-content">
