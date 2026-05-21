@@ -1,23 +1,114 @@
-import { useState } from 'react'
-import { DEMO_ORDERS, DEMO_OFFERS, ORDER_STATUS_MAP } from '../../data'
+import { useEffect, useState } from 'react'
+import { CATEGORIES, ORDER_STATUS_MAP } from '../../data'
 import Icon from '../../components/Icon'
 import ChatPage from '../ChatPage'
+import { ordersApi, offersApi } from '../../lib/api'
 
 const menuItems = [
-  { id: 'overview', icon: '📊', label: 'Přehled' },
-  { id: 'orders', icon: '📋', label: 'Moje poptávky' },
-  { id: 'offers', icon: '💬', label: 'Nabídky' },
-  { id: 'active', icon: '⚡', label: 'Aktivní zakázky' },
+  { id: 'overview',  icon: '📊', label: 'Přehled' },
+  { id: 'orders',    icon: '📋', label: 'Moje poptávky' },
+  { id: 'offers',    icon: '💬', label: 'Nabídky' },
+  { id: 'active',    icon: '⚡', label: 'Aktivní zakázky' },
   { id: 'completed', icon: '✅', label: 'Dokončené' },
-  { id: 'messages', icon: '💌', label: 'Zprávy' },
+  { id: 'messages',  icon: '💌', label: 'Zprávy' },
   { id: 'favorites', icon: '❤️', label: 'Oblíbení' },
-  { id: 'reviews', icon: '⭐', label: 'Hodnocení' },
-  { id: 'profile', icon: '👤', label: 'Profil' },
+  { id: 'reviews',   icon: '⭐', label: 'Hodnocení' },
+  { id: 'profile',   icon: '👤', label: 'Profil' },
 ]
 
-export default function CustomerDashboard({ currentUser, onNav, orders }) {
+const CAT_ICON = Object.fromEntries(CATEGORIES.map(c => [c.id, c.icon]))
+
+function relativni(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const diff = Math.max(0, Date.now() - d.getTime())
+  const min = Math.floor(diff / 60000)
+  if (min < 1)  return 'právě teď'
+  if (min < 60) return `před ${min} min`
+  const h = Math.floor(min / 60)
+  if (h < 24)   return `před ${h} h`
+  const dn = Math.floor(h / 24)
+  if (dn < 7)   return `před ${dn} dny`
+  return d.toLocaleDateString('cs-CZ')
+}
+
+// Načte moje poptávky a ke každé doplní počet nabídek.
+function useMyOrders() {
+  const [orders, setOrders]   = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError]     = useState(null)
+  const [refresh, setRefresh] = useState(0)
+
+  useEffect(() => {
+    let alive = true
+    setLoading(true)
+    ordersApi.list()
+      .then(async ({ orders }) => {
+        const withCounts = await Promise.all(orders.map(async (o) => {
+          try {
+            const { offers } = await offersApi.listByOrder(o.id)
+            return { ...o, offers_count: offers.length }
+          } catch { return { ...o, offers_count: 0 } }
+        }))
+        if (alive) { setOrders(withCounts); setError(null) }
+      })
+      .catch(e => { if (alive) setError(e.message) })
+      .finally(() => { if (alive) setLoading(false) })
+    return () => { alive = false }
+  }, [refresh])
+
+  return { orders, loading, error, reload: () => setRefresh(x => x + 1) }
+}
+
+// Načte všechny nabídky napříč mými poptávkami.
+function useAllMyOffers(myOrders) {
+  const [offers, setOffers]   = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let alive = true
+    if (myOrders.length === 0) { setOffers([]); setLoading(false); return }
+    setLoading(true)
+    Promise.all(myOrders.map(o => offersApi.listByOrder(o.id).then(({ offers }) => offers.map(off => ({ ...off, order_title: o.title }))).catch(() => [])))
+      .then(arrays => { if (alive) setOffers(arrays.flat()) })
+      .finally(() => { if (alive) setLoading(false) })
+    return () => { alive = false }
+  }, [myOrders])
+
+  return { offers, loading }
+}
+
+export default function CustomerDashboard({ currentUser, onNav }) {
   const [activePage, setActivePage] = useState('overview')
-  const myOrders = [...orders, ...DEMO_ORDERS.filter(o => o.customer === 'Jana N.').slice(0, 2)]
+  const { orders, loading, error, reload } = useMyOrders()
+  const { offers: allOffers } = useAllMyOffers(orders)
+
+  const completedCount = orders.filter(o => o.status === 'completed').length
+
+  const handleAcceptOffer = async (offerId) => {
+    try { await offersApi.patch(offerId, 'accept'); reload() } catch (e) { alert(e.message) }
+  }
+
+  const renderOrderCard = (o, opts = {}) => (
+    <div key={o.id} className="order-card" style={{ cursor: 'pointer', ...(opts.flat && { margin: 0, borderRadius: 0, border: 'none', borderBottom: '1px solid var(--border)' }) }}
+      onClick={() => onNav('order-detail', o)}>
+      <div className="order-cat-icon">{CAT_ICON[o.category] || '🔧'}</div>
+      <div className="order-info">
+        <div className="order-title">{o.title}</div>
+        <div className="order-meta">
+          <span><Icon name="map" size={13} /> {o.city}</span>
+          {o.budget && <span><Icon name="wallet" size={13} /> {o.budget}</span>}
+          <span><Icon name="clock" size={13} /> {relativni(o.created_at)}</span>
+        </div>
+      </div>
+      <div className="order-actions">
+        <div className={`badge ${ORDER_STATUS_MAP[o.status]?.color || 'badge-gray'}`}>
+          {ORDER_STATUS_MAP[o.status]?.label || o.status}
+        </div>
+        {o.offers_count > 0 && <div className="badge badge-orange">{o.offers_count} nabídek</div>}
+      </div>
+    </div>
+  )
 
   return (
     <div className="dash-layout">
@@ -45,32 +136,24 @@ export default function CustomerDashboard({ currentUser, onNav, orders }) {
               <button className="btn btn-primary" onClick={() => onNav('new-order')}><Icon name="plus" size={16} /> Nová poptávka</button>
             </div>
             <div className="stats-grid">
-              <div className="stat-card"><div className="stat-icon">📋</div><div className="stat-val">{myOrders.length}</div><div className="stat-label">Celkem poptávek</div></div>
-              <div className="stat-card"><div className="stat-icon">💬</div><div className="stat-val">8</div><div className="stat-label">Přijatých nabídek</div></div>
-              <div className="stat-card"><div className="stat-icon">✅</div><div className="stat-val">3</div><div className="stat-label">Dokončených zakázek</div></div>
-              <div className="stat-card"><div className="stat-icon">⭐</div><div className="stat-val">4.9</div><div className="stat-label">Průměrné hodnocení</div></div>
+              <div className="stat-card"><div className="stat-icon">📋</div><div className="stat-val">{orders.length}</div><div className="stat-label">Celkem poptávek</div></div>
+              <div className="stat-card"><div className="stat-icon">💬</div><div className="stat-val">{allOffers.length}</div><div className="stat-label">Přijatých nabídek</div></div>
+              <div className="stat-card"><div className="stat-icon">✅</div><div className="stat-val">{completedCount}</div><div className="stat-label">Dokončených zakázek</div></div>
+              <div className="stat-card"><div className="stat-icon">⭐</div><div className="stat-val">—</div><div className="stat-label">Průměrné hodnocení</div></div>
             </div>
             <div className="table-wrap">
               <div className="table-header">
                 <span className="table-title">Poslední poptávky</span>
                 <button className="btn btn-ghost btn-sm" onClick={() => setActivePage('orders')}>Zobrazit vše →</button>
               </div>
-              {myOrders.slice(0, 4).map(o => (
-                <div key={o.id} className="order-card" style={{ margin: 0, borderRadius: 0, border: 'none', borderBottom: '1px solid var(--border)', cursor: 'pointer' }} onClick={() => onNav('order-detail', o)}>
-                  <div className="order-cat-icon">{o.icon}</div>
-                  <div className="order-info">
-                    <div className="order-title">{o.title}</div>
-                    <div className="order-meta">
-                      <span><Icon name="map" size={13} /> {o.city}</span>
-                      <span><Icon name="clock" size={13} /> {o.created}</span>
-                    </div>
-                  </div>
-                  <div className="order-actions">
-                    <div className={`badge ${ORDER_STATUS_MAP[o.status]?.color}`}>{ORDER_STATUS_MAP[o.status]?.label}</div>
-                    {o.offers > 0 && <div className="badge badge-orange">{o.offers} nabídek</div>}
-                  </div>
+              {loading && <div style={{ padding: 16, color: 'var(--text3)' }}>Načítám…</div>}
+              {error && <div style={{ padding: 16, color: '#B91C1C' }}>Chyba: {error}</div>}
+              {!loading && !error && orders.length === 0 && (
+                <div style={{ padding: 32, textAlign: 'center', color: 'var(--text3)' }}>
+                  Zatím žádné poptávky. <button className="btn btn-link" onClick={() => onNav('new-order')}>Zadat první poptávku →</button>
                 </div>
-              ))}
+              )}
+              {!loading && orders.slice(0, 4).map(o => renderOrderCard(o, { flat: true }))}
             </div>
           </div>
         )}
@@ -81,24 +164,16 @@ export default function CustomerDashboard({ currentUser, onNav, orders }) {
               <div className="dash-title">Moje poptávky</div>
               <button className="btn btn-primary btn-sm" onClick={() => onNav('new-order')}><Icon name="plus" size={14} /> Nová poptávka</button>
             </div>
+            {loading && <div style={{ color: 'var(--text3)' }}>Načítám…</div>}
+            {!loading && orders.length === 0 && (
+              <div className="empty-state">
+                <div className="empty-icon">📭</div>
+                <h3>Žádné poptávky</h3>
+                <p>Zadejte první poptávku a šikulové vám pošlou nabídky.</p>
+              </div>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {myOrders.map(o => (
-                <div key={o.id} className="order-card" style={{ cursor: 'pointer' }} onClick={() => onNav('order-detail', o)}>
-                  <div className="order-cat-icon">{o.icon}</div>
-                  <div className="order-info">
-                    <div className="order-title">{o.title}</div>
-                    <div className="order-meta">
-                      <span><Icon name="map" size={13} /> {o.city}</span>
-                      <span><Icon name="wallet" size={13} /> {o.budget}</span>
-                      <span><Icon name="clock" size={13} /> {o.created}</span>
-                    </div>
-                  </div>
-                  <div className="order-actions">
-                    <div className={`badge ${ORDER_STATUS_MAP[o.status]?.color}`}>{ORDER_STATUS_MAP[o.status]?.label}</div>
-                    {o.offers > 0 && <div className="badge badge-orange">{o.offers} nabídek</div>}
-                  </div>
-                </div>
-              ))}
+              {!loading && orders.map(o => renderOrderCard(o))}
             </div>
           </div>
         )}
@@ -106,22 +181,31 @@ export default function CustomerDashboard({ currentUser, onNav, orders }) {
         {activePage === 'offers' && (
           <div className="page-enter">
             <div className="dash-title" style={{ marginBottom: 24 }}>Nabídky od šikulů</div>
-            {DEMO_OFFERS.map(offer => (
+            {allOffers.length === 0 && (
+              <div className="empty-state">
+                <div className="empty-icon">📨</div>
+                <h3>Žádné nabídky zatím</h3>
+                <p>Jakmile šikulové nabídnou cenu, uvidíte je tady.</p>
+              </div>
+            )}
+            {allOffers.map(offer => (
               <div key={offer.id} className="offer-card">
                 <div className="offer-header">
-                  <div className="offer-avatar">{offer.avatar}</div>
+                  <div className="offer-avatar">{offer.sikula_avatar || offer.sikula_name?.[0] || '?'}</div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: 16 }}>{offer.sikula}</div>
-                    <div style={{ fontSize: 13, color: 'var(--text2)' }}>
-                      Na poptávku: {DEMO_ORDERS.find(o => o.id === offer.orderId)?.title}
-                    </div>
+                    <div style={{ fontWeight: 700, fontSize: 16 }}>{offer.sikula_name}</div>
+                    <div style={{ fontSize: 13, color: 'var(--text2)' }}>Na poptávku: {offer.order_title}</div>
                   </div>
                   <div className="offer-price">{offer.price} Kč</div>
                 </div>
                 <p style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 12 }}>{offer.message}</p>
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                   <button className="btn btn-outline btn-sm" onClick={() => onNav('chat')}>Chat</button>
-                  <button className="btn btn-green btn-sm">Přijmout</button>
+                  {offer.status === 'pending' && (
+                    <button className="btn btn-green btn-sm" onClick={() => handleAcceptOffer(offer.id)}>Přijmout</button>
+                  )}
+                  {offer.status === 'accepted' && <span className="badge badge-green">Přijato</span>}
+                  {offer.status === 'rejected' && <span className="badge badge-gray">Odmítnuto</span>}
                 </div>
               </div>
             ))}
@@ -155,8 +239,8 @@ export default function CustomerDashboard({ currentUser, onNav, orders }) {
         {!['overview', 'orders', 'offers', 'messages', 'profile'].includes(activePage) && (
           <div className="empty-state">
             <div className="empty-icon">🚧</div>
-            <h3>Tato sekce se načítá</h3>
-            <p>V prototypu je tato část připravena k implementaci.</p>
+            <h3>Tato sekce se připravuje</h3>
+            <p>Bude napojena v dalším kroku.</p>
           </div>
         )}
       </div>
