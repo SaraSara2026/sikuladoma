@@ -1,4 +1,5 @@
 import { sql } from './_db.js';
+import { rateLimit } from './_rate-limit.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -7,6 +8,8 @@ export default async function handler(req, res) {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method not allowed' });
   }
+  // Max 5 zpráv za 10 minut per IP (anti-spam).
+  if (rateLimit(req, res, { key: 'contact', limit: 5, windowMs: 10 * 60 * 1000 })) return;
   try {
     const { name, email, subject, message } = req.body ?? {};
 

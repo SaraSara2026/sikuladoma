@@ -1,5 +1,6 @@
 import { sql } from '../_db.js';
 import { hashPassword, signToken, setSessionCookie } from '../_auth.js';
+import { rateLimit } from '../_rate-limit.js';
 
 const ALLOWED_ROLES = new Set(['customer', 'sikula']);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -9,6 +10,8 @@ export default async function handler(req, res) {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'Method not allowed' });
   }
+  // Max 3 registrace za 10 minut per IP (proti abusu / spam botům).
+  if (rateLimit(req, res, { key: 'register', limit: 3, windowMs: 10 * 60 * 1000 })) return;
   try {
     const { email, password, name, role = 'customer', phone, city } = req.body ?? {};
 
