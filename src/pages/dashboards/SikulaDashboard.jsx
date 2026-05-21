@@ -1,9 +1,47 @@
-import { useState } from 'react'
-import { DEMO_ORDERS, DEMO_INVOICES, REVIEWS, INVOICE_STATUS_MAP } from '../../data'
+import { useEffect, useState } from 'react'
+import { CATEGORIES, DEMO_INVOICES, REVIEWS, INVOICE_STATUS_MAP } from '../../data'
 import Icon from '../../components/Icon'
 import InvoicePage from '../InvoicePage'
 import PricingPage from '../PricingPage'
 import ChatPage from '../ChatPage'
+import { ordersApi } from '../../lib/api'
+
+// Mapování id kategorie → emoji ikona (pro hezké zobrazení v dashboardu).
+const CAT_ICON = Object.fromEntries(CATEGORIES.map(c => [c.id, c.icon]))
+
+// Lidsky čitelný relativní čas: „před 12 min", „před 3 h", „včera"
+function relativni(iso) {
+  const d = new Date(iso)
+  const diff = Math.max(0, Date.now() - d.getTime())
+  const min = Math.floor(diff / 60000)
+  if (min < 1)  return 'právě teď'
+  if (min < 60) return `před ${min} min`
+  const h = Math.floor(min / 60)
+  if (h < 24)   return `před ${h} h`
+  const dn = Math.floor(h / 24)
+  if (dn < 7)   return `před ${dn} dny`
+  return d.toLocaleDateString('cs-CZ')
+}
+
+// Hook pro načtení otevřených poptávek (refetch každých 30 s).
+function useOpenOrders() {
+  const [orders, setOrders]   = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError]     = useState(null)
+
+  useEffect(() => {
+    let alive = true
+    const load = () => ordersApi.list()
+      .then(({ orders }) => { if (alive) { setOrders(orders); setError(null) } })
+      .catch(e => { if (alive) setError(e.message) })
+      .finally(() => { if (alive) setLoading(false) })
+    load()
+    const id = setInterval(load, 30000)
+    return () => { alive = false; clearInterval(id) }
+  }, [])
+
+  return { orders, loading, error }
+}
 
 const menuItems = [
   { id: 'overview', icon: '📊', label: 'Přehled' },
@@ -75,6 +113,7 @@ function CalendarSection() {
 export default function SikulaDashboard({ currentUser, onNav }) {
   const [activePage, setActivePage] = useState('overview')
   const [available, setAvailable] = useState(true)
+  const { orders, loading: ordersLoading, error: ordersError } = useOpenOrders()
 
   return (
     <div className="dash-layout">
@@ -118,14 +157,26 @@ export default function SikulaDashboard({ currentUser, onNav }) {
                 <span className="table-title">Nové zakázky v okolí</span>
                 <button className="btn btn-ghost btn-sm" onClick={() => setActivePage('new-jobs')}>Zobrazit vše →</button>
               </div>
-              {DEMO_ORDERS.filter(o => o.status === 'new' || o.status === 'offers').slice(0, 3).map(o => (
+              {ordersLoading && <div style={{ padding: 16, color: 'var(--text3)', fontSize: 14 }}>Načítám…</div>}
+              {ordersError && !ordersLoading && (
+                <div style={{ padding: 16, color: 'var(--red, #B91C1C)', fontSize: 13 }}>Nepodařilo se načíst zakázky: {ordersError}</div>
+              )}
+              {!ordersLoading && !ordersError && orders.length === 0 && (
+                <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)' }}>
+                  <div style={{ fontSize: 28, marginBottom: 8 }}>🕊️</div>
+                  Zatím žádné nové poptávky. Zkontroluju to znovu za 30 s.
+                </div>
+              )}
+              {!ordersLoading && !ordersError && orders.slice(0, 3).map(o => (
                 <div key={o.id} className="order-card" style={{ margin: 0, borderRadius: 0, border: 'none', borderBottom: '1px solid var(--border)' }}>
-                  <div className="order-cat-icon">{o.icon}</div>
+                  <div className="order-cat-icon">{CAT_ICON[o.category] || '🔧'}</div>
                   <div className="order-info">
                     <div className="order-title">{o.title}</div>
                     <div className="order-meta">
                       <span><Icon name="map" size={13} /> {o.city}</span>
-                      <span><Icon name="wallet" size={13} /> {o.budget}</span>
+                      {o.budget && <span><Icon name="wallet" size={13} /> {o.budget}</span>}
+                      <span><Icon name="clock" size={13} /> {relativni(o.created_at)}</span>
+                      {o.urgent && <span style={{ color: 'var(--red)' }}>🚨 Urgentní</span>}
                     </div>
                   </div>
                   <button className="btn btn-primary btn-sm" onClick={() => onNav('send-offer', o)}>Nabídnout se</button>
@@ -138,16 +189,27 @@ export default function SikulaDashboard({ currentUser, onNav }) {
         {activePage === 'new-jobs' && (
           <div className="page-enter">
             <div className="dash-title" style={{ marginBottom: 24 }}>Nové zakázky v okolí</div>
+            {ordersLoading && <div style={{ color: 'var(--text3)' }}>Načítám zakázky…</div>}
+            {ordersError && !ordersLoading && (
+              <div style={{ color: 'var(--red, #B91C1C)' }}>Nepodařilo se načíst: {ordersError}</div>
+            )}
+            {!ordersLoading && !ordersError && orders.length === 0 && (
+              <div className="empty-state" style={{ padding: 40 }}>
+                <div className="empty-icon">🕊️</div>
+                <h3>Žádné nové poptávky</h3>
+                <p>Až přijde nová poptávka, ukáže se tu automaticky.</p>
+              </div>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {DEMO_ORDERS.map(o => (
+              {!ordersLoading && !ordersError && orders.map(o => (
                 <div key={o.id} className="order-card">
-                  <div className="order-cat-icon">{o.icon}</div>
+                  <div className="order-cat-icon">{CAT_ICON[o.category] || '🔧'}</div>
                   <div className="order-info">
                     <div className="order-title">{o.title}</div>
                     <div className="order-meta">
                       <span><Icon name="map" size={13} /> {o.city}</span>
-                      <span><Icon name="wallet" size={13} /> {o.budget}</span>
-                      <span><Icon name="clock" size={13} /> {o.created}</span>
+                      {o.budget && <span><Icon name="wallet" size={13} /> {o.budget}</span>}
+                      <span><Icon name="clock" size={13} /> {relativni(o.created_at)}</span>
                       {o.urgent && <span style={{ color: 'var(--red)' }}>🚨 Urgentní</span>}
                     </div>
                   </div>
