@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { CATEGORIES, DEMO_INVOICES, REVIEWS, INVOICE_STATUS_MAP } from '../../data'
+import { CATEGORIES, DEMO_INVOICES, INVOICE_STATUS_MAP } from '../../data'
 import Icon from '../../components/Icon'
 import InvoicePage from '../InvoicePage'
 import PricingPage from '../PricingPage'
 import ChatPage from '../ChatPage'
-import { ordersApi, offersApi } from '../../lib/api'
+import { ordersApi, offersApi, reviewsApi } from '../../lib/api'
 
 // Mapování id kategorie → emoji ikona (pro hezké zobrazení v dashboardu).
 const CAT_ICON = Object.fromEntries(CATEGORIES.map(c => [c.id, c.icon]))
@@ -41,6 +41,26 @@ function useOpenOrders() {
   }, [])
 
   return { orders, loading, error }
+}
+
+// Hook: načte recenze o tomto šikulovi (jsem-li target).
+function useMyReviews(sikulaId) {
+  const [data, setData] = useState({ reviews: [], summary: null })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    if (!sikulaId) return
+    let alive = true
+    setLoading(true)
+    reviewsApi.byTarget(sikulaId)
+      .then(d => { if (alive) setData(d) })
+      .catch(e => { if (alive) setError(e.message) })
+      .finally(() => { if (alive) setLoading(false) })
+    return () => { alive = false }
+  }, [sikulaId])
+
+  return { ...data, loading, error }
 }
 
 // Hook: vrátí všechny mé nabídky (sikula). Pro 'Odeslané nabídky' a 'Aktivní zakázky' taby.
@@ -135,6 +155,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout }) {
   const [available, setAvailable] = useState(true)
   const { orders, loading: ordersLoading, error: ordersError } = useOpenOrders()
   const { offers: myOffers, reload: reloadMyOffers } = useMyOffers()
+  const { reviews: myReviews, summary: reviewsSummary, loading: reviewsLoading } = useMyReviews(currentUser?.id)
 
   const acceptedJobs = myOffers.filter(o => o.status === 'accepted')
 
@@ -191,10 +212,27 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout }) {
               </div>
             </div>
             <div className="stats-grid">
-              <div className="stat-card"><div className="stat-icon">💰</div><div className="stat-val">18 400 Kč</div><div className="stat-label">Tento měsíc</div><div className="stat-trend">↑ +12% vs minulý</div></div>
-              <div className="stat-card"><div className="stat-icon">📋</div><div className="stat-val">6</div><div className="stat-label">Aktivní zakázky</div></div>
-              <div className="stat-card"><div className="stat-icon">⭐</div><div className="stat-val">4.9</div><div className="stat-label">Hodnocení</div></div>
-              <div className="stat-card"><div className="stat-icon">👁️</div><div className="stat-val">342</div><div className="stat-label">Zobrazení profilu</div><div className="stat-trend">↑ tento týden</div></div>
+              <div className="stat-card">
+                <div className="stat-icon">📋</div>
+                <div className="stat-val">{jobsCount}</div>
+                <div className="stat-label">Dokončené zakázky</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon">⚡</div>
+                <div className="stat-val">{acceptedJobs.length}</div>
+                <div className="stat-label">Aktivní zakázky</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon">⭐</div>
+                <div className="stat-val">{reviewsSummary?.avg_stars || currentUser?.rating || '—'}</div>
+                <div className="stat-label">Průměrné hodnocení</div>
+                {reviewsSummary?.total > 0 && <div className="stat-trend">{reviewsSummary.total} recenzí</div>}
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon">📤</div>
+                <div className="stat-val">{myOffers.length}</div>
+                <div className="stat-label">Odeslané nabídky</div>
+              </div>
             </div>
             <div className="table-wrap">
               <div className="table-header">
@@ -368,21 +406,46 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout }) {
           <div className="page-enter">
             <div className="dash-title" style={{ marginBottom: 8 }}>Moje recenze</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-              <div style={{ fontFamily: 'Syne', fontSize: 48, fontWeight: 800, color: 'var(--brand)' }}>4.9</div>
+              <div style={{ fontFamily: 'Syne', fontSize: 48, fontWeight: 800, color: 'var(--brand)' }}>
+                {reviewsSummary?.avg_stars || '—'}
+              </div>
               <div>
-                <div className="stars" style={{ fontSize: 20 }}>★★★★★</div>
-                <div style={{ fontSize: 14, color: 'var(--text2)', marginTop: 4 }}>87 hodnocení</div>
+                <div className="stars" style={{ fontSize: 20 }}>
+                  {reviewsSummary?.avg_stars ? '★'.repeat(Math.round(reviewsSummary.avg_stars)) : ''}
+                </div>
+                <div style={{ fontSize: 14, color: 'var(--text2)', marginTop: 4 }}>
+                  {reviewsSummary?.total || 0} hodnocení
+                  {reviewsSummary?.recommended != null && reviewsSummary.total > 0 && (
+                    <> · {Math.round((reviewsSummary.recommended / reviewsSummary.total) * 100)}% doporučuje</>
+                  )}
+                </div>
               </div>
             </div>
+            {reviewsLoading && <div style={{ color: 'var(--text3)' }}>Načítám…</div>}
+            {!reviewsLoading && myReviews.length === 0 && (
+              <div className="empty-state" style={{ padding: 40 }}>
+                <div className="empty-icon">⭐</div>
+                <h3>Zatím žádné recenze</h3>
+                <p>Po dokončení zakázek dostane zákazník odkaz na hodnocení. Recenze se zobrazí zde.</p>
+              </div>
+            )}
             <div className="reviews-grid">
-              {REVIEWS.slice(0, 4).map((r, i) => (
-                <div key={i} className="review-card">
+              {myReviews.map(r => (
+                <div key={r.id} className="review-card">
                   <div className="review-header">
-                    <div className="review-avatar" style={{ width: 36, height: 36, fontSize: 13 }}>{r.initials}</div>
-                    <div className="review-meta"><div className="review-name" style={{ fontSize: 14 }}>{r.name}</div><div className="review-service">{r.service}</div></div>
+                    <div className="review-avatar" style={{ width: 36, height: 36, fontSize: 13 }}>
+                      {r.reviewer_avatar || (r.reviewer_name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                    </div>
+                    <div className="review-meta">
+                      <div className="review-name" style={{ fontSize: 14 }}>{r.reviewer_name}</div>
+                      <div className="review-service">{new Date(r.created_at).toLocaleDateString('cs-CZ')}</div>
+                    </div>
                     <div className="stars">{'★'.repeat(r.stars)}</div>
                   </div>
-                  <div className="review-text">&ldquo;{r.text}&rdquo;</div>
+                  {r.comment && <div className="review-text">&ldquo;{r.comment}&rdquo;</div>}
+                  {r.recommend === false && (
+                    <div style={{ fontSize: 12, color: 'var(--red, #B91C1C)', marginTop: 6 }}>❌ Nedoporučuje</div>
+                  )}
                 </div>
               ))}
             </div>
