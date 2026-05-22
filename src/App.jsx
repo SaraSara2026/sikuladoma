@@ -16,6 +16,7 @@ import CookiesPage from "./pages/CookiesPage";
 import Layout from "./components/Layout";
 import SikulaDashboard from "./pages/dashboards/SikulaDashboard.jsx";
 import CustomerDashboard from "./pages/dashboards/CustomerDashboard.jsx";
+import AdminDashboard from "./pages/dashboards/AdminDashboard.jsx";
 import SendOfferPage from "./pages/SendOfferPage.jsx";
 import SikulaProfilePage from "./pages/SikulaProfilePage.jsx";
 
@@ -149,9 +150,11 @@ export default function App() {
           onBack={() => { setProfileId(null); window.history.replaceState({}, '', '/'); }}
           onOrder={() => { setProfileId(null); window.history.replaceState({}, '', '/'); openOrder(); }} />
       ) : page === "dashboard" ? (
-        sikulaUser?.role === "customer"
-          ? <CustomerDashboard currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} />
-          : <SikulaDashboard   currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} />
+        sikulaUser?.role === "admin"
+          ? <AdminDashboard     currentUser={sikulaUser} onLogout={logoutSikula} />
+          : sikulaUser?.role === "customer"
+            ? <CustomerDashboard currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} />
+            : <SikulaDashboard   currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} />
       ) : page === "send-offer" ? (
         <SendOfferPage order={currentOrder} onNav={handleNav} onSend={() => { setCurrentOrder(null); }} />
       ) : page === "cookies" ? (

@@ -69,3 +69,12 @@ export const reviewsApi = {
 export const usersApi = {
   publicProfile: (id) => fetch(`/api/users/${id}`, opts()).then(unwrap),
 };
+
+// ─── Admin ──────────────────────────────────────────────────────────────────
+export const adminApi = {
+  stats:    ()         => fetch('/api/admin/stats',    opts()).then(unwrap),
+  users:    (role)     => fetch(`/api/admin/users${role ? `?role=${role}` : ''}`, opts()).then(unwrap),
+  orders:   ()         => fetch('/api/admin/orders',   opts()).then(unwrap),
+  contacts: (onlyUnhandled = false) => fetch(`/api/admin/contacts${onlyUnhandled ? '?unhandled=1' : ''}`, opts()).then(unwrap),
+  verifySikula: (id)   => fetch('/api/admin/verify-sikula', opts({ method: 'POST', headers: json, body: JSON.stringify({ id }) })).then(unwrap),
+};
