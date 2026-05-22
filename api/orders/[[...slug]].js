@@ -1,16 +1,31 @@
-import { sql } from './_db.js';
-import { getCurrentUser } from './_auth.js';
+// Sloučený orders endpoint pro Vercel Hobby limit 12 funkcí.
+// Catch-all `[[...slug]]` zachytí `/api/orders` i `/api/orders/:id`.
+// - GET    /api/orders         → list (filtrováno rolí)
+// - POST   /api/orders         → vytvoření poptávky (anonymní i přihlášený)
+// - PATCH  /api/orders/:id     → action: 'complete' | 'cancel'
+
+import { sql } from '../_db.js';
+import { getCurrentUser, requireUser } from '../_auth.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const STATUS_NEW = 'new';
 const VALID_GENDER = new Set(['jedno', 'zena', 'muz']);
 
 export default async function handler(req, res) {
+  const slug = req.query?.slug || [];
+  const id   = Array.isArray(slug) ? slug[0] : slug;
+
   try {
-    if (req.method === 'POST') return createOrder(req, res);
-    if (req.method === 'GET')  return listOrders(req, res);
-    res.setHeader('Allow', 'GET, POST');
-    return res.status(405).json({ error: 'Method not allowed' });
+    if (!id) {
+      if (req.method === 'POST') return await createOrder(req, res);
+      if (req.method === 'GET')  return await listOrders(req, res);
+      res.setHeader('Allow', 'GET, POST');
+      return res.status(405).json({ error: 'Method not allowed' });
+    } else {
+      if (req.method === 'PATCH') return await patchOrder(req, res, Number(id));
+      res.setHeader('Allow', 'PATCH');
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
   } catch (err) {
     console.error('[/api/orders]', err);
     return res.status(500).json({ error: 'Server error' });
@@ -18,8 +33,6 @@ export default async function handler(req, res) {
 }
 
 // ─── POST /api/orders ───────────────────────────────────────────────────────
-// Anonymní i přihlášený zákazník může vytvořit poptávku.
-// Pokud je přihlášen, propojíme s customer_id.
 async function createOrder(req, res) {
   const b = req.body ?? {};
   const title       = String(b.title || '').trim();
@@ -41,11 +54,10 @@ async function createOrder(req, res) {
   const customer_email = String((b.customer_email || b.email || me?.email || '')).trim().toLowerCase();
   const customer_phone = b.customer_phone || b.phone || me?.phone || null;
 
-  // Validace
-  if (title.length < 3)             return res.status(400).json({ error: 'Zadejte název poptávky (min. 3 znaky).' });
-  if (!category)                    return res.status(400).json({ error: 'Vyberte kategorii.' });
-  if (city.length < 2)              return res.status(400).json({ error: 'Zadejte město.' });
-  if (!customer_name)               return res.status(400).json({ error: 'Zadejte své jméno.' });
+  if (title.length < 3)               return res.status(400).json({ error: 'Zadejte název poptávky (min. 3 znaky).' });
+  if (!category)                      return res.status(400).json({ error: 'Vyberte kategorii.' });
+  if (city.length < 2)                return res.status(400).json({ error: 'Zadejte město.' });
+  if (!customer_name)                 return res.status(400).json({ error: 'Zadejte své jméno.' });
   if (!EMAIL_RE.test(customer_email)) return res.status(400).json({ error: 'Zadejte platný e-mail.' });
 
   const [row] = await sql`
@@ -64,10 +76,6 @@ async function createOrder(req, res) {
 }
 
 // ─── GET /api/orders ────────────────────────────────────────────────────────
-// Vrátí list podle role:
-// - customer: jen vlastní poptávky
-// - sikula:   všechny 'new' a 'in_progress' poptávky (+ filtr ?category=, ?city=)
-// - admin:    vše
 async function listOrders(req, res) {
   const me = await getCurrentUser(req);
   if (!me) return res.status(401).json({ error: 'Unauthorized' });
@@ -100,4 +108,65 @@ async function listOrders(req, res) {
     `;
   }
   return res.status(200).json({ orders: rows });
+}
+
+// ─── PATCH /api/orders/:id ──────────────────────────────────────────────────
+async function patchOrder(req, res, orderId) {
+  const me = await requireUser(req, res);
+  if (!me) return;
+
+  if (!orderId) return res.status(400).json({ error: 'Neplatné ID poptávky.' });
+
+  const action = req.body?.action;
+  if (!['complete', 'cancel'].includes(action)) {
+    return res.status(400).json({ error: 'Neplatná akce (povolené: complete, cancel).' });
+  }
+
+  const [order] = await sql`
+    SELECT o.*, off.sikula_id AS accepted_sikula_id
+    FROM orders o
+    LEFT JOIN offers off ON off.id = o.accepted_offer_id
+    WHERE o.id = ${orderId}
+  `;
+  if (!order) return res.status(404).json({ error: 'Poptávka neexistuje.' });
+  if (order.status === 'completed' || order.status === 'cancelled') {
+    return res.status(409).json({ error: 'Poptávka už je uzavřená.' });
+  }
+
+  if (action === 'complete') {
+    const canComplete =
+      me.role === 'admin' ||
+      me.id === order.customer_id ||
+      (me.role === 'sikula' && me.id === order.accepted_sikula_id);
+    if (!canComplete) return res.status(403).json({ error: 'Nemáte oprávnění uzavřít tuto poptávku.' });
+    if (order.status !== 'accepted') {
+      return res.status(409).json({ error: 'Dokončit lze jen poptávku ve stavu „accepted".' });
+    }
+    const [row] = await sql`
+      UPDATE orders SET status = 'completed', updated_at = NOW()
+      WHERE id = ${orderId}
+      RETURNING *
+    `;
+    if (order.accepted_sikula_id) {
+      await sql`
+        UPDATE users SET jobs_count = COALESCE(jobs_count, 0) + 1, updated_at = NOW()
+        WHERE id = ${order.accepted_sikula_id}
+      `;
+    }
+    return res.status(200).json({ order: row });
+  }
+
+  if (action === 'cancel') {
+    const canCancel = me.role === 'admin' || me.id === order.customer_id;
+    if (!canCancel) return res.status(403).json({ error: 'Nemáte oprávnění zrušit tuto poptávku.' });
+    if (order.status === 'accepted') {
+      return res.status(409).json({ error: 'Akceptovanou poptávku nelze jen tak zrušit — kontaktujte podporu.' });
+    }
+    const [row] = await sql`
+      UPDATE orders SET status = 'cancelled', updated_at = NOW()
+      WHERE id = ${orderId}
+      RETURNING *
+    `;
+    return res.status(200).json({ order: row });
+  }
 }
