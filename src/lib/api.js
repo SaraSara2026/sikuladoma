@@ -64,3 +64,8 @@ export const reviewsApi = {
   byTarget: (targetId) => fetch(`/api/reviews?target_id=${targetId}`, opts()).then(unwrap),
   byOrder:  (orderId)  => fetch(`/api/reviews?order_id=${orderId}`,   opts()).then(unwrap),
 };
+
+// ─── Users (veřejné) ────────────────────────────────────────────────────────
+export const usersApi = {
+  publicProfile: (id) => fetch(`/api/users/${id}`, opts()).then(unwrap),
+};

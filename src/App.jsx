@@ -17,6 +17,7 @@ import Layout from "./components/Layout";
 import SikulaDashboard from "./pages/dashboards/SikulaDashboard.jsx";
 import CustomerDashboard from "./pages/dashboards/CustomerDashboard.jsx";
 import SendOfferPage from "./pages/SendOfferPage.jsx";
+import SikulaProfilePage from "./pages/SikulaProfilePage.jsx";
 
 // Modaly
 import OrderForm  from "./modals/OrderForm.jsx";
@@ -53,6 +54,9 @@ export default function App() {
   const [priority,    setPriority]     = useState(null);
   const [dashboardTab, setDashboardTab] = useState("prehled");
   const [currentOrder, setCurrentOrder] = useState(null); // pro SendOffer/OrderDetail navigaci
+  const [profileId, setProfileId] = useState(() => {
+    try { return new URL(window.location.href).searchParams.get('sikula'); } catch { return null; }
+  });
   const [sikulaUser,  setSikulaUser]   = useState(() => {
     try { const s = localStorage.getItem("sd_user"); return s ? JSON.parse(s) : null; } catch { return null; }
   });
@@ -140,7 +144,11 @@ export default function App() {
         onHow={() => { setPage("home"); window.scrollTo(0,0); setTimeout(() => document.getElementById("how")?.scrollIntoView({ behavior: "smooth" }), 100); }}
       >
 
-      {page === "dashboard" ? (
+      {profileId ? (
+        <SikulaProfilePage id={profileId}
+          onBack={() => { setProfileId(null); window.history.replaceState({}, '', '/'); }}
+          onOrder={() => { setProfileId(null); window.history.replaceState({}, '', '/'); openOrder(); }} />
+      ) : page === "dashboard" ? (
         sikulaUser?.role === "customer"
           ? <CustomerDashboard currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} />
           : <SikulaDashboard   currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} />
