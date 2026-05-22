@@ -60,10 +60,19 @@ src/
 
 ## Databáze
 
-- Schéma: `db/schema.sql` — tabulky: `users`, `orders`, `offers`, `conversations`, `messages`, `invoices`, `contact_messages`
-- Migrace: `npm run db:migrate` (spouští `scripts/migrate.js`)
-- Seed: `npm run db:seed` (vloží 3 demo faktury)
+- Schéma: `db/schema.sql` — tabulky: `users`, `orders`, `offers`, `conversations`, `messages`, `invoices`, `contact_messages`, `reviews`, `magic_links`
+- Migrace: `npm run db:migrate` (spouští `scripts/migrate.js`) — všechny `CREATE TABLE IF NOT EXISTS`, je bezpečné spouštět opakovaně
+- Seed: `npm run db:seed` — 3 demo uživatelé (`jana@`, `pavel@`, `admin@` všichni s heslem `demo1234`) + 3 demo faktury
 - Connection string: `.env.local` → `DATABASE_URL=...` (gitignored). Vercel má stejnou env proměnnou v Settings → Environment Variables.
+
+**Klíčové constraints / chování:**
+- `orders.status` enum: `new` → `in_progress` (přijde první nabídka) → `accepted` (customer přijal) → `completed` (sikula nebo customer dokončil)
+- `offers` UNIQUE (order_id, sikula_id) — jeden šikula = jedna nabídka per poptávka
+- `conversations` UNIQUE (customer_id, sikula_id, order_id) — auto-založí se při accept nabídky
+- `reviews` UNIQUE (order_id, reviewer_id) — jen jedna recenze per zakázka
+- Po accept: ostatní pending nabídky automaticky `rejected`, poptávka `accepted`, vytvoří se conversation
+- Po complete: inkrement `users.jobs_count` u šikuly
+- Po recenzi: přepočet `users.rating` jako AVG všech recenzí na šikulu
 
 ## Lokální vývoj
 
@@ -79,26 +88,49 @@ src/
 - `POST /api/auth/logout` — smaže cookie
 - `GET  /api/auth/me` — vrátí přihlášeného uživatele (nebo `{user: null}`)
 
-**Objednávky (od 2026-05-21):**
+**Objednávky:**
 - `POST /api/orders` — vytvoří poptávku (anonymní i přihlášený)
 - `GET  /api/orders` — list (filtrováno podle role: customer = vlastní, sikula = otevřené, admin = vše); query params `?category=`, `?city=`, `?status=`
+- `PATCH /api/orders/:id` — akce `complete` (sikula s akceptovanou nabídkou / customer / admin; inkrementuje `users.jobs_count`) nebo `cancel` (customer / admin)
 - `POST /api/offers` — šikula posílá nabídku na poptávku
 - `GET  /api/offers?order_id=` — nabídky na konkrétní poptávku (filtrované rolí)
 - `GET  /api/offers` — šikula vidí všechny své nabídky
 - `PATCH /api/offers/:id` — akce `accept` / `reject` (customer) / `withdraw` (sikula). Accept automaticky odmítne ostatní pending nabídky, uzavře poptávku a založí konverzaci customer ↔ sikula.
 
-**Chat (od 2026-05-21):**
+**Chat:**
 - `GET  /api/conversations` — mé konverzace + last message + unread count
 - `POST /api/conversations` — založí (nebo vrátí existující) konverzaci mezi customer ↔ sikula
 - `GET  /api/messages?conversation_id=` — zprávy + auto-mark-as-read
 - `POST /api/messages` — odeslat zprávu (jen účastník, max 4000 znaků)
 
-**Kontakt (od 2026-05-21):**
+**Reviews:**
+- `POST /api/reviews` — pouze customer dokončené zakázky může hodnotit svého šikulu; auto-přepočte `users.rating` jako AVG všech jeho reviews; UNIQUE (order_id, reviewer_id) = jedna recenze per zakázka
+- `GET  /api/reviews?target_id=` — veřejný seznam recenzí + summary (total, avg_stars, recommended count)
+- `GET  /api/reviews?order_id=` — vlastní recenze (auth required)
+
+**Kontakt:**
 - `POST /api/contact` — uloží zprávu z kontaktního formuláře do `contact_messages`
 
 **Faktury:**
 - `GET /api/invoices` → seznam faktur (volá `InvoicePage.jsx`)
 - `POST /api/invoices` → vytvoření faktury (zatím bez autentizace!)
+
+## SEO
+
+- `index.html` — title, description, keywords, canonical, OG (FB/LinkedIn), Twitter Cards, Schema.org JSON-LD (LocalBusiness + WebSite + SearchAction)
+- `public/robots.txt` — povolí indexaci, blokuje `/api/`, odkazuje na sitemap
+- `public/sitemap.xml` — 7 veřejných stránek
+- TODO: vyrobit `public/og-image.png` (1200×630) a `public/logo.png`
+- **Limit:** projekt je SPA — Google bot to dnes umí, ale meta tagy per-route by chtěly `react-helmet` nebo SSR (zatím out of scope)
+
+## Rate limiting
+
+`api/_rate-limit.js` — in-memory sliding window per IP, posílá X-RateLimit-* a Retry-After hlavičky. Per-instance (Vercel scale-out neideální, pro tvrdší ochranu → Upstash Redis).
+
+Aplikováno:
+- `POST /api/auth/login` — 5 pokusů / 5 min (anti-brute-force)
+- `POST /api/auth/register` — 3 registrace / 10 min (anti-spam)
+- `POST /api/contact` — 5 zpráv / 10 min (anti-spam)
 
 ## Auth architektura
 
