@@ -1,3 +1,9 @@
+import { useState } from 'react'
+import { stripeApi } from '../lib/api'
+
+// Mapování tier → Stripe plan ID (musí odpovídat STRIPE_PRICE_* env vars)
+const TIER_TO_PLAN = { Plus: 'plus', Profi: 'profi', Premium: 'top' }
+
 const plans = [
   {
     tier: 'Start', name: 'Základní', price: 0, period: 'zdarma navždy',
@@ -21,7 +27,37 @@ const plans = [
   },
 ]
 
-export default function PricingPage({ onNav, inDash }) {
+export default function PricingPage({ onNav, inDash, currentUser }) {
+  const [loading, setLoading] = useState(null)  // tier který se právě načítá
+  const [error,   setError]   = useState(null)
+
+  const currentPlan = currentUser?.plan || 'start'
+
+  async function handleUpgrade(tier) {
+    const planId = TIER_TO_PLAN[tier]
+    if (!planId) return
+    setLoading(tier)
+    setError(null)
+    try {
+      const { url } = await stripeApi.checkout(planId)
+      window.location.href = url
+    } catch (err) {
+      setError(err.message || 'Nepodařilo se otevřít platební bránu.')
+      setLoading(null)
+    }
+  }
+
+  function getButtonLabel(p) {
+    if (p.price === 0) return 'Začít zdarma'
+    const planId = TIER_TO_PLAN[p.tier]
+    if (currentPlan === planId) return '✓ Váš aktuální plán'
+    return loading === p.tier ? 'Přesměrovávám…' : 'Vybrat tarif'
+  }
+
+  function isCurrentPlan(p) {
+    return currentPlan === TIER_TO_PLAN[p.tier] || (p.tier === 'Start' && currentPlan === 'start')
+  }
+
   return (
     <div className="page-enter" style={{ padding: inDash ? 0 : '60px 24px', background: inDash ? 'transparent' : 'var(--bg)' }}>
       {!inDash && (
@@ -35,10 +71,17 @@ export default function PricingPage({ onNav, inDash }) {
       )}
       {inDash && <div className="dash-title" style={{ marginBottom: 24 }}>Moje členství &amp; Ceník</div>}
 
+      {error && (
+        <div style={{ background: 'var(--red-pale, #fee2e2)', color: 'var(--red, #B91C1C)', border: '1px solid var(--red, #B91C1C)', borderRadius: 8, padding: '12px 16px', marginBottom: 20, fontSize: 14 }}>
+          ⚠️ {error}
+        </div>
+      )}
+
       <div className="pricing-grid" style={{ maxWidth: 1100, margin: '0 auto' }}>
         {plans.map(p => (
-          <div key={p.tier} className={`pricing-card ${p.featured ? 'featured' : ''}`}>
+          <div key={p.tier} className={`pricing-card ${p.featured ? 'featured' : ''} ${isCurrentPlan(p) ? 'current-plan' : ''}`}>
             {p.popular && <div className="pricing-popular">Nejoblíbenější</div>}
+            {isCurrentPlan(p) && <div className="pricing-popular" style={{ background: 'var(--green, #16a34a)' }}>Váš plán</div>}
             <div className="pricing-tier">{p.tier}</div>
             <div className="pricing-name">{p.name}</div>
             <div className="pricing-price">
@@ -54,13 +97,26 @@ export default function PricingPage({ onNav, inDash }) {
             <button
               className={`btn ${p.featured ? 'btn-primary' : 'btn-outline'}`}
               style={{ width: '100%', justifyContent: 'center' }}
-              onClick={() => onNav('register-sikula')}
+              disabled={loading === p.tier || isCurrentPlan(p)}
+              onClick={() => {
+                if (p.price === 0) return
+                if (inDash && currentUser) {
+                  handleUpgrade(p.tier)
+                } else {
+                  onNav?.('register-sikula')
+                }
+              }}
             >
-              {p.price === 0 ? 'Začít zdarma' : 'Vybrat tarif'}
+              {getButtonLabel(p)}
             </button>
           </div>
         ))}
       </div>
+
+      {/* Správa předplatného přes Stripe Customer Portal */}
+      {inDash && currentUser && currentPlan !== 'start' && (
+        <ManageSubscription />
+      )}
 
       {!inDash && (
         <div style={{ textAlign: 'center', marginTop: 48, padding: '32px', background: 'white', borderRadius: 'var(--radius)', maxWidth: 600, margin: '48px auto 0', border: '1px solid var(--border)' }}>
@@ -70,6 +126,36 @@ export default function PricingPage({ onNav, inDash }) {
           </p>
         </div>
       )}
+    </div>
+  )
+}
+
+function ManageSubscription() {
+  const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState(null)
+
+  async function openPortal() {
+    setLoading(true)
+    setError(null)
+    try {
+      const { url } = await stripeApi.portal()
+      window.location.href = url
+    } catch (err) {
+      setError(err.message || 'Nepodařilo se otevřít správu předplatného.')
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div style={{ marginTop: 32, padding: '20px 24px', background: 'var(--canvas)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+      <div>
+        <div style={{ fontWeight: 600, marginBottom: 4 }}>Správa předplatného</div>
+        <div style={{ fontSize: 13, color: 'var(--text2)' }}>Změnit plán, stáhnout faktury nebo zrušit předplatné přes Stripe.</div>
+      </div>
+      {error && <div style={{ color: 'var(--red, #B91C1C)', fontSize: 13 }}>{error}</div>}
+      <button className="btn btn-outline" onClick={openPortal} disabled={loading}>
+        {loading ? 'Přesměrovávám…' : 'Spravovat předplatné →'}
+      </button>
     </div>
   )
 }

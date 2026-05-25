@@ -55,7 +55,15 @@ export const invoicesApi = {
 
 // ─── Contact ────────────────────────────────────────────────────────────────
 export const contactApi = {
-  send: (data) => fetch('/api/contact', opts({ method: 'POST', headers: json, body: JSON.stringify(data) })).then(unwrap),
+  send: (data) => fetch('/api/admin/contact', opts({ method: 'POST', headers: json, body: JSON.stringify(data) })).then(unwrap),
+};
+
+// ─── Stripe ─────────────────────────────────────────────────────────────────
+export const stripeApi = {
+  checkout: (plan) => fetch('/api/stripe?action=checkout', opts({
+    method: 'POST', headers: json, body: JSON.stringify({ plan }),
+  })).then(unwrap),
+  portal: () => fetch('/api/stripe?action=portal', opts()).then(unwrap),
 };
 
 // ─── Reviews ────────────────────────────────────────────────────────────────

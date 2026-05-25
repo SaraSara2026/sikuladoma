@@ -17,6 +17,9 @@ CREATE TABLE IF NOT EXISTS users (
   ico             TEXT,
   services        TEXT[] DEFAULT '{}',         -- pole category id, např. {'opravy','elektro'}
   plan            TEXT DEFAULT 'start' CHECK (plan IN ('start','plus','profi','top')),
+  stripe_customer_id     TEXT,
+  stripe_subscription_id TEXT,
+  plan_expires_at        TIMESTAMPTZ,
   verified        BOOLEAN DEFAULT FALSE,
   rating          NUMERIC(2,1),
   jobs_count      INTEGER DEFAULT 0,
@@ -185,3 +188,10 @@ CREATE TABLE IF NOT EXISTS contact_messages (
 );
 
 CREATE INDEX IF NOT EXISTS idx_contact_handled ON contact_messages(handled, created_at);
+
+-- ============================================================
+-- STRIPE — sloupce na users (bezpečné opakované spuštění)
+-- ============================================================
+ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id     TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_expires_at        TIMESTAMPTZ;

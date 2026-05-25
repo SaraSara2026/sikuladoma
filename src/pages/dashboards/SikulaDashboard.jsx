@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CATEGORIES, DEMO_INVOICES, INVOICE_STATUS_MAP } from '../../data'
 import Icon from '../../components/Icon'
 import InvoicePage from '../InvoicePage'
@@ -153,9 +153,29 @@ function CalendarSection() {
 export default function SikulaDashboard({ currentUser, onNav, onLogout }) {
   const [activePage, setActivePage] = useState('overview')
   const [available, setAvailable] = useState(true)
+  const [stripeMsg, setStripeMsg] = useState(null)   // { type: 'success'|'cancel', plan? }
   const { orders, loading: ordersLoading, error: ordersError } = useOpenOrders()
   const { offers: myOffers, reload: reloadMyOffers } = useMyOffers()
   const { reviews: myReviews, summary: reviewsSummary, loading: reviewsLoading } = useMyReviews(currentUser?.id)
+
+  // Detekce ?stripe=success/cancel po návratu ze Stripe Checkout
+  const stripeHandled = useRef(false)
+  useEffect(() => {
+    if (stripeHandled.current) return
+    const params = new URLSearchParams(window.location.search)
+    const s = params.get('stripe')
+    const plan = params.get('plan')
+    if (s === 'success') {
+      setStripeMsg({ type: 'success', plan })
+      stripeHandled.current = true
+      // Vyčistíme URL
+      window.history.replaceState({}, '', window.location.pathname)
+    } else if (s === 'cancel') {
+      setStripeMsg({ type: 'cancel' })
+      stripeHandled.current = true
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [])
 
   const acceptedJobs = myOffers.filter(o => o.status === 'accepted')
 
@@ -199,6 +219,27 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout }) {
       </div>
 
       <div className="dash-content">
+
+        {/* Stripe Checkout — zprávy po návratu */}
+        {stripeMsg && (
+          <div style={{
+            margin: '0 0 20px',
+            padding: '14px 20px',
+            borderRadius: 'var(--radius)',
+            background: stripeMsg.type === 'success' ? 'var(--green-pale, #dcfce7)' : 'var(--canvas)',
+            border: `1px solid ${stripeMsg.type === 'success' ? 'var(--green, #16a34a)' : 'var(--border)'}`,
+            color: stripeMsg.type === 'success' ? 'var(--green, #15803d)' : 'var(--text2)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+          }}>
+            <span>
+              {stripeMsg.type === 'success'
+                ? `🎉 Platba proběhla úspěšně! Váš tarif ${stripeMsg.plan ? `(${stripeMsg.plan})` : ''} bude aktivován do pár minut.`
+                : 'Platba byla zrušena. Váš tarif nebyl změněn.'}
+            </span>
+            <button onClick={() => setStripeMsg(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '0 4px', color: 'inherit' }}>×</button>
+          </div>
+        )}
+
         {activePage === 'overview' && (
           <div className="page-enter">
             <div className="dash-header">
@@ -234,6 +275,26 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout }) {
                 <div className="stat-label">Odeslané nabídky</div>
               </div>
             </div>
+            {/* Upgrade banner — jen pro Start tarif */}
+            {(!currentUser?.plan || currentUser.plan === 'start') && (
+              <div style={{
+                marginBottom: 20,
+                padding: '16px 20px',
+                background: 'linear-gradient(135deg, #f5f0ff 0%, #fff7ed 100%)',
+                border: '1px solid var(--purple-pale, #e9d5ff)',
+                borderRadius: 'var(--radius)',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap',
+              }}>
+                <div>
+                  <div style={{ fontWeight: 700, marginBottom: 4 }}>⚡ Získejte více zakázek</div>
+                  <div style={{ fontSize: 13, color: 'var(--text2)' }}>S tariferem Plus nebo Profi získáte přednostní zobrazení a více reakcí.</div>
+                </div>
+                <button className="btn btn-primary btn-sm" onClick={() => setActivePage('membership')}>
+                  Zobrazit tarify →
+                </button>
+              </div>
+            )}
+
             <div className="table-wrap">
               <div className="table-header">
                 <span className="table-title">Nové zakázky v okolí</span>
@@ -370,7 +431,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout }) {
 
         {activePage === 'invoices' && <InvoicePage />}
         {activePage === 'calendar' && <CalendarSection />}
-        {activePage === 'membership' && <PricingPage onNav={onNav} inDash />}
+        {activePage === 'membership' && <PricingPage onNav={onNav} inDash currentUser={currentUser} />}
         {activePage === 'messages' && <ChatPage />}
 
         {activePage === 'earnings' && (
