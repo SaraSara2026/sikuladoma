@@ -1,75 +1,57 @@
-// DEBUG: minimal handler, postupne pridavat veci
+// /api/conversations — GET (list) + POST (create)
+// Query přepsaná z `(SELECT ...) AS x` + `ORDER BY COALESCE(x, ...)` na LATERAL JOIN,
+// protože Neon HTTP driver na to padal (FUNCTION_INVOCATION_FAILED).
+
 import { sql } from './_db.js';
 import { requireUser } from './_auth.js';
 
 export default async function handler(req, res) {
   try {
-    // Krok 1: simply respond hello
-    if (req.query?.dbg === 'hello') {
-      return res.status(200).json({ ok: true, msg: 'hello from conversations' });
-    }
-
-    // Krok 2: requireUser
-    if (req.query?.dbg === 'auth') {
-      const me = await requireUser(req, res);
-      if (!me) return;
-      return res.status(200).json({ ok: true, me });
-    }
-
-    // Krok 3: SELECT z conversations
-    if (req.query?.dbg === 'sql') {
-      const me = await requireUser(req, res);
-      if (!me) return;
-      const rows = await sql`SELECT id, customer_id, sikula_id FROM conversations WHERE customer_id = ${me.id} OR sikula_id = ${me.id} LIMIT 10`;
-      return res.status(200).json({ ok: true, count: rows.length, rows });
-    }
-
-    // Krok 4: SELECT s JOINy a aliasy
-    if (req.query?.dbg === 'join') {
-      const me = await requireUser(req, res);
-      if (!me) return;
-      const rows = await sql`
-        SELECT c.id, c.customer_id, c.sikula_id, c.order_id, c.created_at,
-               ord.title AS order_title,
-               cu.name AS customer_name, s.name AS sikula_name
-        FROM conversations c
-        LEFT JOIN users cu  ON cu.id  = c.customer_id
-        LEFT JOIN users s   ON s.id   = c.sikula_id
-        LEFT JOIN orders ord ON ord.id = c.order_id
-        WHERE c.customer_id = ${me.id} OR c.sikula_id = ${me.id}
-      `;
-      return res.status(200).json({ ok: true, count: rows.length, rows });
-    }
-
-    // Default: full query (puvodni)
-    if (req.method === 'GET')  return listConversations(req, res);
-    if (req.method === 'POST') return createConversation(req, res);
+    if (req.method === 'GET')  return await listConversations(req, res);
+    if (req.method === 'POST') return await createConversation(req, res);
     res.setHeader('Allow', 'GET, POST');
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (err) {
     console.error('[/api/conversations]', err);
-    return res.status(500).json({ error: 'Server error', _debug: String(err?.message || err), _stack: String(err?.stack || '').split('\n').slice(0, 4) });
+    return res.status(500).json({ error: 'Server error', _debug: String(err?.message || err) });
   }
 }
 
 async function listConversations(req, res) {
   const me = await requireUser(req, res);
   if (!me) return;
+
+  // LATERAL JOIN pro poslední zprávu (1 row per conversation)
+  // unread_count přes correlated subquery jen v WHERE
   const rows = await sql`
     SELECT
       c.id, c.customer_id, c.sikula_id, c.order_id, c.created_at,
       ord.title AS order_title,
-      CASE WHEN c.customer_id = ${me.id} THEN s.name ELSE cu.name END AS other_name,
+      CASE WHEN c.customer_id = ${me.id} THEN s.name   ELSE cu.name   END AS other_name,
       CASE WHEN c.customer_id = ${me.id} THEN s.avatar ELSE cu.avatar END AS other_avatar,
-      (SELECT text FROM messages m WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) AS last_message,
-      (SELECT created_at FROM messages m WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) AS last_message_at,
-      (SELECT COUNT(*) FROM messages m WHERE m.conversation_id = c.id AND m.sender_id != ${me.id} AND m.read_at IS NULL) AS unread_count
+      lm.text       AS last_message,
+      lm.created_at AS last_message_at,
+      COALESCE(uc.unread_count, 0) AS unread_count
     FROM conversations c
-    LEFT JOIN users cu  ON cu.id  = c.customer_id
-    LEFT JOIN users s   ON s.id   = c.sikula_id
+    LEFT JOIN users  cu  ON cu.id  = c.customer_id
+    LEFT JOIN users  s   ON s.id   = c.sikula_id
     LEFT JOIN orders ord ON ord.id = c.order_id
+    LEFT JOIN LATERAL (
+      SELECT m.text, m.created_at
+      FROM messages m
+      WHERE m.conversation_id = c.id
+      ORDER BY m.created_at DESC
+      LIMIT 1
+    ) lm ON TRUE
+    LEFT JOIN LATERAL (
+      SELECT COUNT(*)::int AS unread_count
+      FROM messages m
+      WHERE m.conversation_id = c.id
+        AND m.sender_id != ${me.id}
+        AND m.read_at IS NULL
+    ) uc ON TRUE
     WHERE c.customer_id = ${me.id} OR c.sikula_id = ${me.id}
-    ORDER BY COALESCE(last_message_at, c.created_at) DESC
+    ORDER BY COALESCE(lm.created_at, c.created_at) DESC
   `;
   return res.status(200).json({ conversations: rows });
 }
@@ -77,6 +59,7 @@ async function listConversations(req, res) {
 async function createConversation(req, res) {
   const me = await requireUser(req, res);
   if (!me) return;
+
   const { other_user_id, order_id } = req.body ?? {};
   if (!other_user_id) return res.status(400).json({ error: 'Chybí other_user_id.' });
   if (Number(other_user_id) === me.id) return res.status(400).json({ error: 'Nelze založit konverzaci sám se sebou.' });
