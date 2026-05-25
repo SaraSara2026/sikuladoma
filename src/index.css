@@ -250,10 +250,26 @@ a { text-decoration:none; color:inherit; }
 .dash-user-av { width:40px; height:40px; border-radius:999px; background:var(--orange); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; margin-bottom:10px; }
 .dash-user-name { color:#fff; font-weight:600; font-size:14px; }
 .dash-user-role { color:rgba(255,255,255,.4); font-size:12px; margin-top:1px; }
-.dash-link { display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:var(--r-sm); font-size:13px; font-weight:500; color:rgba(255,255,255,.55); border:none; background:none; width:100%; text-align:left; cursor:pointer; transition:all .12s; }
-.dash-link:hover { background:rgba(255,255,255,.07); color:rgba(255,255,255,.85); }
-.dash-link.active { background:var(--blue); color:#fff; font-weight:600; }
-.dash-link span { font-size:15px; }
+.dash-link,
+.dash-nav-item { display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:var(--r-sm); font-size:13px; font-weight:500; color:rgba(255,255,255,.7); border:none; background:none; width:100%; text-align:left; cursor:pointer; transition:all .12s; font-family:inherit; }
+.dash-link:hover,
+.dash-nav-item:hover { background:rgba(255,255,255,.07); color:#fff; }
+.dash-link.active,
+.dash-nav-item.active { background:var(--blue); color:#fff; font-weight:600; }
+.dash-link span,
+.dash-nav-item span { font-size:15px; flex-shrink:0; }
+
+/* Avatar v dash sidebaru — kompatibilní jak s .dash-user-av tak .dash-user-avatar */
+.dash-user-avatar { width:40px; height:40px; border-radius:999px; background:var(--orange); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; margin-bottom:10px; }
+
+/* ─── CALENDAR ─── */
+.calendar-grid { display:grid; grid-template-columns:repeat(7, 1fr); gap:4px; }
+.cal-day { aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:500; color:var(--ink2); border-radius:var(--r-sm); cursor:pointer; transition:background .12s; }
+.cal-day:hover { background:var(--canvas); }
+.cal-day.today { background:var(--orange); color:#fff; font-weight:700; }
+.cal-day.has-event { background:var(--blue-pale); color:var(--blue); font-weight:600; position:relative; }
+.cal-day.has-event::after { content:''; position:absolute; bottom:3px; width:4px; height:4px; border-radius:50%; background:var(--blue); }
+.cal-day.other-month { color:transparent; cursor:default; }
 .dash-section-label { font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.25); padding:14px 10px 6px; }
 .dash-content { flex:1; padding:32px; overflow-y:auto; min-width:0; background:var(--canvas); }
 .dash-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:28px; gap:16px; }
@@ -323,7 +339,22 @@ a { text-decoration:none; color:inherit; }
 .profile-tags { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
 
 /* PRICING */
-.pricing-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; }
+.pricing-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:18px; }
+.pricing-card { background:#fff; border:1.5px solid var(--border); border-radius:18px; padding:28px 24px; display:flex; flex-direction:column; position:relative; transition:all .15s; box-shadow:0 1px 3px rgba(0,0,0,.04); }
+.pricing-card:hover { border-color:var(--border2); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.08); }
+.pricing-card.featured { border-color:var(--orange); background:linear-gradient(180deg,#FFF7ED 0%,#fff 60%); box-shadow:0 4px 16px rgba(249,115,22,.15); }
+.pricing-popular { position:absolute; top:-12px; left:50%; transform:translateX(-50%); background:var(--orange); color:#fff; font-size:11px; font-weight:700; padding:5px 14px; border-radius:999px; letter-spacing:.04em; text-transform:uppercase; box-shadow:0 2px 8px rgba(249,115,22,.35); white-space:nowrap; }
+.pricing-tier { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--ink4); margin-bottom:6px; }
+.pricing-name { font-size:18px; font-weight:700; color:var(--ink); margin-bottom:14px; letter-spacing:-.01em; }
+.pricing-price { font-size:32px; font-weight:800; color:var(--ink); letter-spacing:-.03em; line-height:1.1; }
+.pricing-price span { font-size:14px; font-weight:500; color:var(--ink4); margin-left:4px; }
+.pricing-period { font-size:13px; color:var(--ink3); margin-top:2px; margin-bottom:18px; }
+.pricing-divider { height:1px; background:var(--border); margin:0 -4px 18px; }
+.pricing-features { display:flex; flex-direction:column; gap:9px; margin-bottom:22px; flex:1; }
+.pricing-feature { font-size:13px; color:var(--ink2); display:flex; align-items:flex-start; gap:8px; line-height:1.5; }
+.pricing-feature::before { content:'✓'; color:var(--green); font-weight:700; flex-shrink:0; }
+.pricing-feature.no { color:var(--ink4); text-decoration:line-through; opacity:.6; }
+.pricing-feature.no::before { content:'×'; color:var(--ink4); }
 .price-card { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--r-xl); padding:28px 22px; position:relative; transition:all .16s; }
 .price-card:hover { transform:translateY(-3px); box-shadow:var(--sh-lg); }
 .price-card.featured { border-color:var(--blue); background:var(--ink2); color:#fff; }
@@ -420,7 +451,7 @@ footer { background:var(--ink); color:rgba(255,255,255,.5); padding:56px 24px 28
   }
   .dash-user { display:none; }
   .dash-nav-item { white-space:nowrap; flex-shrink:0; color:var(--ink2); }
-  .dash-nav-item.active { background:var(--orange-lt); color:var(--orange); }
+  .dash-nav-item.active { background:var(--orange-pale); color:var(--orange); }
 }
 @media(max-width:768px){
   .topbar-nav { display:none; }
