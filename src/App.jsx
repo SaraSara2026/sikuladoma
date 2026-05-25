@@ -195,7 +195,7 @@ export default function App() {
       ) : (<>
 
       {/* HERO */}
-      <section id="hero" style={{ background: "#fff", padding: "88px 24px 72px", textAlign: "center", position: "relative", overflow: "hidden" }}>
+      <section id="hero" style={{ background: "#fff", padding: "clamp(40px, 8vw, 88px) clamp(16px, 4vw, 24px) clamp(36px, 6vw, 72px)", textAlign: "center", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden" }}>
           <div style={{ position: "absolute", top: -120, left: -80, width: 480, height: 480, borderRadius: "50%", background: "rgba(219,234,254,.45)", filter: "blur(80px)" }} />
           <div style={{ position: "absolute", bottom: -80, right: -60, width: 380, height: 380, borderRadius: "50%", background: "rgba(255,237,213,.5)", filter: "blur(70px)" }} />
@@ -207,12 +207,12 @@ export default function App() {
             Šikulové dostupní v celé ČR
           </div>
 
-          <h1 style={{ fontSize: 36, fontWeight: 800, color: T.ink, lineHeight: 1.2, letterSpacing: "-.03em", marginBottom: 16, fontFamily: "'Inter', system-ui, sans-serif" }}>
+          <h1 style={{ fontSize: "clamp(26px, 5vw, 36px)", fontWeight: 800, color: T.ink, lineHeight: 1.2, letterSpacing: "-.03em", marginBottom: 16, fontFamily: "'Inter', system-ui, sans-serif" }}>
             Doma se vždycky něco najde.<br />
             My najdeme <span style={{ color: T.orange }}>šikulu.</span>
           </h1>
 
-          <p style={{ fontSize: 17, color: T.ink3, lineHeight: 1.7, maxWidth: 460, margin: "0 auto 36px", letterSpacing: "-.01em" }}>
+          <p style={{ fontSize: "clamp(14px, 2vw, 17px)", color: T.ink3, lineHeight: 1.7, maxWidth: 460, margin: "0 auto 36px", letterSpacing: "-.01em" }}>
             Vyberte službu, napište pár detailů a šikulové z okolí vám pošlou nabídky.
           </p>
 
@@ -277,7 +277,7 @@ export default function App() {
 
       {/* STATS STRIP */}
       <div style={{ background: "#0F172A", padding: "40px 24px" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 0 }}>
+        <div style={{ maxWidth: 900, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 0 }}>
           {[
             { value: "1 200+", label: "šikulů v ČR",          color: "#F97316" },
             { value: "8 400+", label: "dokončených prací",     color: "#38BDF8" },
@@ -293,16 +293,16 @@ export default function App() {
       </div>
 
       {/* HOW IT WORKS */}
-      <section id="how" style={{ padding: "80px 24px", background: "#F8FAFC" }}>
+      <section id="how" style={{ padding: "clamp(48px, 8vw, 80px) clamp(16px, 4vw, 24px)", background: "#F8FAFC" }}>
         <div style={{ maxWidth: 1060, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 48 }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: T.blue, marginBottom: 10 }}>JAK TO FUNGUJE</div>
-            <h2 style={{ fontSize: 28, fontWeight: 700, color: T.ink, letterSpacing: "-.03em", marginBottom: 10 }}>Jak to funguje</h2>
-            <p style={{ fontSize: 15, color: T.ink3, maxWidth: 500, margin: "0 auto", lineHeight: 1.65 }}>
+            <h2 style={{ fontSize: "clamp(22px, 4vw, 28px)", fontWeight: 700, color: T.ink, letterSpacing: "-.03em", marginBottom: 10 }}>Jak to funguje</h2>
+            <p style={{ fontSize: "clamp(13px, 2vw, 15px)", color: T.ink3, maxWidth: 500, margin: "0 auto", lineHeight: 1.65 }}>
               Poptávku zadáte za pár minut. Vyberete službu, místo, čas a odešlete.
             </p>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 14 }}>
+          <div className="how-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
             {[
               { n: 1, title: "Vyberete kategorii",       desc: "Například Domácnost, Zahrada, Elektro práce nebo Drobné opravy a montáže.", bg: "#FFF7ED", color: "#F97316" },
               { n: 2, title: "Vyberete konkrétní službu", desc: "Například u kategorie Domácnost zvolíte žehlení, úklid, mytí oken nebo jinou službu.", bg: "#EFF6FF", color: "#3B82F6" },
@@ -325,12 +325,12 @@ export default function App() {
       </section>
 
       {/* SERVICES */}
-      <section id="services" style={{ padding: "80px 24px", background: "#fff" }}>
+      <section id="services" style={{ padding: "clamp(48px, 8vw, 80px) clamp(16px, 4vw, 24px)", background: "#fff" }}>
         <div style={{ maxWidth: 1060, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 44 }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: T.blue, marginBottom: 10 }}>SLUŽBY</div>
-            <h2 style={{ fontSize: 28, fontWeight: 700, color: T.ink, letterSpacing: "-.03em", marginBottom: 8 }}>Co potřebujete vyřešit?</h2>
-            <p style={{ fontSize: 15, color: T.ink3 }}>Vyberte kategorii a rovnou zadejte poptávku – bez registrace.</p>
+            <h2 style={{ fontSize: "clamp(22px, 4vw, 28px)", fontWeight: 700, color: T.ink, letterSpacing: "-.03em", marginBottom: 8 }}>Co potřebujete vyřešit?</h2>
+            <p style={{ fontSize: "clamp(13px, 2vw, 15px)", color: T.ink3 }}>Vyberte kategorii a rovnou zadejte poptávku – bez registrace.</p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))", gap: 12 }}>
             {[
