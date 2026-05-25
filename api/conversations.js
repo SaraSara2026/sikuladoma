@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (err) {
     console.error('[/api/conversations]', err);
-    return res.status(500).json({ error: 'Server error' });
+    return res.status(500).json({ error: 'Server error', _debug: String(err?.message || err), _stack: String(err?.stack || '').split('\n').slice(0, 4) });
   }
 }
 
