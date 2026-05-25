@@ -19,6 +19,8 @@ import CustomerDashboard from "./pages/dashboards/CustomerDashboard.jsx";
 import AdminDashboard from "./pages/dashboards/AdminDashboard.jsx";
 import SendOfferPage from "./pages/SendOfferPage.jsx";
 import SikulaProfilePage from "./pages/SikulaProfilePage.jsx";
+import OrderDetailPage from "./pages/OrderDetailPage.jsx";
+import ChatPage from "./pages/ChatPage.jsx";
 
 // Modaly
 import OrderForm  from "./modals/OrderForm.jsx";
@@ -65,10 +67,13 @@ export default function App() {
   // Navigace ze sub-stránek (dashboard, send-offer apod.).
   // Konvence: onNav('cílová-stránka', payload)
   const handleNav = (target, payload) => {
-    if (target === "send-offer") { setCurrentOrder(payload); setPage("send-offer"); window.scrollTo(0, 0); return; }
-    if (target === "dash-sikula") { setPage("dashboard"); window.scrollTo(0, 0); return; }
+    if (target === "send-offer")   { setCurrentOrder(payload); setPage("send-offer"); window.scrollTo(0, 0); return; }
+    if (target === "order-detail") { setCurrentOrder(payload); setPage("order-detail"); window.scrollTo(0, 0); return; }
+    if (target === "chat")         { setPage("chat"); window.scrollTo(0, 0); return; }
+    if (target === "dash-sikula" || target === "dash-customer") { setPage("dashboard"); window.scrollTo(0, 0); return; }
+    if (target === "new-order")    { openOrder(); return; }
     if (target === "back" || target === "home") { setPage("home"); window.scrollTo(0, 0); return; }
-    if (target === "logout") { logoutSikula(); return; }
+    if (target === "logout")       { logoutSikula(); return; }
     // fallback: setPage napřímo (musí být známá stránka)
     setPage(target);
     window.scrollTo(0, 0);
@@ -157,6 +162,11 @@ export default function App() {
             : <SikulaDashboard   currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} />
       ) : page === "send-offer" ? (
         <SendOfferPage order={currentOrder} onNav={handleNav} onSend={() => { setCurrentOrder(null); }} />
+      ) : page === "order-detail" ? (
+        <OrderDetailPage order={currentOrder} currentUser={sikulaUser} onNav={handleNav}
+          onAcceptOffer={() => { /* refresh dashboard po accept */ }} />
+      ) : page === "chat" ? (
+        <ChatPage />
       ) : page === "cookies" ? (
         <CookiesPage onBack={() => { setPage("home"); window.scrollTo(0,0); }} />
       ) : page === "gdpr" ? (

@@ -1,6 +1,8 @@
 // /api/conversations — GET (list) + POST (create)
-// Query přepsaná z `(SELECT ...) AS x` + `ORDER BY COALESCE(x, ...)` na LATERAL JOIN,
-// protože Neon HTTP driver na to padal (FUNCTION_INVOCATION_FAILED).
+//
+// listConversations používá LATERAL JOIN pro poslední zprávu a unread count.
+// Původní verze se scalar subqueries v SELECT a `ORDER BY COALESCE(alias,...)`
+// padala v Neon HTTP driveru s FUNCTION_INVOCATION_FAILED.
 
 import { sql } from './_db.js';
 import { requireUser } from './_auth.js';
@@ -13,7 +15,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (err) {
     console.error('[/api/conversations]', err);
-    return res.status(500).json({ error: 'Server error', _debug: String(err?.message || err) });
+    return res.status(500).json({ error: 'Server error' });
   }
 }
 
@@ -21,8 +23,6 @@ async function listConversations(req, res) {
   const me = await requireUser(req, res);
   if (!me) return;
 
-  // LATERAL JOIN pro poslední zprávu (1 row per conversation)
-  // unread_count přes correlated subquery jen v WHERE
   const rows = await sql`
     SELECT
       c.id, c.customer_id, c.sikula_id, c.order_id, c.created_at,
