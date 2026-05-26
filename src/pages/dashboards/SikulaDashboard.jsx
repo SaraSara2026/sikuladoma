@@ -9,6 +9,28 @@ import { ordersApi, offersApi, reviewsApi } from '../../lib/api'
 // Mapování id kategorie → emoji ikona (pro hezké zobrazení v dashboardu).
 const CAT_ICON = Object.fromEntries(CATEGORIES.map(c => [c.id, c.icon]))
 
+const PLAN_LABELS = { start: 'Start', plus: 'Plus', profi: 'Profi', top: 'Top Šikula' }
+const PLAN_COLORS = {
+  start: 'var(--text3)',
+  plus:  'var(--blue, #2563eb)',
+  profi: 'var(--purple, #7c3aed)',
+  top:   'var(--orange, #F07800)',
+}
+
+function PlanBadge({ plan, expiresAt }) {
+  const p = plan || 'start'
+  const label = PLAN_LABELS[p] || p
+  const color = PLAN_COLORS[p] || 'var(--text3)'
+  const expiry = expiresAt ? new Date(expiresAt) : null
+  const expStr = expiry ? `do ${expiry.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric' })}` : null
+  return (
+    <span style={{ color, fontWeight: 700 }}>
+      {p !== 'start' ? '👑 ' : ''}{label}
+      {expStr && <span style={{ fontWeight: 400, color: 'var(--text3)', fontSize: 12, marginLeft: 4 }}>({expStr})</span>}
+    </span>
+  )
+}
+
 // Lidsky čitelný relativní čas: „před 12 min", „před 3 h", „včera"
 function relativni(iso) {
   const d = new Date(iso)
@@ -245,7 +267,10 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout }) {
             <div className="dash-header">
               <div>
                 <div className="dash-title">Ahoj, {(currentUser?.name || '').split(' ')[0] || 'šikulo'}! 🛠️</div>
-                <div className="dash-subtitle">{currentUser?.plan || 'start'} · {jobsCount} zakázek celkem</div>
+                <div className="dash-subtitle">
+                  <PlanBadge plan={currentUser?.plan} expiresAt={currentUser?.plan_expires_at} />
+                  {' · '}{jobsCount} zakázek celkem
+                </div>
               </div>
               <div className="avail-toggle">
                 <span style={{ fontSize: 14, fontWeight: 600 }}>{available ? 'Dostupný' : 'Nedostupný'}</span>

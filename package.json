@@ -9,7 +9,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "db:migrate": "node scripts/migrate.js",
-    "db:seed": "node scripts/seed.js"
+    "db:seed": "node scripts/seed.js",
+    "test": "node scripts/test-e2e.js",
+    "test:verbose": "VERBOSE=1 node scripts/test-e2e.js",
+    "test:local": "BASE=http://localhost:3000 node scripts/test-e2e.js"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

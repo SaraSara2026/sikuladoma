@@ -2,27 +2,28 @@ import { useState } from 'react'
 import { stripeApi } from '../lib/api'
 
 // Mapování tier → Stripe plan ID (musí odpovídat STRIPE_PRICE_* env vars)
-const TIER_TO_PLAN = { Plus: 'plus', Profi: 'profi', Premium: 'top' }
+// plan IDs musí odpovídat CHECK constraint v DB: 'start','plus','profi','top'
+const TIER_TO_PLAN = { Plus: 'plus', Profi: 'profi', Top: 'top' }
 
 const plans = [
   {
-    tier: 'Start', name: 'Základní', price: 0, period: 'zdarma navždy',
+    tier: 'Start', id: 'start', name: 'Základní', price: 0, period: 'zdarma navždy',
     features: ['Vytvoření profilu', '5 reakcí na poptávky/měsíc', 'Základní zobrazení v katalogu', 'Recenze a hodnocení'],
     no: ['Přednostní zobrazení', 'Fakturační modul', 'Statistiky profilu', 'Notifikace na zakázky', 'Ověřený štítek'],
   },
   {
-    tier: 'Plus', name: 'Šikula Plus', price: 299, period: 'měsíčně',
+    tier: 'Plus', id: 'plus', name: 'Šikula Plus', price: 299, period: 'měsíčně',
     features: ['30 reakcí na poptávky/měsíc', 'Lepší pozice ve výsledcích', 'Fakturační modul', 'Statistiky profilu', 'Notifikace na nové zakázky', 'Portfolio fotek'],
-    no: ['Přednostní zobrazení', 'Ověřený štítek Premium'],
+    no: ['Přednostní zobrazení', 'Ověřený štítek Profi'],
   },
   {
-    tier: 'Profi', name: 'Šikula Profi', price: 599, period: 'měsíčně', featured: true, popular: true,
+    tier: 'Profi', id: 'profi', name: 'Šikula Profi', price: 599, period: 'měsíčně', featured: true, popular: true,
     features: ['Neomezené reakce', 'Přednostní zobrazení', 'Ověřený štítek ✓', 'Plný fakturační modul', 'PDF faktury + odeslání', 'Rozšířené statistiky', 'Urgentní notifikace', 'Boost profilu 1× měsíčně'],
     no: [],
   },
   {
-    tier: 'Premium', name: 'Šikula Premium', price: 999, period: 'měsíčně',
-    features: ['Vše z Profi tarifu', 'Topování v kategorii', 'Prémiové odznaky', 'Prioritní podpora', 'API přístup', 'Roční exporty', 'Brandovaný profil', 'Dedikovaný account manager'],
+    tier: 'Top', id: 'top', name: 'Top Šikula', price: 1299, period: 'měsíčně',
+    features: ['Vše z Profi tarifu', 'Topování v kategorii vždy', 'Prémiové odznaky', 'Dedikovaný support', 'API přístup', 'Roční exporty', 'Brandovaný profil'],
     no: [],
   },
 ]
@@ -55,7 +56,7 @@ export default function PricingPage({ onNav, inDash, currentUser }) {
   }
 
   function isCurrentPlan(p) {
-    return currentPlan === TIER_TO_PLAN[p.tier] || (p.tier === 'Start' && currentPlan === 'start')
+    return currentPlan === p.id
   }
 
   return (

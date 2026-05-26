@@ -75,6 +75,7 @@ export function readSessionCookie(req) {
 }
 
 // Vrátí uživatele z DB podle aktuální session, nebo null.
+// Automaticky kontroluje expiraci tarifu — pokud plan_expires_at uplynul, vrátí šikulu na 'start'.
 export async function getCurrentUser(req) {
   const token = readSessionCookie(req);
   if (!token) return null;
@@ -82,10 +83,25 @@ export async function getCurrentUser(req) {
   if (!payload?.sub) return null;
   const [user] = await sql`
     SELECT id, email, role, name, phone, city, avatar, ico, services, plan,
+           stripe_customer_id, stripe_subscription_id, plan_expires_at,
            verified, rating, jobs_count, bio
     FROM users WHERE id = ${Number(payload.sub)}
   `;
-  return user || null;
+  if (!user) return null;
+
+  // Auto-expiry: pokud byl tarif placený a vypršel, degraduj zpět na 'start'
+  if (user.plan !== 'start' && user.plan_expires_at && new Date(user.plan_expires_at) < new Date()) {
+    try {
+      await sql`
+        UPDATE users SET plan = 'start', stripe_subscription_id = NULL, plan_expires_at = NULL, updated_at = NOW()
+        WHERE id = ${user.id}
+      `;
+    } catch {}
+    user.plan = 'start';
+    user.plan_expires_at = null;
+    user.stripe_subscription_id = null;
+  }
+  return user;
 }
 
 // Vrátí uživatele a vyžaduje, aby existoval. Jinak pošle 401.

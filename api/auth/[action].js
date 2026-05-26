@@ -38,7 +38,9 @@ async function doLogin(req, res) {
   if (!email || !password) return res.status(400).json({ error: 'Vyplňte e-mail a heslo.' });
 
   const [user] = await sql`
-    SELECT id, email, password_hash, role, name, phone, city, avatar
+    SELECT id, email, password_hash, role, name, phone, city, avatar,
+           ico, services, plan, stripe_customer_id, plan_expires_at,
+           verified, rating, jobs_count, bio
     FROM users WHERE email = ${String(email).toLowerCase()}
   `;
   if (!user) return res.status(401).json({ error: 'Nesprávný e-mail nebo heslo.' });

@@ -84,11 +84,28 @@ async function listReviews(req, res) {
     const me = await getCurrentUser(req);
     if (!me) return res.status(401).json({ error: 'Unauthorized' });
     const rows = await sql`
-      SELECT * FROM reviews
-      WHERE order_id = ${orderId} AND (reviewer_id = ${me.id} OR target_id = ${me.id})
+      SELECT r.*, u.name AS target_name, u.avatar AS target_avatar
+      FROM reviews r JOIN users u ON u.id = r.target_id
+      WHERE r.order_id = ${orderId} AND (r.reviewer_id = ${me.id} OR r.target_id = ${me.id})
     `;
     return res.status(200).json({ reviews: rows });
   }
 
-  return res.status(400).json({ error: 'Zadejte target_id nebo order_id.' });
+  // GET /api/reviews?my_reviews=1 → všechny recenze které přihlášený uživatel napsal
+  if (req.query?.my_reviews === '1') {
+    const me = await getCurrentUser(req);
+    if (!me) return res.status(401).json({ error: 'Unauthorized' });
+    const rows = await sql`
+      SELECT r.*, u.name AS target_name, u.avatar AS target_avatar,
+             o.title AS order_title
+      FROM reviews r
+      JOIN users u ON u.id = r.target_id
+      JOIN orders o ON o.id = r.order_id
+      WHERE r.reviewer_id = ${me.id}
+      ORDER BY r.created_at DESC LIMIT 100
+    `;
+    return res.status(200).json({ reviews: rows });
+  }
+
+  return res.status(400).json({ error: 'Zadejte target_id, order_id nebo my_reviews=1.' });
 }
