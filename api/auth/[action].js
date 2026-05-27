@@ -77,7 +77,7 @@ async function doRegister(req, res) {
   const [user] = await sql`
     INSERT INTO users (email, password_hash, role, name, phone, city)
     VALUES (${email.toLowerCase()}, ${password_hash}, ${role}, ${name.trim()}, ${phone || null}, ${city || null})
-    RETURNING id, email, role, name, phone, city, avatar
+    RETURNING id, email, role, name, phone, city, avatar, plan, verified, jobs_count
   `;
 
   const token = await signToken({ sub: String(user.id), role: user.role });
