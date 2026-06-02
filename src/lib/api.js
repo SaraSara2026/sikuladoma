@@ -77,6 +77,14 @@ export const reviewsApi = {
 // ─── Users (veřejné) ────────────────────────────────────────────────────────
 export const usersApi = {
   publicProfile: (id) => fetch(`/api/users/${id}`, opts()).then(unwrap),
+  listSikulove: ({ category, city, search } = {}) => {
+    const q = new URLSearchParams();
+    if (category) q.set('category', category);
+    if (city)     q.set('city', city);
+    if (search)   q.set('search', search);
+    const qs = q.toString();
+    return fetch(`/api/users${qs ? '?' + qs : ''}`, opts()).then(unwrap);
+  },
 };
 
 // ─── Admin ──────────────────────────────────────────────────────────────────

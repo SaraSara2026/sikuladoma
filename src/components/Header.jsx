@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export default function Header({ T, BtnPrimary, onHome, onScrollTo, onOrder, onLogin, onDashboard, onProfil, onLogout, sikulaUser }) {
+export default function Header({ T, BtnPrimary, onHome, onScrollTo, onOrder, onLogin, onDashboard, onProfil, onLogout, onSikulove, sikulaUser }) {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
@@ -16,6 +16,7 @@ export default function Header({ T, BtnPrimary, onHome, onScrollTo, onOrder, onL
         <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
           <button className="nav-link" onClick={() => onScrollTo("how")}>Jak to funguje</button>
           <button className="nav-link" onClick={() => onScrollTo("services")}>Služby</button>
+          {onSikulove && <button className="nav-link" onClick={onSikulove}>Šikulové</button>}
         </div>
 
         {/* Right */}

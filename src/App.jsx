@@ -24,6 +24,7 @@ import ChatPage from "./pages/ChatPage.jsx";
 import VerifyEmailPage from "./pages/VerifyEmailPage.jsx";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
+import SikuloveListPage from "./pages/SikuloveListPage.jsx";
 
 // Modaly
 import OrderForm  from "./modals/OrderForm.jsx";
@@ -147,6 +148,7 @@ export default function App() {
         onReg={() => openReg()}
         onKontakt={() => { setPage("kontakt"); window.scrollTo(0,0); }}
         onSikuly={() => { setPage("sikuly"); window.scrollTo(0,0); }}
+        onSikulove={() => { setPage("sikulove"); window.scrollTo(0,0); }}
         onPodminkySikuly={() => { setPage("podminky-sikuly"); window.scrollTo(0,0); }}
         onPodporaSikuly={() => { setPage("podpora-sikuly"); window.scrollTo(0,0); }}
         sikulaUser={sikulaUser}
@@ -189,6 +191,10 @@ export default function App() {
         <ResetPasswordPage
           onBack={() => { setPage("home"); window.history.replaceState({}, '', '/'); }}
           onLogin={() => { setPage("home"); window.history.replaceState({}, '', '/'); setLoginModal(true); }} />
+      ) : page === "sikulove" ? (
+        <SikuloveListPage
+          onBack={() => { setPage("home"); window.scrollTo(0,0); }}
+          onProfile={(id) => { setProfileId(String(id)); window.history.replaceState({}, '', `/?sikula=${id}`); }} />
       ) : page === "cookies" ? (
         <CookiesPage onBack={() => { setPage("home"); window.scrollTo(0,0); }} />
       ) : page === "gdpr" ? (

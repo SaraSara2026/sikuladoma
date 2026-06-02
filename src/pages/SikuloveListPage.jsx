@@ -1,0 +1,168 @@
+// Veřejný katalog šikulů s filtry (kategorie, město, hledat).
+// Karty kliknutelné → veřejný profil přes onProfile(id).
+
+import { useEffect, useState } from 'react';
+import { T } from '../ui/theme';
+import { CATEGORIES } from '../lib/categories';
+import { usersApi } from '../lib/api';
+
+const PLAN_BADGE = {
+  top:   { label: '👑 Top',   bg: '#FEF3C7', fg: '#92400E' },
+  profi: { label: '⭐ Profi', bg: '#FAF5FF', fg: '#7C3AED' },
+  plus:  { label: 'Plus',     bg: '#EFF6FF', fg: '#2563EB' },
+  start: { label: 'Start',    bg: '#F3F4F6', fg: '#6B7280' },
+};
+
+export default function SikuloveListPage({ onBack, onProfile, onReg }) {
+  const [sikulove, setSikulove] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({ category: '', city: '', search: '' });
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    usersApi.listSikulove(filters)
+      .then(data => { if (alive) setSikulove(data.sikulove || []); })
+      .catch(() => { if (alive) setSikulove([]); })
+      .finally(() => { if (alive) setLoading(false); });
+    return () => { alive = false; };
+  }, [filters.category, filters.city, filters.search]);
+
+  return (
+    <div style={{ minHeight: '100vh', background: T.bg }}>
+      {/* HERO */}
+      <div style={{ background: '#fff', borderBottom: `1px solid ${T.border}`, padding: '32px 24px 24px' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          {onBack && (
+            <button onClick={onBack}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: T.ink3, fontFamily: 'inherit', padding: 0, marginBottom: 16 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+              Zpět na úvod
+            </button>
+          )}
+          <h1 style={{ fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 800, color: T.ink, letterSpacing: '-.03em', marginBottom: 8 }}>
+            Šikulové, kterým můžeš věřit
+          </h1>
+          <p style={{ fontSize: 15, color: T.ink3, marginBottom: 24, maxWidth: 560 }}>
+            Procházej ověřené šikuly podle kategorie a oblasti. Klikni na profil — uvidíš recenze, plán a kontakt.
+          </p>
+
+          {/* FILTERS */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, marginTop: 8 }}>
+            <select value={filters.category} onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}
+              style={selStyle}>
+              <option value="">Všechny kategorie</option>
+              {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+            </select>
+            <input placeholder="Město (např. Praha)" value={filters.city} onChange={e => setFilters(f => ({ ...f, city: e.target.value }))}
+              style={inpStyle} />
+            <input placeholder="Hledat (jméno, popis)" value={filters.search} onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
+              style={inpStyle} />
+          </div>
+        </div>
+      </div>
+
+      {/* GRID */}
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 24px 80px' }}>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: 60, color: T.ink3 }}>Načítám…</div>
+        ) : sikulove.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 60, color: T.ink3 }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>🔍</div>
+            <div style={{ fontSize: 16, fontWeight: 600, color: T.ink, marginBottom: 6 }}>Žádní šikulové se neshodují</div>
+            <div style={{ fontSize: 13 }}>Zkus změnit filtry nebo zadej rovnou poptávku — šikulové se ti ozvou sami.</div>
+          </div>
+        ) : (
+          <>
+            <div style={{ fontSize: 13, color: T.ink3, marginBottom: 14 }}>
+              <strong style={{ color: T.ink }}>{sikulove.length}</strong> {sikulove.length === 1 ? 'šikula' : sikulove.length < 5 ? 'šikulové' : 'šikulů'}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+              {sikulove.map(s => <SikulaCard key={s.id} s={s} onClick={() => onProfile?.(s.id)} />)}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SikulaCard({ s, onClick }) {
+  const plan = PLAN_BADGE[s.plan || 'start'];
+  const initials = (s.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
+  return (
+    <button onClick={onClick}
+      style={{
+        background: '#fff', border: `1px solid ${T.border}`, borderRadius: 16, padding: 20,
+        textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit',
+        boxShadow: '0 1px 3px rgba(0,0,0,.04)', transition: 'all .15s',
+        display: 'flex', flexDirection: 'column', gap: 12,
+      }}
+      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,.08)'; e.currentTarget.style.borderColor = T.orange; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.04)'; e.currentTarget.style.borderColor = T.border; }}>
+
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <div style={{ width: 52, height: 52, borderRadius: 14, background: T.orange, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 18, flexShrink: 0, boxShadow: '0 2px 8px rgba(249,115,22,.25)' }}>
+          {initials}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: T.ink, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</div>
+          <div style={{ fontSize: 12, color: T.ink3 }}>📍 {s.city || 'celá ČR'}</div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: plan.bg, color: plan.fg }}>
+          {plan.label}
+        </span>
+        {s.verified && (
+          <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: '#DCFCE7', color: '#15803D' }}>
+            ✓ Ověřený
+          </span>
+        )}
+        {s.rating && (
+          <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: '#FEF3C7', color: '#92400E' }}>
+            ⭐ {Number(s.rating).toFixed(1)}
+          </span>
+        )}
+      </div>
+
+      {s.bio && (
+        <div style={{ fontSize: 13, color: T.ink3, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {s.bio}
+        </div>
+      )}
+
+      {(s.services || []).length > 0 && (
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+          {(s.services || []).slice(0, 4).map(svcId => {
+            const cat = CATEGORIES.find(c => c.id === svcId);
+            return (
+              <span key={svcId} style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, background: '#F3F4F6', color: T.ink3 }}>
+                {cat?.label || svcId}
+              </span>
+            );
+          })}
+          {(s.services || []).length > 4 && (
+            <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, background: '#F3F4F6', color: T.ink3 }}>
+              +{s.services.length - 4}
+            </span>
+          )}
+        </div>
+      )}
+
+      <div style={{ fontSize: 12, color: T.ink4, marginTop: 'auto', paddingTop: 4 }}>
+        {s.jobs_count || 0} dokončených zakázek
+      </div>
+    </button>
+  );
+}
+
+const inpStyle = {
+  width: '100%', height: 42, padding: '0 14px', borderRadius: 10,
+  border: `1.5px solid ${T.border}`, fontSize: 14, fontFamily: 'inherit',
+  color: T.ink, outline: 'none',
+};
+
+const selStyle = { ...inpStyle, cursor: 'pointer', background: '#fff' };
