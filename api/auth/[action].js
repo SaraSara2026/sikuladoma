@@ -84,10 +84,11 @@ async function doRegister(req, res) {
 
   const { email, password, name, role = 'customer', phone, city } = req.body ?? {};
 
-  if (!email || !EMAIL_RE.test(email))   return res.status(400).json({ error: 'Neplatný e-mail.' });
-  if (!password || password.length < 8)  return res.status(400).json({ error: 'Heslo musí mít alespoň 8 znaků.' });
-  if (!name || name.trim().length < 2)   return res.status(400).json({ error: 'Zadejte jméno.' });
-  if (!ALLOWED_ROLES.has(role))          return res.status(400).json({ error: 'Neplatná role.' });
+  if (!email || !EMAIL_RE.test(email))         return res.status(400).json({ error: 'Neplatný e-mail.' });
+  if (!password || password.length < 8)        return res.status(400).json({ error: 'Heslo musí mít alespoň 8 znaků.' });
+  if (!name || name.trim().length < 2)         return res.status(400).json({ error: 'Zadejte jméno.' });
+  if (!/^\S+\s+\S+/.test((name || '').trim())) return res.status(400).json({ error: 'Zadejte jméno i příjmení.' });
+  if (!ALLOWED_ROLES.has(role))                return res.status(400).json({ error: 'Neplatná role.' });
 
   const [existing] = await sql`SELECT id FROM users WHERE email = ${email.toLowerCase()}`;
   if (existing) return res.status(409).json({ error: 'E-mail je již zaregistrován.' });

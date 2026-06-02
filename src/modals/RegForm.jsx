@@ -19,6 +19,7 @@ export default function RegForm({ plan, onClose, onRegistered }) {
   });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
+  const [registeredUser, setRegisteredUser] = useState(null);
 
   const upd = (k, v) => setForm(p => ({ ...p, [k]: v }));
   const toggleSvc = id => setForm(p => ({
@@ -59,7 +60,9 @@ export default function RegForm({ plan, onClose, onRegistered }) {
         }
       }
       // Free tarif nebo Stripe selhání → ukáže success screen.
-      onRegistered({ ...user, services: form.services, plan: form.plan, ico: form.ico });
+      // Pozn.: onRegistered NEZAVOLÁME hned — nejdřív musíme uživateli ukázat success obrazovku.
+      // onRegistered (která změní page na dashboard) se zavolá až po kliknutí "Přejít do profilu".
+      setRegisteredUser({ ...user, services: form.services, plan: form.plan, ico: form.ico });
       setStep(2);
     } catch (e) {
       setErr(e.message || "Registrace selhala.");
@@ -69,18 +72,23 @@ export default function RegForm({ plan, onClose, onRegistered }) {
   };
 
   if (step === 2) return (
-    <div style={S.overlay} onClick={onClose}>
-      <div style={{ ...S.modal, maxWidth: 420 }} onClick={e => e.stopPropagation()}>
+    <div style={S.overlay}>
+      <div style={{ ...S.modal, maxWidth: 460 }} onClick={e => e.stopPropagation()}>
         <div style={{ padding: "48px 32px", textAlign: "center" }}>
-          <div style={{ width: 52, height: 52, borderRadius: "50%", background: "#F0FDF4", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px", color: "#16A34A" }}>
+          <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#F0FDF4", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px", color: "#16A34A" }}>
             <IcCheckCircle />
           </div>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: T.ink, marginBottom: 8 }}>Profil vytvořen</h2>
-          <p style={{ color: T.ink3, fontSize: 14, lineHeight: 1.65, marginBottom: 24 }}>
-            Vítejte v ŠikulaDoma, <strong>{form.name}</strong>.<br />
-            Tarif <strong>{PLANS.find(p => p.id === form.plan)?.name}</strong> je aktivní.
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: T.ink, marginBottom: 10 }}>Profil vytvořen 🎉</h2>
+          <p style={{ color: T.ink3, fontSize: 14, lineHeight: 1.7, marginBottom: 16 }}>
+            Vítej v ŠikulaDoma, <strong>{form.name}</strong>.
           </p>
-          <button onClick={onClose}
+          <div style={{ background: "#FEF3C7", border: "1px solid #FCD34D", borderRadius: 10, padding: "14px 16px", marginBottom: 24, textAlign: "left" }}>
+            <div style={{ fontWeight: 700, color: "#92400E", fontSize: 13, marginBottom: 6 }}>✉️ Ověř svůj e-mail</div>
+            <div style={{ fontSize: 13, color: "#78350F", lineHeight: 1.5 }}>
+              Poslali jsme ti ověřovací odkaz na <strong>{form.email}</strong>. Bez ověření nemůžeš posílat nabídky ani zprávy.
+            </div>
+          </div>
+          <button onClick={() => { if (registeredUser) onRegistered(registeredUser); onClose(); }}
             style={{ height: 46, padding: "0 28px", borderRadius: 10, border: "none", background: T.orange, color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8 }}>
             Přejít do profilu šikuly <IcArrow />
           </button>
@@ -167,7 +175,9 @@ export default function RegForm({ plan, onClose, onRegistered }) {
           <BtnBlue size="sm" disabled={busy} onClick={() => {
             setErr(null);
             if (step === 0) {
-              if (!form.name?.trim())               return setErr("Zadejte jméno.");
+              const fullName = (form.name || "").trim();
+              if (!fullName)                         return setErr("Zadejte jméno.");
+              if (!/^\S+\s+\S+/.test(fullName))      return setErr("Zadejte jméno i příjmení.");
               if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return setErr("Zadejte platný e-mail.");
               if ((form.password || "").length < 8) return setErr("Heslo musí mít alespoň 8 znaků.");
               if (!form.city?.trim())               return setErr("Zadejte město.");
