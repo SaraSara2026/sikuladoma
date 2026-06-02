@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { adminApi } from '../../lib/api';
+import VerificationBanner from '../../components/VerificationBanner';
 
 const TABS = [
   { id: 'stats',    label: '📊 Přehled' },
@@ -58,6 +59,8 @@ export default function AdminDashboard({ currentUser, onLogout }) {
   return (
     <div style={{ minHeight: '100vh', background: '#F9FAFB' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px 80px' }}>
+
+        <VerificationBanner user={currentUser} />
 
         <div style={{ background: '#fff', borderRadius: 16, padding: '20px 24px', border: '1px solid #F3F4F6', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>

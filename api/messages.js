@@ -1,5 +1,5 @@
 import { sql } from './_db.js';
-import { requireUser } from './_auth.js';
+import { requireUser, requireVerifiedUser } from './_auth.js';
 
 export default async function handler(req, res) {
   try {
@@ -52,7 +52,7 @@ async function listMessages(req, res) {
 
 // POST /api/messages { conversation_id, text }
 async function sendMessage(req, res) {
-  const me = await requireUser(req, res);
+  const me = await requireVerifiedUser(req, res);
   if (!me) return;
 
   const { conversation_id, text } = req.body ?? {};

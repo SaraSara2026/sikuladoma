@@ -43,3 +43,42 @@ export async function apiMe() {
   if (!res.ok) return { user: null };
   return res.json();
 }
+
+export async function apiVerifyEmail(token) {
+  const res = await fetch('/api/auth/verify-email', opts({
+    method: 'POST',
+    headers: j,
+    body: JSON.stringify({ token }),
+  }));
+  if (!res.ok) throw new Error(await parseError(res));
+  return res.json();
+}
+
+export async function apiResendVerification() {
+  const res = await fetch('/api/auth/resend-verification', opts({
+    method: 'POST',
+    headers: j,
+  }));
+  if (!res.ok) throw new Error(await parseError(res));
+  return res.json();
+}
+
+export async function apiForgotPassword(email) {
+  const res = await fetch('/api/auth/forgot-password', opts({
+    method: 'POST',
+    headers: j,
+    body: JSON.stringify({ email }),
+  }));
+  if (!res.ok) throw new Error(await parseError(res));
+  return res.json();
+}
+
+export async function apiResetPassword({ token, password }) {
+  const res = await fetch('/api/auth/reset-password', opts({
+    method: 'POST',
+    headers: j,
+    body: JSON.stringify({ token, password }),
+  }));
+  if (!res.ok) throw new Error(await parseError(res));
+  return res.json();
+}

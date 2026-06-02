@@ -21,6 +21,9 @@ import SendOfferPage from "./pages/SendOfferPage.jsx";
 import SikulaProfilePage from "./pages/SikulaProfilePage.jsx";
 import OrderDetailPage from "./pages/OrderDetailPage.jsx";
 import ChatPage from "./pages/ChatPage.jsx";
+import VerifyEmailPage from "./pages/VerifyEmailPage.jsx";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
+import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 
 // Modaly
 import OrderForm  from "./modals/OrderForm.jsx";
@@ -50,7 +53,14 @@ const DEMO_SIKULA = {
 };
 
 export default function App() {
-  const [page,        setPage]         = useState("home");
+  // Detekce ?page= z URL při startu (pro email linky verify-email + reset-password)
+  const [page,        setPage]         = useState(() => {
+    try {
+      const p = new URL(window.location.href).searchParams.get('page');
+      if (p === 'verify-email' || p === 'reset-password' || p === 'forgot-password') return p;
+    } catch {}
+    return "home";
+  });
   const [orderForm,   setOrderForm]    = useState(null);
   const [regForm,     setRegForm]      = useState(null);
   const [loginModal,  setLoginModal]   = useState(false);
@@ -167,6 +177,17 @@ export default function App() {
           onAcceptOffer={() => { /* refresh dashboard po accept */ }} />
       ) : page === "chat" ? (
         <ChatPage />
+      ) : page === "verify-email" ? (
+        <VerifyEmailPage
+          onBack={() => { setPage("home"); window.history.replaceState({}, '', '/'); }}
+          onLogin={() => { setPage("home"); window.history.replaceState({}, '', '/'); setLoginModal(true); }} />
+      ) : page === "forgot-password" ? (
+        <ForgotPasswordPage
+          onBack={() => { setPage("home"); window.history.replaceState({}, '', '/'); }} />
+      ) : page === "reset-password" ? (
+        <ResetPasswordPage
+          onBack={() => { setPage("home"); window.history.replaceState({}, '', '/'); }}
+          onLogin={() => { setPage("home"); window.history.replaceState({}, '', '/'); setLoginModal(true); }} />
       ) : page === "cookies" ? (
         <CookiesPage onBack={() => { setPage("home"); window.scrollTo(0,0); }} />
       ) : page === "gdpr" ? (
@@ -404,7 +425,7 @@ export default function App() {
 
       {orderForm !== null && <OrderForm initialService={orderForm.service} onClose={() => setOrderForm(null)} />}
       {regForm   !== null && <RegForm   plan={regForm.plan} onClose={() => setRegForm(null)} onRegistered={loginSikula} />}
-      {loginModal && <LoginModal onClose={() => setLoginModal(false)} onReg={openReg} onOrder={openOrder} onFaktury={() => { setLoginModal(false); setPage("faktury"); window.scrollTo(0,0); }} onDemoLogin={loginSikula} onGetDemo={() => DEMO_SIKULA} />}
+      {loginModal && <LoginModal onClose={() => setLoginModal(false)} onReg={openReg} onOrder={openOrder} onFaktury={() => { setLoginModal(false); setPage("faktury"); window.scrollTo(0,0); }} onDemoLogin={loginSikula} onGetDemo={() => DEMO_SIKULA} onForgot={() => { setLoginModal(false); setPage("forgot-password"); window.scrollTo(0,0); }} />}
 
     </>
   );

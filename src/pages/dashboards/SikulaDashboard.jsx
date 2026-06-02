@@ -5,6 +5,7 @@ import InvoicePage from '../InvoicePage'
 import PricingPage from '../PricingPage'
 import ChatPage from '../ChatPage'
 import { ordersApi, offersApi, reviewsApi } from '../../lib/api'
+import VerificationBanner from '../../components/VerificationBanner'
 
 // Mapování id kategorie → emoji ikona (pro hezké zobrazení v dashboardu).
 const CAT_ICON = Object.fromEntries(CATEGORIES.map(c => [c.id, c.icon]))
@@ -241,6 +242,8 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout }) {
       </div>
 
       <div className="dash-content">
+
+        <VerificationBanner user={currentUser} />
 
         {/* Stripe Checkout — zprávy po návratu */}
         {stripeMsg && (

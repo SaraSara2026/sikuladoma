@@ -4,6 +4,7 @@ import Icon from '../../components/Icon'
 import ChatPage from '../ChatPage'
 import { ordersApi, offersApi, reviewsApi } from '../../lib/api.js'
 import HodnoceniForm from '../../modals/HodnoceniForm.jsx'
+import VerificationBanner from '../../components/VerificationBanner'
 
 const menuItems = [
   { id: 'overview',  icon: '📊', label: 'Přehled' },
@@ -197,6 +198,8 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout }) {
       </div>
 
       <div className="dash-content">
+
+        <VerificationBanner user={currentUser} />
 
         {/* ── PŘEHLED ─────────────────────────────────────────────────────── */}
         {activePage === 'overview' && (

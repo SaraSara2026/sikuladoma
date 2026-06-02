@@ -113,3 +113,18 @@ export async function requireUser(req, res) {
   }
   return user;
 }
+
+// Vrátí uživatele s ověřeným e-mailem. Jinak pošle 401 nebo 403 s code='verify_required'.
+// Frontend tak může otevřít modal "Ověř e-mail" místo obecné chyby.
+export async function requireVerifiedUser(req, res) {
+  const user = await requireUser(req, res);
+  if (!user) return null;
+  if (!user.email_verified_at) {
+    res.status(403).json({
+      error: 'Nejdřív si ověř e-mail. Pošli si nový ověřovací odkaz z dashboardu.',
+      code: 'verify_required',
+    });
+    return null;
+  }
+  return user;
+}

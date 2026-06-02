@@ -195,3 +195,31 @@ CREATE INDEX IF NOT EXISTS idx_contact_handled ON contact_messages(handled, crea
 ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id     TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_expires_at        TIMESTAMPTZ;
+
+-- ============================================================
+-- EMAIL VERIFIKACE + RESET HESLA
+-- ============================================================
+ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ;
+
+CREATE TABLE IF NOT EXISTS email_verifications (
+  token       TEXT PRIMARY KEY,
+  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  expires_at  TIMESTAMPTZ NOT NULL,
+  used_at     TIMESTAMPTZ,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_email_verifications_user ON email_verifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_email_verifications_expires ON email_verifications(expires_at);
+
+CREATE TABLE IF NOT EXISTS password_resets (
+  token       TEXT PRIMARY KEY,
+  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  expires_at  TIMESTAMPTZ NOT NULL,
+  used_at     TIMESTAMPTZ,
+  ip          TEXT,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_password_resets_user ON password_resets(user_id);
+CREATE INDEX IF NOT EXISTS idx_password_resets_expires ON password_resets(expires_at);

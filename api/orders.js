@@ -37,6 +37,16 @@ async function createOrder(req, res) {
   const gender         = VALID_GENDER.has(b.gender_preference || b.gender) ? (b.gender_preference || b.gender) : 'jedno';
 
   const me = await getCurrentUser(req);
+
+  // Přihlášený zákazník musí mít ověřený e-mail. Anonymní poptávky zůstávají
+  // bez kontroly (zatím), jejich e-mail nepatří k žádnému účtu.
+  if (me && !me.email_verified_at) {
+    return res.status(403).json({
+      error: 'Nejdřív si ověř svůj e-mail. Pošli si nový ověřovací odkaz z dashboardu.',
+      code: 'verify_required',
+    });
+  }
+
   const customer_name  = String((b.customer_name || b.name || me?.name || '')).trim();
   const customer_email = String((b.customer_email || b.email || me?.email || '')).trim().toLowerCase();
   const customer_phone = b.customer_phone || b.phone || me?.phone || null;

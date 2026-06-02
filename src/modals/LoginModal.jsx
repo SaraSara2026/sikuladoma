@@ -7,7 +7,7 @@ import { IconBtn } from "../ui/Button";
 import { IcX, IcArrow } from "../ui/icons/UIIcons";
 import { apiLogin } from "../lib/auth.js";
 
-export default function LoginModal({ onClose, onReg, onOrder, onFaktury, onDemoLogin, onGetDemo }) {
+export default function LoginModal({ onClose, onReg, onOrder, onFaktury, onDemoLogin, onGetDemo, onForgot }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -81,6 +81,15 @@ export default function LoginModal({ onClose, onReg, onOrder, onFaktury, onDemoL
               justifyContent: "center", gap: 8, transition: "all .15s" }}>
             {busy ? "Přihlašuji…" : <>Přihlásit se <IcArrow /></>}
           </button>
+
+          {onForgot && (
+            <div style={{ textAlign: "center", marginTop: 12 }}>
+              <button type="button" onClick={() => { onClose(); onForgot(); }}
+                style={{ background: "none", border: "none", color: T.blue, fontSize: 13, cursor: "pointer", fontFamily: "inherit", padding: 0, textDecoration: "underline" }}>
+                Zapomenuté heslo?
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Demo přístup */}

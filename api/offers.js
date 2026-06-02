@@ -2,7 +2,7 @@
 // PATCH/:id je v api/offers/[id].js.
 
 import { sql } from './_db.js';
-import { requireUser } from './_auth.js';
+import { requireUser, requireVerifiedUser } from './_auth.js';
 
 export default async function handler(req, res) {
   try {
@@ -20,7 +20,7 @@ export default async function handler(req, res) {
 const MONTHLY_LIMITS = { start: 5, plus: 30 };  // profi + top = neomezeno
 
 async function createOffer(req, res) {
-  const me = await requireUser(req, res);
+  const me = await requireVerifiedUser(req, res);
   if (!me) return;
   if (me.role !== 'sikula') return res.status(403).json({ error: 'Nabídku může poslat jen šikula.' });
 
