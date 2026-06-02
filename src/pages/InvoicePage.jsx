@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { INVOICE_STATUS_MAP } from '../data'
+import { useAuth } from '../contexts/AuthContext'
 
 function dnes() {
   return new Date().toLocaleDateString('cs-CZ', { day: '2-digit', month: '2-digit', year: 'numeric' })
@@ -13,8 +14,22 @@ function noveCislo(pocet) {
 }
 function fKc(n) { return Number(n).toLocaleString('cs-CZ') + ' Kč' }
 
-const INIT_PROFIL = {
-  jmeno: 'Pavel Šikovný', ico: '12345678', dic: '', adresa: 'Hlavní 10, 110 00 Praha 1', platceDph: false,
+const EMPTY_PROFIL = { jmeno: '', ico: '', dic: '', adresa: '', platceDph: false }
+
+// Inicializuje fakturační profil z přihlášeného uživatele + uloženého localStorage.
+function initProfilFor(user) {
+  if (!user) return EMPTY_PROFIL
+  try {
+    const saved = localStorage.getItem(`sd_invoice_profile_${user.id}`)
+    if (saved) return { ...EMPTY_PROFIL, ...JSON.parse(saved) }
+  } catch {}
+  return {
+    jmeno: user.name || '',
+    ico: user.ico || '',
+    dic: '',
+    adresa: user.city ? `${user.city}` : '',
+    platceDph: false,
+  }
 }
 
 // ─── Náhled / tisk faktury ────────────────────────────────────────────────────
@@ -304,6 +319,7 @@ function ProfilModal({ profil, onSave, onClose }) {
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 export default function InvoicePage() {
+  const { user } = useAuth()
   const [invoices, setInvoices] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -320,7 +336,18 @@ export default function InvoicePage() {
       .catch(err => console.error('Načítání faktur selhalo:', err))
       .finally(() => setLoading(false))
   }, [])
-  const [profil, setProfil] = useState(INIT_PROFIL)
+
+  const [profil, setProfilState] = useState(() => initProfilFor(user))
+
+  // Re-init profile when user changes (login/logout).
+  useEffect(() => { setProfilState(initProfilFor(user)) }, [user?.id])
+
+  const setProfil = (next) => {
+    setProfilState(next)
+    if (user?.id) {
+      try { localStorage.setItem(`sd_invoice_profile_${user.id}`, JSON.stringify(next)) } catch {}
+    }
+  }
   const [showNova, setShowNova] = useState(false)
   const [showProfil, setShowProfil] = useState(false)
   const [nahled, setNahled] = useState(null)

@@ -8,6 +8,7 @@ import { IcX, IcArrow, IcCheckCircle } from "../ui/icons/UIIcons";
 import { SERVICES } from "../lib/categories";
 import { PLANS } from "../lib/plans";
 import { apiRegister } from "../lib/auth.js";
+import PasswordField from "../components/PasswordField";
 
 export default function RegForm({ plan, onClose, onRegistered }) {
   const [step, setStep] = useState(0);
@@ -36,7 +37,28 @@ export default function RegForm({ plan, onClose, onRegistered }) {
         role:     "sikula",
         city:     [form.street, form.psc, form.city].filter(Boolean).join(", ") || form.city,
       });
-      // Doplníme lokální atributy, které backend zatím neukládá (services, plan, ico).
+      // Pokud zvolen placený tarif → přesměruj na Stripe Checkout.
+      // Backend stále uloží uživatele s plan='start'; Stripe webhook po platbě upraví na zvolený plán.
+      if (form.plan && form.plan !== 'start') {
+        try {
+          const res = await fetch('/api/stripe?action=checkout', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ plan: form.plan }),
+          });
+          const data = await res.json();
+          if (res.ok && data.url) {
+            window.location.href = data.url;
+            return;
+          }
+          // Stripe selhal — pokračujeme jako start, řekneme uživateli ať platí později.
+          console.warn('Stripe checkout selhal:', data.error);
+        } catch (stripeErr) {
+          console.warn('Stripe checkout error:', stripeErr);
+        }
+      }
+      // Free tarif nebo Stripe selhání → ukáže success screen.
       onRegistered({ ...user, services: form.services, plan: form.plan, ico: form.ico });
       setStep(2);
     } catch (e) {
@@ -86,7 +108,7 @@ export default function RegForm({ plan, onClose, onRegistered }) {
               <div><label style={lbl}>Jméno / název *</label><input value={form.name} onChange={e => upd("name", e.target.value)} placeholder="Pavel Šikovný" style={inp} autoFocus /></div>
               <div><label style={lbl}>IČO (volitelné)</label><input value={form.ico} onChange={e => upd("ico", e.target.value)} placeholder="12345678" style={inp} /></div>
               <div><label style={lbl}>E-mail *</label><input value={form.email} onChange={e => upd("email", e.target.value)} placeholder="vas@email.cz" type="email" autoComplete="email" style={inp} /></div>
-              <div><label style={lbl}>Heslo * (min. 8 znaků)</label><input value={form.password} onChange={e => upd("password", e.target.value)} placeholder="••••••••" type="password" autoComplete="new-password" style={inp} /></div>
+              <div><label style={lbl}>Heslo * (min. 8 znaků)</label><PasswordField value={form.password} onChange={e => upd("password", e.target.value)} autoComplete="new-password" /></div>
               <div><label style={lbl}>Ulice a číslo popisné</label><input value={form.street || ""} onChange={e => upd("street", e.target.value)} placeholder="Hlavní 42" style={inp} /></div>
               <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
                 <div><label style={lbl}>Město / oblast *</label><input value={form.city} onChange={e => upd("city", e.target.value)} placeholder="Praha a okolí" style={inp} /></div>
@@ -142,7 +164,7 @@ export default function RegForm({ plan, onClose, onRegistered }) {
 
         <div style={{ padding: "14px 20px", borderTop: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between" }}>
           {step > 0 ? <BtnGhost size="sm" onClick={() => setStep(0)}>Zpět</BtnGhost> : <span />}
-          <BtnBlue size="sm" onClick={() => {
+          <BtnBlue size="sm" disabled={busy} onClick={() => {
             setErr(null);
             if (step === 0) {
               if (!form.name?.trim())               return setErr("Zadejte jméno.");
@@ -151,9 +173,12 @@ export default function RegForm({ plan, onClose, onRegistered }) {
               if (!form.city?.trim())               return setErr("Zadejte město.");
               return setStep(1);
             }
-            if (step === 1 && !busy) submitRegistration();
+            if (step === 1 && !busy) {
+              if (form.services.length === 0) return setErr("Vyberte alespoň jednu službu, kterou nabízíte.");
+              submitRegistration();
+            }
           }}>
-            {step === 0 ? <>Pokračovat <IcArrow /></> : (busy ? "Vytvářím…" : "Vytvořit profil")}
+            {step === 0 ? <>Pokračovat <IcArrow /></> : (busy ? <><span style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid rgba(255,255,255,.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginRight: 8 }} /> Vytvářím účet…</> : "Vytvořit profil")}
           </BtnBlue>
         </div>
       </div>

@@ -126,6 +126,7 @@ export default function App() {
         ::-webkit-scrollbar{width:5px;}
         ::-webkit-scrollbar-thumb{background:${T.border2};border-radius:3px;}
         @keyframes modalUp{from{opacity:0;transform:translateY(12px) scale(.98);}to{opacity:1;transform:none;}}
+        @keyframes spin{to{transform:rotate(360deg);}}
         .nav-link{padding:6px 12px;border-radius:8px;font-size:14px;font-weight:500;color:${T.ink3};border:none;background:none;cursor:pointer;transition:all .12s;letter-spacing:-.01em;}
         .nav-link:hover{color:${T.ink};background:${T.bg};}
         .svc-tile{display:flex;flex-direction:column;align-items:center;gap:9px;padding:18px 12px;background:#fff;border:1px solid ${T.border};border-radius:14px;cursor:pointer;font-size:12px;font-weight:600;color:${T.ink};transition:all .18s;box-shadow:0 1px 3px rgba(0,0,0,.04);letter-spacing:-.01em;font-family:'Inter',system-ui,sans-serif;}

@@ -107,17 +107,17 @@ function useMyOffers() {
 }
 
 const menuItems = [
+  { id: 'profile', icon: '👤', label: 'Profil šikuly' },
   { id: 'overview', icon: '📊', label: 'Přehled' },
   { id: 'new-jobs', icon: '🔔', label: 'Nové zakázky' },
   { id: 'offers-sent', icon: '📤', label: 'Odeslané nabídky' },
   { id: 'active', icon: '⚡', label: 'Aktivní zakázky' },
   { id: 'calendar', icon: '📅', label: 'Kalendář' },
-  { id: 'history', icon: '📁', label: 'Historie' },
   { id: 'earnings', icon: '💰', label: 'Výdělky' },
   { id: 'invoices', icon: '🧾', label: 'Faktury' },
   { id: 'reviews', icon: '⭐', label: 'Recenze' },
+  { id: 'history', icon: '📁', label: 'Historie' },
   { id: 'membership', icon: '👑', label: 'Členství' },
-  { id: 'profile', icon: '👤', label: 'Profil' },
 ]
 
 function CalendarSection() {
@@ -560,7 +560,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout }) {
               <div style={{ padding: 24 }}>
                 <div className="form-group">
                   <label className="form-label">Bio / Představení</label>
-                  <textarea className="form-textarea" defaultValue="Zkušený šikula s 10+ lety praxe. Rychlý, precizní, spolehlivý." />
+                  <textarea className="form-textarea" defaultValue={currentUser?.bio || ''} placeholder="Napiš pár vět o sobě, své praxi a tom co děláš..." />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Moje služby</label>
@@ -569,8 +569,8 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout }) {
                   </div>
                 </div>
                 <div className="form-row">
-                  <div className="form-group"><label className="form-label">IČO</label><input className="form-input" defaultValue="12345678" /></div>
-                  <div className="form-group"><label className="form-label">Hodinová sazba</label><input className="form-input" defaultValue="350 Kč" /></div>
+                  <div className="form-group"><label className="form-label">IČO</label><input className="form-input" defaultValue={currentUser?.ico || ''} placeholder="12345678" /></div>
+                  <div className="form-group"><label className="form-label">Hodinová sazba</label><input className="form-input" defaultValue={currentUser?.hourly_rate || ''} placeholder="350 Kč" /></div>
                 </div>
                 <button className="btn btn-primary">Uložit změny</button>
               </div>

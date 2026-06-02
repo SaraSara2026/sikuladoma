@@ -6,6 +6,7 @@ import { T, S, inp, lbl } from "../ui/theme";
 import { IconBtn } from "../ui/Button";
 import { IcX, IcArrow } from "../ui/icons/UIIcons";
 import { apiLogin } from "../lib/auth.js";
+import PasswordField from "../components/PasswordField";
 
 export default function LoginModal({ onClose, onReg, onOrder, onFaktury, onDemoLogin, onGetDemo, onForgot }) {
   const [email, setEmail] = useState("");
@@ -62,9 +63,12 @@ export default function LoginModal({ onClose, onReg, onOrder, onFaktury, onDemoL
           </div>
           <div style={{ marginBottom: 14 }}>
             <label style={lbl}>Heslo</label>
-            <input value={password} onChange={e => { setPassword(e.target.value); setErr(null); }}
-              type="password" placeholder="••••••••" autoComplete="current-password" style={inp}
-              onKeyDown={e => e.key === "Enter" && submit()} />
+            <PasswordField
+              value={password}
+              onChange={e => { setPassword(e.target.value); setErr(null); }}
+              autoComplete="current-password"
+              onKeyDown={e => e.key === "Enter" && submit()}
+            />
           </div>
 
           {err && (

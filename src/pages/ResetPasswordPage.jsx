@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { T, inp, lbl } from '../ui/theme';
 import { apiResetPassword } from '../lib/auth.js';
+import PasswordField from '../components/PasswordField';
 
 export default function ResetPasswordPage({ onBack, onLogin }) {
   const [token, setToken] = useState('');
@@ -61,26 +62,20 @@ export default function ResetPasswordPage({ onBack, onLogin }) {
 
             <div style={{ marginBottom: 14 }}>
               <label style={lbl}>Nové heslo</label>
-              <input
-                type="password"
+              <PasswordField
                 autoFocus
                 value={password}
                 onChange={e => { setPassword(e.target.value); setErr(null); }}
-                placeholder="••••••••"
                 autoComplete="new-password"
-                style={inp}
               />
             </div>
 
             <div style={{ marginBottom: 16 }}>
               <label style={lbl}>Potvrzení hesla</label>
-              <input
-                type="password"
+              <PasswordField
                 value={confirm}
                 onChange={e => { setConfirm(e.target.value); setErr(null); }}
-                placeholder="••••••••"
                 autoComplete="new-password"
-                style={inp}
               />
             </div>
 
