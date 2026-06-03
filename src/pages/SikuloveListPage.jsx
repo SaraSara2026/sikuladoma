@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { T } from '../ui/theme';
 import { CATEGORIES } from '../lib/categories';
 import { usersApi } from '../lib/api';
+import { BtnPrimary } from '../ui/Button';
 
 const PLAN_BADGE = {
   top:   { label: '👑 Top',   bg: '#FEF3C7', fg: '#92400E' },
@@ -13,7 +14,7 @@ const PLAN_BADGE = {
   start: { label: 'Start',    bg: '#F3F4F6', fg: '#6B7280' },
 };
 
-export default function SikuloveListPage({ onBack, onProfile, onReg }) {
+export default function SikuloveListPage({ onBack, onProfile, onReg, onOrder }) {
   const [sikulove, setSikulove] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ category: '', city: '', verified: false, profiPlus: false, minRating: 0 });
@@ -84,6 +85,26 @@ export default function SikuloveListPage({ onBack, onProfile, onReg }) {
               </select>
             </label>
           </div>
+
+          {/* CTA: rovnou zadat poptávku s pre-fillem kategorie + města */}
+          {(filters.category || filters.city) && onOrder && (
+            <div style={{ marginTop: 18, padding: '16px 20px', background: 'linear-gradient(135deg, #FFF7ED 0%, #FEF3C7 100%)', border: '1px solid #FDBA74', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#9A3412', marginBottom: 2 }}>
+                  Nechceš si vybírat? Pošli poptávku všem najednou.
+                </div>
+                <div style={{ fontSize: 13, color: '#7C2D12', lineHeight: 1.5 }}>
+                  {filters.category && <>Kategorie: <strong>{CATEGORIES.find(c => c.id === filters.category)?.label}</strong></>}
+                  {filters.category && filters.city && ' · '}
+                  {filters.city && <>Místo: <strong>{filters.city}</strong></>}
+                  {' '} — šikulové z okolí ti pošlou nabídky do 48 hodin.
+                </div>
+              </div>
+              <BtnPrimary size="md" onClick={() => onOrder({ category: filters.category, city: filters.city })}>
+                Zadat poptávku zdarma →
+              </BtnPrimary>
+            </div>
+          )}
         </div>
       </div>
 

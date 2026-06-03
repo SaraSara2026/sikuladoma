@@ -149,7 +149,7 @@ export default function App() {
     window.scrollTo(0, 0);
   };
 
-  const openOrder = (svc = null) => setOrderForm({ service: svc });
+  const openOrder = (svc = null, opts = {}) => setOrderForm({ service: svc, ...opts });
   const openReg   = (plan = null) => setRegForm({ plan });
   const scrollTo  = id => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 
@@ -234,7 +234,8 @@ export default function App() {
       ) : page === "sikulove" ? (
         <SikuloveListPage
           onBack={() => { setPage("home"); window.scrollTo(0,0); }}
-          onProfile={(id) => { setProfileId(String(id)); window.history.replaceState({}, '', `/?sikula=${id}`); }} />
+          onProfile={(id) => { setProfileId(String(id)); window.history.replaceState({}, '', `/?sikula=${id}`); }}
+          onOrder={({ category, city }) => openOrder(null, { category, city })} />
       ) : page === "faq" ? (
         <FAQPage
           onBack={() => { setPage("home"); window.scrollTo(0,0); }}
@@ -478,7 +479,7 @@ export default function App() {
       </>)}
       </Layout>
 
-      {orderForm !== null && <OrderForm initialService={orderForm.service} onClose={() => setOrderForm(null)} />}
+      {orderForm !== null && <OrderForm initialService={orderForm.service} initialCategory={orderForm.category} initialCity={orderForm.city} onClose={() => setOrderForm(null)} />}
       {regForm   !== null && <RegForm   plan={regForm.plan} onClose={() => setRegForm(null)} onRegistered={loginSikula} />}
       {loginModal && <LoginModal onClose={() => setLoginModal(false)} onReg={openReg} onOrder={openOrder} onFaktury={() => { setLoginModal(false); setPage("faktury"); window.scrollTo(0,0); }} onDemoLogin={loginSikula} onGetDemo={() => DEMO_SIKULA} onForgot={() => { setLoginModal(false); setPage("forgot-password"); window.scrollTo(0,0); }} />}
 

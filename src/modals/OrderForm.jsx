@@ -16,15 +16,17 @@ import { CATEGORIES, SUBCATEGORIES, OTHER, CAT_COLORS } from "../lib/categories"
 const STEP_LABELS = ["Kategorie", "Služba", "Upřesnění", "Místo", "Čas", "Kontakt"];
 const TOTAL = 6;
 
-export default function OrderForm({ initialService, onClose }) {
+export default function OrderForm({ initialService, initialCategory, initialCity, onClose }) {
   const initCat = initialService
     ? CATEGORIES.find(c => c.id === initialService.id) || null
-    : null;
-  const [step, setStep]     = useState(initCat ? 1 : 0);
+    : initialCategory
+      ? CATEGORIES.find(c => c.id === initialCategory) || null
+      : null;
+  const [step, setStep]     = useState(initCat ? (initialCity ? 3 : 1) : 0);
   const [category, setCat]  = useState(initCat);
   const [subSvc, setSubSvc] = useState(null);
   const [desc, setDesc]     = useState("");
-  const [city, setCity]     = useState("");
+  const [city, setCity]     = useState(initialCity || "");
   const [floor, setFloor]   = useState("");
   const [priority, setPrio] = useState(null);
   const [name, setName]     = useState("");
