@@ -4,25 +4,23 @@ export default function Header({ T, BtnPrimary, onHome, onScrollTo, onOrder, onL
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
-    <nav style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(255,255,255,.94)", backdropFilter: "blur(20px) saturate(180%)", borderBottom: `1px solid ${T.border}`, height: 56, display: "flex", alignItems: "center" }}>
+    <nav style={{ position: "sticky", top: 0, zIndex: 50, background: "rgba(255,255,255,.94)", backdropFilter: "blur(20px) saturate(180%)", borderBottom: `1px solid ${T.border}`, height: 64, display: "flex", alignItems: "center" }}>
       <div style={{ maxWidth: 1120, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
 
-        {/* Logo */}
-        <div style={{ fontWeight: 700, fontSize: 18, letterSpacing: "-.03em", cursor: "pointer", flexShrink: 0 }} onClick={onHome}>
-          <span style={{ color: T.blue }}>Šikula</span><span style={{ color: T.orange }}>Doma</span>
-        </div>
-
-        {/* Center links */}
-        <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <button className="nav-link" onClick={() => onScrollTo("how")}>Jak to funguje</button>
-          <button className="nav-link" onClick={() => onScrollTo("services")}>Služby</button>
-          {onSikulove && <button className="nav-link" onClick={onSikulove}>Šikulové</button>}
+        {/* Left: Logo + odkazy */}
+        <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
+          <div style={{ fontWeight: 800, fontSize: 24, letterSpacing: "-.03em", cursor: "pointer", flexShrink: 0 }} onClick={onHome}>
+            <span style={{ color: T.blue }}>Šikula</span><span style={{ color: T.orange }}>Doma</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <button className="nav-link" onClick={() => onScrollTo("how")}>Jak to funguje</button>
+            <button className="nav-link" onClick={() => onScrollTo("services")}>Služby</button>
+            {onSikulove && <button className="nav-link" onClick={onSikulove}>Šikulové</button>}
+          </div>
         </div>
 
         {/* Right */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, position: "relative" }}>
-          <BtnPrimary size="sm" onClick={onOrder}>Zadat poptávku</BtnPrimary>
-
           {sikulaUser ? (
             <div style={{ position: "relative" }}>
               {/* Avatar button */}
@@ -93,9 +91,9 @@ export default function Header({ T, BtnPrimary, onHome, onScrollTo, onOrder, onL
           ) : (
             <button
               onClick={onLogin}
-              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 500, color: T.ink3, padding: "4px 2px", transition: "color .12s" }}
-              onMouseEnter={e => e.currentTarget.style.color = T.ink}
-              onMouseLeave={e => e.currentTarget.style.color = T.ink3}
+              style={{ background: "#fff", border: `1.5px solid ${T.border}`, borderRadius: 10, cursor: "pointer", fontSize: 14, fontWeight: 600, color: T.ink, padding: "8px 18px", transition: "all .14s", fontFamily: "inherit" }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = T.orange; e.currentTarget.style.color = T.orange; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.ink; }}
             >
               Přihlášení
             </button>
