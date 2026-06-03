@@ -284,22 +284,22 @@ export default function App() {
           <div style={{ position: "absolute", bottom: -80, right: -60, width: 380, height: 380, borderRadius: "50%", background: "rgba(255,237,213,.5)", filter: "blur(70px)" }} />
         </div>
 
-        <div style={{ position: "relative", maxWidth: 660, margin: "0 auto" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#EFF6FF", border: "1px solid #BFDBFE", color: "#1D4ED8", borderRadius: 999, padding: "5px 16px 5px 10px", fontSize: 13, fontWeight: 500, marginBottom: 32, letterSpacing: "-.01em" }}>
+        <div style={{ position: "relative", maxWidth: 960, margin: "0 auto" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#EFF6FF", border: "1px solid #BFDBFE", color: "#1D4ED8", borderRadius: 999, padding: "5px 16px 5px 10px", fontSize: 13, fontWeight: 500, marginBottom: 24, letterSpacing: "-.01em" }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E", display: "inline-block", boxShadow: "0 0 0 3px rgba(34,197,94,.2)" }} />
             Šikulové dostupní v celé ČR
           </div>
 
-          <h1 style={{ fontSize: "clamp(26px, 5vw, 36px)", fontWeight: 800, color: T.ink, lineHeight: 1.2, letterSpacing: "-.03em", marginBottom: 16, fontFamily: "'Inter', system-ui, sans-serif" }}>
-            Doma se vždycky něco najde.<br />
+          <h1 style={{ fontSize: "clamp(28px, 5vw, 42px)", fontWeight: 800, color: T.ink, lineHeight: 1.2, letterSpacing: "-.03em", marginBottom: 16, fontFamily: "'Inter', system-ui, sans-serif" }}>
+            Doma se vždycky něco najde.{" "}
             My najdeme <span style={{ color: T.orange }}>šikulu.</span>
           </h1>
 
-          <p style={{ fontSize: "clamp(14px, 2vw, 17px)", color: T.ink3, lineHeight: 1.7, maxWidth: 460, margin: "0 auto 36px", letterSpacing: "-.01em" }}>
+          <p style={{ fontSize: "clamp(14px, 2vw, 17px)", color: T.ink3, lineHeight: 1.7, maxWidth: 640, margin: "0 auto 28px", letterSpacing: "-.01em" }}>
             Vyberte službu, napište pár detailů a šikulové z okolí vám pošlou nabídky.
           </p>
 
-          <div style={{ display: "flex", maxWidth: 520, margin: "0 auto 16px", background: "#fff", borderRadius: 14, border: `1.5px solid ${T.border}`, boxShadow: "0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06)", overflow: "hidden" }}>
+          <div style={{ display: "flex", maxWidth: 640, margin: "0 auto 16px", background: "#fff", borderRadius: 14, border: `1.5px solid ${T.border}`, boxShadow: "0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06)", overflow: "hidden" }}>
             <span style={{ display: "flex", alignItems: "center", paddingLeft: 16, paddingRight: 10, color: T.ink4, flexShrink: 0 }}><IcSearch /></span>
             <input style={{ flex: 1, padding: "15px 4px", border: "none", outline: "none", fontSize: 15, color: T.ink, background: "transparent", fontFamily: "inherit", letterSpacing: "-.01em" }}
               placeholder="Co potřebujete doma vyřešit?"
@@ -341,17 +341,20 @@ export default function App() {
             </BtnSecondary>
           </div>
 
-          <div style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 4, flexWrap: "wrap", rowGap: 8 }}>
             {[
               { Icon: IcShield, text: "Ověření šikulové",       iconColor: "#059669" },
               { Icon: IcStar,   text: "Nabídky zdarma",         iconColor: T.orange },
               { Icon: IcCheck,  text: "Zákazník nic neplatí",   iconColor: "#059669" },
               { Icon: IcGlobe,  text: "Platíte přímo šikulovi", iconColor: T.blue },
-            ].map(({ Icon, text, iconColor }) => (
-              <div key={text} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 13px", background: "#F8FAFC", border: `1px solid ${T.border}`, borderRadius: 10, fontSize: 12, fontWeight: 500, color: T.ink2, letterSpacing: "-.01em" }}>
-                <span style={{ color: iconColor, display: "flex", flexShrink: 0 }}><Icon /></span>
-                {text}
-              </div>
+            ].map(({ Icon, text, iconColor }, i, arr) => (
+              <span key={text} style={{ display: "inline-flex", alignItems: "center" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", background: "transparent", fontSize: 13, fontWeight: 500, color: T.ink2, letterSpacing: "-.01em", whiteSpace: "nowrap" }}>
+                  <span style={{ color: iconColor, display: "flex", flexShrink: 0 }}><Icon /></span>
+                  {text}
+                </span>
+                {i < arr.length - 1 && <span style={{ color: T.border2, fontSize: 10, padding: "0 2px" }}>·</span>}
+              </span>
             ))}
           </div>
 
