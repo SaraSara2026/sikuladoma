@@ -221,9 +221,18 @@ function SikulaCard({ s, onClick }) {
 }
 
 const inpStyle = {
-  width: '100%', height: 42, padding: '0 14px', borderRadius: 10,
-  border: `1.5px solid ${T.border}`, fontSize: 14, fontFamily: 'inherit',
-  color: T.ink, outline: 'none',
+  width: '100%', height: 42, paddingLeft: 14, paddingRight: 14, paddingTop: 0, paddingBottom: 0,
+  borderRadius: 10, border: `1.5px solid ${T.border}`,
+  fontSize: 14, fontFamily: 'inherit', color: T.ink, outline: 'none',
+  boxSizing: 'border-box', lineHeight: '42px',
 };
 
-const selStyle = { ...inpStyle, cursor: 'pointer', background: '#fff' };
+const selStyle = {
+  ...inpStyle, cursor: 'pointer', background: '#fff',
+  appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none',
+  backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round'><polyline points='6 9 12 15 18 9'/></svg>")`,
+  backgroundRepeat: 'no-repeat',
+  backgroundPosition: 'right 12px center',
+  backgroundSize: '14px 14px',
+  paddingRight: 36,
+};

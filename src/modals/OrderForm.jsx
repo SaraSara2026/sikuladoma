@@ -26,13 +26,18 @@ export default function OrderForm({ initialService, initialCategory, initialCity
   const [category, setCat]  = useState(initCat);
   const [subSvc, setSubSvc] = useState(null);
   const [desc, setDesc]     = useState("");
+  const [street, setStreet] = useState("");
+  const [psc, setPsc]       = useState("");
   const [city, setCity]     = useState(initialCity || "");
   const [floor, setFloor]   = useState("");
+  const [gdprOk, setGdprOk] = useState(false);
   const [priority, setPrio] = useState(null);
   const [name, setName]     = useState("");
   const [email, setEmail]   = useState("");
   const [phone, setPhone]   = useState("");
   const [done, setDone]     = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitErr, setSubmitErr]   = useState(null);
 
   const colCat = category ? (CAT_COLORS[category.id] || { bg:"#F8FAFC", ic:"#64748B" }) : null;
 
@@ -42,8 +47,44 @@ export default function OrderForm({ initialService, initialCategory, initialCity
     if (step === 2) return true;
     if (step === 3) return city.trim().length >= 2;
     if (step === 4) return !!priority;
-    if (step === 5) return name.trim() && email.includes("@");
+    if (step === 5) {
+      const fullName = name.trim();
+      return /^\S+\s+\S+/.test(fullName) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && gdprOk;
+    }
     return false;
+  };
+
+  const submitOrder = async () => {
+    if (submitting) return;
+    setSubmitErr(null);
+    setSubmitting(true);
+    try {
+      const fullCity = [street, psc, city].filter(Boolean).join(', ') || city;
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: subSvc || category?.label || 'Poptávka',
+          category: category?.id,
+          subcategory: subSvc,
+          description: desc,
+          city: fullCity,
+          floor,
+          urgent: priority === 'urgent',
+          customer_name: name.trim(),
+          customer_email: email.trim().toLowerCase(),
+          customer_phone: phone,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Poptávku se nepodařilo odeslat.');
+      setDone(true);
+    } catch (e) {
+      setSubmitErr(e.message || 'Něco se pokazilo. Zkuste to znovu.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const next = () => { if (canNext()) setStep(s => s + 1); };
@@ -59,9 +100,15 @@ export default function OrderForm({ initialService, initialCategory, initialCity
           <h2 style={{ fontSize: 21, fontWeight: 700, color: T.ink, marginBottom: 8, letterSpacing: "-.02em" }}>
             Hotovo. Šikulové už o vás vědí.
           </h2>
-          <p style={{ color: T.ink3, fontSize: 14, lineHeight: 1.65, marginBottom: 22 }}>
+          <p style={{ color: T.ink3, fontSize: 14, lineHeight: 1.65, marginBottom: 18 }}>
             Do pár minut začnete dostávat nabídky od šikulů z okolí.
           </p>
+          <div style={{ background: "#FEF3C7", border: "1px solid #FCD34D", borderRadius: 10, padding: "14px 16px", marginBottom: 18, textAlign: "left" }}>
+            <div style={{ fontWeight: 700, color: "#92400E", fontSize: 13, marginBottom: 6 }}>📧 Zkontrolujte e-mail</div>
+            <div style={{ fontSize: 13, color: "#78350F", lineHeight: 1.55 }}>
+              Poslali jsme vám odkaz na <strong>{email}</strong>, kde si nastavíte heslo. Pak uvidíte všechny nabídky a budete moci chatovat se šikuly.
+            </div>
+          </div>
           <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 10, padding: "12px 16px", marginBottom: 20, textAlign: "left" }}>
             {["Průměrná první reakce do 2 hodin", "Nabídky zdarma", "Platíte až po dokončení práce"].map(t => (
               <div key={t} style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 7, fontSize: 13, color: T.ink2 }}>
@@ -89,8 +136,10 @@ export default function OrderForm({ initialService, initialCategory, initialCity
               Zpět na úvod
             </button>
             <BtnGhost onClick={() => {
-              setCat(null); setSubSvc(null); setDesc(""); setCity(""); setFloor("");
-              setPrio(null); setName(""); setEmail(""); setPhone(""); setDone(false); setStep(0);
+              setCat(null); setSubSvc(null); setDesc("");
+              setStreet(""); setPsc(""); setCity(""); setFloor("");
+              setPrio(null); setName(""); setEmail(""); setPhone("");
+              setGdprOk(false); setSubmitErr(null); setDone(false); setStep(0);
             }}>
               Zadat další poptávku
             </BtnGhost>
@@ -191,8 +240,21 @@ export default function OrderForm({ initialService, initialCategory, initialCity
 
           {step === 3 && (
             <div>
-              <input autoFocus value={city} onChange={e => setCity(e.target.value)}
-                placeholder="Praha 6 – Dejvice" style={inp} />
+              <label style={lbl}>Ulice a číslo popisné</label>
+              <input autoFocus value={street} onChange={e => setStreet(e.target.value)}
+                placeholder="Hlavní 42" style={inp} />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 10, marginTop: 12 }}>
+                <div>
+                  <label style={lbl}>PSČ</label>
+                  <input value={psc} onChange={e => setPsc(e.target.value)}
+                    style={inp} placeholder="110 00" />
+                </div>
+                <div>
+                  <label style={lbl}>Město / oblast *</label>
+                  <input value={city} onChange={e => setCity(e.target.value)}
+                    style={inp} placeholder="Praha 6 – Dejvice" />
+                </div>
+              </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
                 <div>
                   <label style={lbl}>Patro</label>
@@ -207,6 +269,9 @@ export default function OrderForm({ initialService, initialCategory, initialCity
                     <option>Bez parkování</option>
                   </select>
                 </div>
+              </div>
+              <div style={{ fontSize: 12, color: T.ink4, marginTop: 8, lineHeight: 1.5 }}>
+                💡 Přesnější adresa pomůže šikulovi odhadnout dojezd a cenu. Adresu sdílíme jen šikulovi, kterému přijmete nabídku.
               </div>
             </div>
           )}
@@ -241,14 +306,28 @@ export default function OrderForm({ initialService, initialCategory, initialCity
 
           {step === 5 && (
             <div>
-              <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 9, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: T.blueDark, display: "flex", alignItems: "center", gap: 8 }}>
-                <IcShield /><span>Registraci nevyžadujeme. Účet vytvoříme automaticky.</span>
+              <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 9, padding: "12px 14px", marginBottom: 16, fontSize: 13, color: T.blueDark, lineHeight: 1.5 }}>
+                <div style={{ fontWeight: 600, marginBottom: 4 }}>📧 Účet vám vytvoříme automaticky</div>
+                Po odeslání poptávky vám pošleme e-mail s odkazem, kde si nastavíte heslo. Pak uvidíte všechny nabídky a budete moci chatovat se šikuly.
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
-                <div><label style={lbl}>Jméno *</label><input value={name} onChange={e => setName(e.target.value)} placeholder="Jana Nováková" style={inp} autoFocus /></div>
-                <div><label style={lbl}>E-mail *</label><input value={email} onChange={e => setEmail(e.target.value)} placeholder="vas@email.cz" type="email" style={inp} /></div>
-                <div><label style={lbl}>Telefon</label><input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+420 777 000 000" type="tel" style={inp} /></div>
+                <div><label style={lbl}>Jméno a příjmení *</label><input value={name} onChange={e => setName(e.target.value)} placeholder="Jana Nováková" style={inp} autoFocus /></div>
+                <div><label style={lbl}>E-mail *</label><input value={email} onChange={e => setEmail(e.target.value)} placeholder="vas@email.cz" type="email" autoComplete="email" style={inp} /></div>
+                <div><label style={lbl}>Telefon</label><input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+420 777 000 000" type="tel" autoComplete="tel" style={inp} /></div>
               </div>
+              <label style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 16, padding: "12px 14px", background: T.bg, border: `1px solid ${T.border}`, borderRadius: 10, cursor: "pointer", fontSize: 13, color: T.ink2, lineHeight: 1.55 }}>
+                <input type="checkbox" checked={gdprOk} onChange={e => setGdprOk(e.target.checked)}
+                  style={{ marginTop: 2, flexShrink: 0, width: 16, height: 16, cursor: "pointer" }} />
+                <span>
+                  Souhlasím s <strong>vytvořením účtu</strong> na ŠikulaDoma a se zpracováním osobních údajů pro účely této poptávky.
+                  Podrobnosti v <a href="/?page=ochrana-soukromi" target="_blank" rel="noopener" style={{ color: T.orange, textDecoration: "underline" }}>Ochraně soukromí</a> a <a href="/?page=podminky-pouziti" target="_blank" rel="noopener" style={{ color: T.orange, textDecoration: "underline" }}>Podmínkách</a>.
+                </span>
+              </label>
+              {submitErr && (
+                <div style={{ marginTop: 12, padding: "10px 14px", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, fontSize: 13, color: "#B91C1C" }}>
+                  {submitErr}
+                </div>
+              )}
             </div>
           )}
 
@@ -260,10 +339,11 @@ export default function OrderForm({ initialService, initialCategory, initialCity
             : <span />}
           {step === 0 ? <span /> : (
             <button
-              onClick={step < TOTAL - 1 ? next : () => setDone(true)}
-              style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, height: 42, padding: "0 22px", borderRadius: 10, border: "none", background: canNext() ? T.orange : T.border, color: canNext() ? "#fff" : T.ink4, fontWeight: 600, fontSize: 14, cursor: canNext() ? "pointer" : "not-allowed", fontFamily: "inherit", transition: "all .15s" }}
+              onClick={step < TOTAL - 1 ? next : submitOrder}
+              disabled={submitting || !canNext()}
+              style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, height: 42, padding: "0 22px", borderRadius: 10, border: "none", background: (canNext() && !submitting) ? T.orange : T.border, color: (canNext() && !submitting) ? "#fff" : T.ink4, fontWeight: 600, fontSize: 14, cursor: (canNext() && !submitting) ? "pointer" : "not-allowed", fontFamily: "inherit", transition: "all .15s" }}
             >
-              {step < TOTAL - 1 ? <>Pokračovat <IcArrow /></> : "Odeslat poptávku"}
+              {step < TOTAL - 1 ? <>Pokračovat <IcArrow /></> : (submitting ? "Odesílám…" : "Odeslat poptávku")}
             </button>
           )}
         </div>

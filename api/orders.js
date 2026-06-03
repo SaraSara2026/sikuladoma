@@ -1,12 +1,19 @@
 // /api/orders — GET (list) + POST (create)
 // PATCH/:id je v api/orders/[id].js (Vercel optional catch-all nematchuje base path).
 
+import { randomBytes } from 'node:crypto';
 import { sql } from './_db.js';
-import { getCurrentUser } from './_auth.js';
+import { getCurrentUser, hashPassword } from './_auth.js';
+import { sendPasswordResetEmail } from './_email.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const STATUS_NEW = 'new';
 const VALID_GENDER = new Set(['jedno', 'zena', 'muz']);
+const RESET_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;  // 7 dní pro nově vytvořené účty
+
+function genToken() {
+  return randomBytes(32).toString('base64url');
+}
 
 export default async function handler(req, res) {
   try {
@@ -38,8 +45,7 @@ async function createOrder(req, res) {
 
   const me = await getCurrentUser(req);
 
-  // Přihlášený zákazník musí mít ověřený e-mail. Anonymní poptávky zůstávají
-  // bez kontroly (zatím), jejich e-mail nepatří k žádnému účtu.
+  // Přihlášený zákazník musí mít ověřený e-mail.
   if (me && !me.email_verified_at) {
     return res.status(403).json({
       error: 'Nejdřív si ověř svůj e-mail. Pošli si nový ověřovací odkaz z dashboardu.',
@@ -51,11 +57,33 @@ async function createOrder(req, res) {
   const customer_email = String((b.customer_email || b.email || me?.email || '')).trim().toLowerCase();
   const customer_phone = b.customer_phone || b.phone || me?.phone || null;
 
-  if (title.length < 3)               return res.status(400).json({ error: 'Zadejte název poptávky (min. 3 znaky).' });
-  if (!category)                      return res.status(400).json({ error: 'Vyberte kategorii.' });
-  if (city.length < 2)                return res.status(400).json({ error: 'Zadejte město.' });
-  if (!customer_name)                 return res.status(400).json({ error: 'Zadejte své jméno.' });
-  if (!EMAIL_RE.test(customer_email)) return res.status(400).json({ error: 'Zadejte platný e-mail.' });
+  if (title.length < 3)                              return res.status(400).json({ error: 'Zadejte název poptávky (min. 3 znaky).' });
+  if (!category)                                     return res.status(400).json({ error: 'Vyberte kategorii.' });
+  if (city.length < 2)                               return res.status(400).json({ error: 'Zadejte město.' });
+  if (!customer_name)                                return res.status(400).json({ error: 'Zadejte své jméno.' });
+  if (!/^\S+\s+\S+/.test(customer_name))             return res.status(400).json({ error: 'Zadejte jméno i příjmení.' });
+  if (!EMAIL_RE.test(customer_email))                return res.status(400).json({ error: 'Zadejte platný e-mail.' });
+
+  // Anonymní poptávka: vytvoř customer účet + pošli email s nastavením hesla.
+  // Pokud už účet s tímto e-mailem existuje, použij ho.
+  let customerId = me?.id || null;
+  let createdNewAccount = false;
+  if (!customerId) {
+    const [existing] = await sql`SELECT id FROM users WHERE email = ${customer_email}`;
+    if (existing) {
+      customerId = existing.id;
+    } else {
+      const randomPassword = randomBytes(32).toString('base64url');
+      const password_hash = await hashPassword(randomPassword);
+      const [newUser] = await sql`
+        INSERT INTO users (email, password_hash, role, name, phone, city)
+        VALUES (${customer_email}, ${password_hash}, 'customer', ${customer_name}, ${customer_phone}, ${city})
+        RETURNING id
+      `;
+      customerId = newUser.id;
+      createdNewAccount = true;
+    }
+  }
 
   const [row] = await sql`
     INSERT INTO orders (
@@ -63,13 +91,30 @@ async function createOrder(req, res) {
       title, category, subcategory, description, city, floor, parking, budget,
       preferred_date, preferred_time, gender_preference, urgent, note, status
     ) VALUES (
-      ${me?.id || null}, ${customer_name}, ${customer_email}, ${customer_phone},
+      ${customerId}, ${customer_name}, ${customer_email}, ${customer_phone},
       ${title}, ${category}, ${subcategory}, ${description}, ${city}, ${floor}, ${parking}, ${budget},
       ${preferred_date}, ${preferred_time}, ${gender}, ${urgent}, ${note}, ${STATUS_NEW}
     )
     RETURNING *
   `;
-  return res.status(201).json({ order: row });
+
+  // Pokud byl vytvořen nový účet, pošli mu reset-password token aby si nastavil heslo.
+  // Selhání emailu nesmí zrušit poptávku — uživatel ji už má v DB.
+  if (createdNewAccount) {
+    try {
+      const token = genToken();
+      const expires = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+      await sql`
+        INSERT INTO password_resets (token, user_id, expires_at)
+        VALUES (${token}, ${customerId}, ${expires.toISOString()})
+      `;
+      await sendPasswordResetEmail({ to: customer_email, name: customer_name, token });
+    } catch (err) {
+      console.error('[orders] welcome email failed:', err);
+    }
+  }
+
+  return res.status(201).json({ order: row, accountCreated: createdNewAccount });
 }
 
 async function listOrders(req, res) {
