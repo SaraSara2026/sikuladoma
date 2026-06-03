@@ -45,32 +45,35 @@ export default function ProSikulyPage({ onBack, onReg }) {
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <section style={{ background: "linear-gradient(150deg,#fff 0%,#FFF7ED 100%)", padding: "72px 24px 64px", textAlign: "center", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", inset: 0, pointerEvents: "none", background: "radial-gradient(ellipse 45% 55% at 5% 95%,rgba(219,234,254,.45) 0%,transparent 60%),radial-gradient(ellipse 40% 45% at 95% 5%,rgba(255,237,213,.5) 0%,transparent 55%)" }} />
-        <div style={{ position: "relative", maxWidth: 640, margin: "0 auto" }}>
+        <div style={{ position: "relative", maxWidth: 960, margin: "0 auto" }}>
 
           {/* Badge */}
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#FFF7ED", border: "1.5px solid #FED7AA", color: "#C2410C", borderRadius: 999, padding: "5px 16px", fontSize: 12, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 24 }}>
-            <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#F97316", display: "inline-block" }} />
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 10, background: "#FFF7ED", border: "1.5px solid #FED7AA", color: "#C2410C", borderRadius: 999, padding: "8px 20px", fontSize: 14, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 24 }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#F97316", display: "inline-block" }} />
             PRO ŠIKULY
           </div>
 
-          <h1 style={{ fontSize: "clamp(26px,4vw,42px)", fontWeight: 700, color: "#1A1F2E", letterSpacing: "-.025em", lineHeight: 1.15, marginBottom: 16, fontFamily: "'Inter', system-ui, sans-serif" }}>
-            Jak to funguje<br />
+          <h1 style={{ fontSize: "clamp(28px,5vw,46px)", fontWeight: 800, color: "#1A1F2E", letterSpacing: "-.03em", lineHeight: 1.15, marginBottom: 16, fontFamily: "'Inter', system-ui, sans-serif" }}>
+            Jak to funguje{" "}
             <span style={{ color: "#F97316" }}>pro šikuly</span>
           </h1>
 
-          <p style={{ fontSize: 16, color: "#6B7280", lineHeight: 1.75, maxWidth: 520, margin: "0 auto 16px" }}>
+          <p style={{ fontSize: 16, color: "#6B7280", lineHeight: 1.7, maxWidth: 720, margin: "0 auto 14px" }}>
             Jste živnostník, šikovný domácí kutil nebo menší firma a chcete získávat zakázky ve svém okolí? ŠikulaDoma je postavený tak, aby registrace byla jednoduchá, rychlá a praktická. Žádné zbytečné papírování, žádné složité nastavování.
           </p>
-          <p style={{ fontSize: 15, color: "#9CA3AF", lineHeight: 1.65, maxWidth: 480, margin: "0 auto 36px" }}>
+          <p style={{ fontSize: 15, color: "#9CA3AF", lineHeight: 1.65, maxWidth: 640, margin: "0 auto 28px" }}>
             Vyplníte, co umíte, kde chcete zakázky, a můžete začít dostávat poptávky.
           </p>
 
-          {/* Benefit chips */}
-          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8, marginBottom: 36 }}>
-            {BENEFITS.map(b => (
-              <div key={b.text} style={{ display: "inline-flex", alignItems: "center", padding: "6px 14px", borderRadius: 999, background: b.bg, color: b.color, fontSize: 13, fontWeight: 600 }}>
-                {b.text}
-              </div>
+          {/* Benefit chips — jeden řádek, oddělené tečkami */}
+          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 4, rowGap: 8, marginBottom: 32 }}>
+            {BENEFITS.map((b, i, arr) => (
+              <span key={b.text} style={{ display: "inline-flex", alignItems: "center" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", padding: "6px 14px", fontSize: 14, fontWeight: 600, color: b.color, whiteSpace: "nowrap", letterSpacing: "-.01em" }}>
+                  {b.text}
+                </span>
+                {i < arr.length - 1 && <span style={{ color: "#CBD5E1", fontSize: 10, padding: "0 2px" }}>·</span>}
+              </span>
             ))}
           </div>
 
