@@ -45,13 +45,9 @@ async function createOrder(req, res) {
 
   const me = await getCurrentUser(req);
 
-  // Přihlášený zákazník musí mít ověřený e-mail.
-  if (me && !me.email_verified_at) {
-    return res.status(403).json({
-      error: 'Nejdřív si ověř svůj e-mail. Pošli si nový ověřovací odkaz z dashboardu.',
-      code: 'verify_required',
-    });
-  }
+  // Pozn.: Zadání poptávky NEVYŽADUJE ověřený e-mail (low friction vstup).
+  // Verify check je až u akcí které spotřebovávají čas šikulovi:
+  // odeslání nabídky (api/offers) a chat zprávy (api/messages).
 
   const customer_name  = String((b.customer_name || b.name || me?.name || '')).trim();
   const customer_email = String((b.customer_email || b.email || me?.email || '')).trim().toLowerCase();
