@@ -57,9 +57,13 @@ export default function SikulaProfilePage({ id, onBack, onOrder }) {
         {/* HEAD */}
         <div style={{ background: '#fff', borderRadius: 18, padding: '32px', border: '1px solid #F3F4F6', boxShadow: '0 1px 3px rgba(0,0,0,.04)', marginBottom: 24 }}>
           <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-            <div style={{ width: 96, height: 96, borderRadius: '50%', background: 'linear-gradient(135deg,#F97316,#EA580C)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 32, fontWeight: 700, flexShrink: 0 }}>
-              {avatar}
-            </div>
+            {user.avatar ? (
+              <img src={user.avatar} alt={user.name} style={{ width: 96, height: 96, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, boxShadow: '0 4px 12px rgba(0,0,0,.12)' }} />
+            ) : (
+              <div style={{ width: 96, height: 96, borderRadius: '50%', background: 'linear-gradient(135deg,#F97316,#EA580C)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 32, fontWeight: 700, flexShrink: 0 }}>
+                {initials}
+              </div>
+            )}
             <div style={{ flex: 1, minWidth: 220 }}>
               <h1 style={{ fontSize: 28, fontWeight: 700, color: '#1A1F2E', letterSpacing: '-.02em', marginBottom: 6 }}>{user.name}</h1>
               <p style={{ fontSize: 14, color: '#6B7280', marginBottom: 12 }}>📍 {user.city || 'Česká republika'}</p>
@@ -127,9 +131,13 @@ export default function SikulaProfilePage({ id, onBack, onOrder }) {
                 <div key={r.id} style={{ padding: '14px 16px', background: '#F9FAFB', borderRadius: 10, border: '1px solid #F3F4F6' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#475569' }}>
-                        {r.reviewer_avatar || (r.reviewer_name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
-                      </div>
+                      {r.reviewer_avatar && r.reviewer_avatar.startsWith('data:') ? (
+                        <img src={r.reviewer_avatar} alt={r.reviewer_name} style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#475569' }}>
+                          {(r.reviewer_name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                        </div>
+                      )}
                       <span style={{ fontSize: 13, fontWeight: 600, color: '#1A1F2E' }}>{r.reviewer_name}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

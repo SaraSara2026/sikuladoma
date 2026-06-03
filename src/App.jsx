@@ -27,6 +27,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 import SikuloveListPage from "./pages/SikuloveListPage.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
 import PageMeta from "./components/PageMeta.jsx";
+import FAQPage from "./pages/FAQPage.jsx";
 
 // Modaly
 import OrderForm  from "./modals/OrderForm.jsx";
@@ -62,6 +63,7 @@ const PAGE_META = {
   'verify-email':       { title: 'Ověření e-mailu',     description: null, noindex: true },
   'forgot-password':    { title: 'Zapomenuté heslo',    description: null, noindex: true },
   'reset-password':     { title: 'Reset hesla',         description: null, noindex: true },
+  faq:                  { title: 'Často kladené dotazy', description: 'Odpovědi na nejčastější otázky pro zákazníky i šikuly.' },
 };
 
 // Demo šikula pro testovací login bez DB záznamu (zachováno z původního App.jsx).
@@ -186,6 +188,7 @@ export default function App() {
         onKontakt={() => { setPage("kontakt"); window.scrollTo(0,0); }}
         onSikuly={() => { setPage("sikuly"); window.scrollTo(0,0); }}
         onSikulove={() => { setPage("sikulove"); window.scrollTo(0,0); }}
+        onFAQ={() => { setPage("faq"); window.scrollTo(0,0); }}
         onPodminkySikuly={() => { setPage("podminky-sikuly"); window.scrollTo(0,0); }}
         onPodporaSikuly={() => { setPage("podpora-sikuly"); window.scrollTo(0,0); }}
         sikulaUser={sikulaUser}
@@ -232,6 +235,11 @@ export default function App() {
         <SikuloveListPage
           onBack={() => { setPage("home"); window.scrollTo(0,0); }}
           onProfile={(id) => { setProfileId(String(id)); window.history.replaceState({}, '', `/?sikula=${id}`); }} />
+      ) : page === "faq" ? (
+        <FAQPage
+          onBack={() => { setPage("home"); window.scrollTo(0,0); }}
+          onOrder={() => openOrder()}
+          onReg={() => openReg()} />
       ) : page === "cookies" ? (
         <CookiesPage onBack={() => { setPage("home"); window.scrollTo(0,0); }} />
       ) : page === "gdpr" ? (

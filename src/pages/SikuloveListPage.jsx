@@ -16,17 +16,24 @@ const PLAN_BADGE = {
 export default function SikuloveListPage({ onBack, onProfile, onReg }) {
   const [sikulove, setSikulove] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ category: '', city: '', search: '' });
+  const [filters, setFilters] = useState({ category: '', city: '', search: '', verified: false, profiPlus: false, minRating: 0 });
 
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    usersApi.listSikulove(filters)
+    usersApi.listSikulove({
+      category: filters.category,
+      city: filters.city,
+      search: filters.search,
+      verified: filters.verified,
+      profiPlus: filters.profiPlus,
+      minRating: filters.minRating || undefined,
+    })
       .then(data => { if (alive) setSikulove(data.sikulove || []); })
       .catch(() => { if (alive) setSikulove([]); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [filters.category, filters.city, filters.search]);
+  }, [filters.category, filters.city, filters.search, filters.verified, filters.profiPlus, filters.minRating]);
 
   return (
     <div style={{ minHeight: '100vh', background: T.bg }}>
@@ -58,6 +65,27 @@ export default function SikuloveListPage({ onBack, onProfile, onReg }) {
               style={inpStyle} />
             <input placeholder="Hledat (jméno, popis)" value={filters.search} onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
               style={inpStyle} />
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginTop: 12, alignItems: 'center', fontSize: 13, color: T.ink3 }}>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+              <input type="checkbox" checked={filters.verified} onChange={e => setFilters(f => ({ ...f, verified: e.target.checked }))} />
+              ✓ Jen s ověřeným e-mailem
+            </label>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+              <input type="checkbox" checked={filters.profiPlus} onChange={e => setFilters(f => ({ ...f, profiPlus: e.target.checked }))} />
+              👑 Jen Profi a Top
+            </label>
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+              Min. hodnocení:
+              <select value={filters.minRating} onChange={e => setFilters(f => ({ ...f, minRating: Number(e.target.value) }))}
+                style={{ height: 32, padding: '0 8px', borderRadius: 8, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit' }}>
+                <option value="0">vše</option>
+                <option value="3">3⭐+</option>
+                <option value="4">4⭐+</option>
+                <option value="5">jen 5⭐</option>
+              </select>
+            </label>
           </div>
         </div>
       </div>
@@ -103,9 +131,13 @@ function SikulaCard({ s, onClick }) {
       onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,.04)'; e.currentTarget.style.borderColor = T.border; }}>
 
       <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-        <div style={{ width: 52, height: 52, borderRadius: 14, background: T.orange, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 18, flexShrink: 0, boxShadow: '0 2px 8px rgba(249,115,22,.25)' }}>
-          {initials}
-        </div>
+        {s.avatar ? (
+          <img src={s.avatar} alt={s.name} style={{ width: 52, height: 52, borderRadius: 14, objectFit: 'cover', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,.12)' }} />
+        ) : (
+          <div style={{ width: 52, height: 52, borderRadius: 14, background: T.orange, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 18, flexShrink: 0, boxShadow: '0 2px 8px rgba(249,115,22,.25)' }}>
+            {initials}
+          </div>
+        )}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: T.ink, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</div>
           <div style={{ fontSize: 12, color: T.ink3 }}>📍 {s.city || 'celá ČR'}</div>

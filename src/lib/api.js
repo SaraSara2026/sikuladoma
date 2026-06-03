@@ -77,11 +77,14 @@ export const reviewsApi = {
 // ─── Users (veřejné) ────────────────────────────────────────────────────────
 export const usersApi = {
   publicProfile: (id) => fetch(`/api/users/${id}`, opts()).then(unwrap),
-  listSikulove: ({ category, city, search } = {}) => {
+  listSikulove: ({ category, city, search, verified, profiPlus, minRating } = {}) => {
     const q = new URLSearchParams();
-    if (category) q.set('category', category);
-    if (city)     q.set('city', city);
-    if (search)   q.set('search', search);
+    if (category)  q.set('category', category);
+    if (city)      q.set('city', city);
+    if (search)    q.set('search', search);
+    if (verified)  q.set('verified', '1');
+    if (profiPlus) q.set('profiPlus', '1');
+    if (minRating) q.set('minRating', String(minRating));
     const qs = q.toString();
     return fetch(`/api/users${qs ? '?' + qs : ''}`, opts()).then(unwrap);
   },

@@ -74,7 +74,8 @@ async function updateMe(req, res) {
 
 // ─── List šikulů s filtry ───────────────────────────────────────────────────
 async function getList(req, res) {
-  const { category, city, search } = req.query || {};
+  const { category, city, search, verified, profiPlus, minRating } = req.query || {};
+  const minR = minRating ? Math.max(0, Math.min(5, Number(minRating) || 0)) : null;
 
   const rows = await sql`
     SELECT id, name, avatar, city, plan, verified, rating, jobs_count, bio, services,
@@ -86,6 +87,9 @@ async function getList(req, res) {
       AND (${search ?? null}::text IS NULL
            OR name ILIKE ${search ? `%${search}%` : null}
            OR bio  ILIKE ${search ? `%${search}%` : null})
+      AND (${verified === '1' ? true : null}::boolean IS NULL OR email_verified_at IS NOT NULL)
+      AND (${profiPlus === '1' ? true : null}::boolean IS NULL OR plan IN ('profi','top'))
+      AND (${minR}::numeric IS NULL OR COALESCE(rating, 0) >= ${minR})
     ORDER BY
       CASE plan
         WHEN 'top'   THEN 4

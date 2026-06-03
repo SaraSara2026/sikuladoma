@@ -13,6 +13,14 @@ function noveCislo(pocet) {
   return `FAK-${new Date().getFullYear()}-${String(pocet + 1).padStart(3, '0')}`
 }
 function fKc(n) { return Number(n).toLocaleString('cs-CZ') + ' Kč' }
+// "27. 5. 2026" → "2026-05-27" (pro Postgres DATE)
+function parseCzechDate(s) {
+  if (!s) return null
+  const m = String(s).match(/(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/)
+  if (!m) return s
+  const [, d, mo, y] = m
+  return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`
+}
 
 const EMPTY_PROFIL = { jmeno: '', ico: '', dic: '', adresa: '', platceDph: false }
 
@@ -230,17 +238,44 @@ function FakturaView({ inv, profil, onClose }) {
   )
 }
 
-// ─── Nová faktura ────────────────────────────────────────────────────────────
-function NovaFaktura({ profil, pocet, onSave, onClose }) {
-  const [f, setF] = useState({ sluzba:'', castka:'', zakaznik:'', zakaznikAdresa:'', zakaznikIco:'', datumPlneni:dnes(), poznamka:'' })
+// ─── Nová / upravit fakturu ──────────────────────────────────────────────────
+function NovaFaktura({ profil, pocet, editing, onSave, onClose }) {
+  const isEdit = !!editing
+  const [f, setF] = useState(editing ? {
+    sluzba: editing.sluzba || editing.title || '',
+    castka: editing.castka || editing.amount || '',
+    zakaznik: editing.zakaznik || editing.customer || '',
+    zakaznikAdresa: editing.zakaznikAdresa || '',
+    zakaznikIco: editing.zakaznikIco || '',
+    datumPlneni: editing.datumPlneni || editing.created || dnes(),
+    poznamka: editing.poznamka || '',
+  } : { sluzba:'', castka:'', zakaznik:'', zakaznikAdresa:'', zakaznikIco:'', datumPlneni:dnes(), poznamka:'' })
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState(null)
   const u = (k,v) => setF(p=>({...p,[k]:v}))
   const ok = f.sluzba && f.castka && f.zakaznik
+
+  const submit = async () => {
+    if (!ok || saving) return
+    setSaving(true); setErr(null)
+    try {
+      if (isEdit) {
+        await onSave({ id: editing.id, ...f, castka: Number(f.castka) })
+      } else {
+        await onSave({ id: noveCislo(pocet), ...f, castka: Number(f.castka), datumVystaveni: dnes(), splatnost: plusDni(14), status: 'draft' })
+      }
+    } catch (e) {
+      setErr(e.message || 'Něco se pokazilo.')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div style={OV} onClick={onClose}>
       <div style={{ ...MOD, maxWidth:500 }} onClick={e=>e.stopPropagation()}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'16px 20px', borderBottom:'1px solid #E5E7EB' }}>
-          <div style={{ fontWeight:700, fontSize:16, color:'#1A1F2E' }}>Nová faktura</div>
+          <div style={{ fontWeight:700, fontSize:16, color:'#1A1F2E' }}>{isEdit ? `Upravit ${editing.id}` : 'Nová faktura'}</div>
           <button style={BC} onClick={onClose}>✕</button>
         </div>
         <div style={{ padding:'18px 20px', display:'flex', flexDirection:'column', gap:13 }}>
@@ -267,13 +302,13 @@ function NovaFaktura({ profil, pocet, onSave, onClose }) {
           </div>
           <div><label style={LB}>Datum plnění</label><input style={IN} type="date" value={f.datumPlneni.split('.').reverse().join('-')} onChange={e=>{ const[y,m,d]=e.target.value.split('-'); u('datumPlneni',`${d}.${m}.${y}`) }} /></div>
           <div><label style={LB}>Poznámka</label><textarea style={{ ...IN, minHeight:60, resize:'vertical' }} value={f.poznamka} onChange={e=>u('poznamka',e.target.value)} placeholder="Platba převodem…" /></div>
+          {err && <div style={{ padding:'9px 12px', background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:8, fontSize:12, color:'#B91C1C' }}>{err}</div>}
         </div>
         <div style={{ padding:'12px 20px', borderTop:'1px solid #E5E7EB', display:'flex', justifyContent:'flex-end', gap:8 }}>
           <button style={BG} onClick={onClose}>Zrušit</button>
-          <button style={{ ...BP, opacity:ok?1:.45, cursor:ok?'pointer':'not-allowed' }} onClick={()=>{
-            if(!ok) return
-            onSave({ id:noveCislo(pocet), ...f, castka:Number(f.castka), datumVystaveni:dnes(), splatnost:plusDni(14), status:'draft' })
-          }}>Vystavit fakturu ✓</button>
+          <button style={{ ...BP, opacity:(ok&&!saving)?1:.45, cursor:(ok&&!saving)?'pointer':'not-allowed' }} onClick={submit}>
+            {saving ? 'Ukládám…' : (isEdit ? 'Uložit změny ✓' : 'Vystavit fakturu ✓')}
+          </button>
         </div>
       </div>
     </div>
@@ -351,6 +386,77 @@ export default function InvoicePage() {
   const [showNova, setShowNova] = useState(false)
   const [showProfil, setShowProfil] = useState(false)
   const [nahled, setNahled] = useState(null)
+  const [editing, setEditing] = useState(null)  // faktura která se právě edituje (null = nová)
+
+  // POST nové faktury do DB
+  const saveInvoice = async (inv) => {
+    const res = await fetch('/api/invoices', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: inv.id,
+        title: inv.sluzba,
+        amount: inv.castka,
+        customer_name: inv.zakaznik,
+        due_date: parseCzechDate(inv.splatnost),
+      }),
+    })
+    if (!res.ok) throw new Error((await res.json().catch(()=>({}))).error || 'Faktura se nepodařila uložit.')
+    setInvoices(p => [inv, ...p])
+    setShowNova(false)
+    setNahled(inv)
+  }
+
+  // PATCH editace draft faktury
+  const editInvoice = async (inv) => {
+    const res = await fetch(`/api/invoices?id=${encodeURIComponent(inv.id)}`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: inv.sluzba,
+        amount: inv.castka,
+        customer_name: inv.zakaznik,
+      }),
+    })
+    if (!res.ok) throw new Error((await res.json().catch(()=>({}))).error || 'Úprava se nezdařila.')
+    setInvoices(p => p.map(i => i.id === inv.id ? { ...i, ...inv } : i))
+    setEditing(null)
+  }
+
+  // PATCH status change (sent / paid)
+  const changeStatus = async (id, status) => {
+    const before = invoices.find(i => i.id === id)
+    setInvoices(p => p.map(i => i.id === id ? { ...i, status } : i))  // optimistic
+    try {
+      const res = await fetch(`/api/invoices?id=${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      })
+      if (!res.ok) throw new Error('PATCH failed')
+    } catch {
+      setInvoices(p => p.map(i => i.id === id ? before : i))  // rollback
+      alert('Nepodařilo se změnit stav faktury.')
+    }
+  }
+
+  // DELETE draft
+  const deleteInvoice = async (id) => {
+    if (!confirm(`Opravdu smazat fakturu ${id}?`)) return
+    try {
+      const res = await fetch(`/api/invoices?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      if (!res.ok) throw new Error((await res.json().catch(()=>({}))).error || 'Smazání selhalo.')
+      setInvoices(p => p.filter(i => i.id !== id))
+    } catch (e) {
+      alert(e.message)
+    }
+  }
 
   const zaplaceno = invoices.filter(i=>i.status==='paid').reduce((s,i)=>s+(i.castka||0),0)
   const ceka = invoices.filter(i=>i.status!=='paid').reduce((s,i)=>s+(i.castka||0),0)
@@ -395,16 +501,19 @@ export default function InvoicePage() {
                 {profil.platceDph && <div style={{ fontSize:11, color:'#9CA3AF' }}>základ {fKc(base)}</div>}
               </div>
             </div>
-            <div style={{ display:'flex', gap:7, marginTop:12, paddingTop:12, borderTop:'1px solid #F3F4F6' }}>
+            <div style={{ display:'flex', gap:7, marginTop:12, paddingTop:12, borderTop:'1px solid #F3F4F6', flexWrap:'wrap' }}>
               <button style={BS} onClick={()=>setNahled(inv)}>👁 Náhled / PDF</button>
-              {inv.status==='draft' && <button style={{ ...BS, background:'#EFF6FF', color:'#1D4ED8', border:'1px solid #BFDBFE' }} onClick={()=>setInvoices(p=>p.map(i=>i.id===inv.id?{...i,status:'sent'}:i))}>✉ Odeslat zákazníkovi</button>}
-              {inv.status==='sent' && <button style={{ ...BS, background:'#F0FDF4', color:'#16A34A', border:'1px solid #BBF7D0' }} onClick={()=>setInvoices(p=>p.map(i=>i.id===inv.id?{...i,status:'paid'}:i))}>✓ Zaplaceno</button>}
+              {inv.status==='draft' && <button style={{ ...BS, background:'#FFF7ED', color:'#C2410C', border:'1px solid #FED7AA' }} onClick={()=>setEditing(inv)}>✎ Upravit</button>}
+              {inv.status==='draft' && <button style={{ ...BS, background:'#EFF6FF', color:'#1D4ED8', border:'1px solid #BFDBFE' }} onClick={()=>changeStatus(inv.id,'sent')}>✉ Odeslat zákazníkovi</button>}
+              {inv.status==='sent' && <button style={{ ...BS, background:'#F0FDF4', color:'#16A34A', border:'1px solid #BBF7D0' }} onClick={()=>changeStatus(inv.id,'paid')}>✓ Zaplaceno</button>}
+              {inv.status==='draft' && <button style={{ ...BS, background:'#FEF2F2', color:'#B91C1C', border:'1px solid #FECACA' }} onClick={()=>deleteInvoice(inv.id)}>🗑 Smazat</button>}
             </div>
           </div>
         )
       })}
 
-      {showNova && <NovaFaktura profil={profil} pocet={invoices.length} onSave={inv=>{ setInvoices(p=>[inv,...p]); setShowNova(false); setNahled(inv) }} onClose={()=>setShowNova(false)} />}
+      {showNova && <NovaFaktura profil={profil} pocet={invoices.length} onSave={saveInvoice} onClose={()=>setShowNova(false)} />}
+      {editing && <NovaFaktura profil={profil} editing={editing} onSave={editInvoice} onClose={()=>setEditing(null)} />}
       {showProfil && <ProfilModal profil={profil} onSave={setProfil} onClose={()=>setShowProfil(false)} />}
       {nahled && <FakturaView inv={nahled} profil={profil} onClose={()=>setNahled(null)} />}
     </div>

@@ -201,11 +201,25 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
   }, [currentUser?.id])
 
   const saveProfile = async () => {
-    setProfileSaving(true)
     setProfileMsg(null)
+    // Client-side validace — celé jméno povinné
+    const trimmedName = (profileForm.name || '').trim()
+    if (!trimmedName) {
+      setProfileMsg({ type: 'error', text: 'Zadej jméno.' })
+      return
+    }
+    if (!/^\S+\s+\S+/.test(trimmedName)) {
+      setProfileMsg({ type: 'error', text: 'Zadej celé jméno (jméno i příjmení).' })
+      return
+    }
+    if (profileForm.services.length === 0) {
+      setProfileMsg({ type: 'error', text: 'Vyber alespoň jednu službu, kterou nabízíš.' })
+      return
+    }
+    setProfileSaving(true)
     try {
       const { user } = await usersApi.updateMe({
-        name: profileForm.name,
+        name: trimmedName,
         bio: profileForm.bio,
         ico: profileForm.ico,
         phone: profileForm.phone,
