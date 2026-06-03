@@ -285,8 +285,8 @@ export default function App() {
         </div>
 
         <div style={{ position: "relative", maxWidth: 960, margin: "0 auto" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#EFF6FF", border: "1px solid #BFDBFE", color: "#1D4ED8", borderRadius: 999, padding: "5px 16px 5px 10px", fontSize: 13, fontWeight: 500, marginBottom: 24, letterSpacing: "-.01em" }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E", display: "inline-block", boxShadow: "0 0 0 3px rgba(34,197,94,.2)" }} />
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 10, background: "#EFF6FF", border: "1px solid #BFDBFE", color: "#1D4ED8", borderRadius: 999, padding: "8px 20px 8px 14px", fontSize: 15, fontWeight: 600, marginBottom: 28, letterSpacing: "-.01em" }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22C55E", display: "inline-block", boxShadow: "0 0 0 4px rgba(34,197,94,.2)" }} />
             Šikulové dostupní v celé ČR
           </div>
 
