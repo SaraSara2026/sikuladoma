@@ -36,7 +36,7 @@ import LoginModal from "./modals/LoginModal.jsx";
 
 // UI
 import { T } from "./ui/theme";
-import { BtnPrimary, BtnSecondary } from "./ui/Button";
+import { BtnPrimary, BtnSecondary, BtnBlue } from "./ui/Button";
 import { IcSearch, IcArrow, IcShield, IcStar, IcCheck, IcGlobe } from "./ui/icons/UIIcons";
 
 // Data (jen pro homepage tile grid)
@@ -336,9 +336,9 @@ export default function App() {
             <BtnPrimary size="lg" onClick={() => openOrder()}>
               Zadat poptávku zdarma <IcArrow />
             </BtnPrimary>
-            <BtnSecondary size="lg" onClick={() => { setPage("sikuly"); window.scrollTo(0, 0); }}>
+            <BtnBlue size="lg" onClick={() => { setPage("sikuly"); window.scrollTo(0, 0); }}>
               Chci vydělávat jako šikula
-            </BtnSecondary>
+            </BtnBlue>
           </div>
 
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 4, flexWrap: "wrap", rowGap: 8 }}>
