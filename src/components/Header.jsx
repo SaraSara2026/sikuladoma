@@ -91,9 +91,9 @@ export default function Header({ T, BtnPrimary, onHome, onScrollTo, onOrder, onL
           ) : (
             <button
               onClick={onLogin}
-              style={{ background: "#fff", border: `1.5px solid ${T.border}`, borderRadius: 10, cursor: "pointer", fontSize: 14, fontWeight: 600, color: T.ink, padding: "8px 18px", transition: "all .14s", fontFamily: "inherit" }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = T.orange; e.currentTarget.style.color = T.orange; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.ink; }}
+              style={{ background: T.orange, border: "none", borderRadius: 10, cursor: "pointer", fontSize: 14, fontWeight: 700, color: "#fff", padding: "9px 22px", transition: "all .14s", fontFamily: "inherit", boxShadow: "0 2px 8px rgba(249,115,22,.3)" }}
+              onMouseEnter={e => { e.currentTarget.style.background = T.orangeDk || "#EA580C"; e.currentTarget.style.boxShadow = "0 4px 12px rgba(249,115,22,.4)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = T.orange; e.currentTarget.style.boxShadow = "0 2px 8px rgba(249,115,22,.3)"; }}
             >
               Přihlášení
             </button>
