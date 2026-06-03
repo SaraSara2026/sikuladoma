@@ -17,23 +17,28 @@ const PLAN_BADGE = {
 export default function SikuloveListPage({ onBack, onProfile, onReg, onOrder }) {
   const [sikulove, setSikulove] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ category: '', city: '', verified: false, profiPlus: false, minRating: 0 });
+  const initial = { category: '', city: '', verified: false, profiPlus: false, minRating: 0 };
+  const [filters, setFilters] = useState(initial);            // co uživatel vyplňuje
+  const [appliedFilters, setApplied] = useState(initial);      // co je aplikováno (po kliku Hledej)
 
   useEffect(() => {
     let alive = true;
     setLoading(true);
     usersApi.listSikulove({
-      category: filters.category,
-      city: filters.city,
-      verified: filters.verified,
-      profiPlus: filters.profiPlus,
-      minRating: filters.minRating || undefined,
+      category: appliedFilters.category,
+      city: appliedFilters.city,
+      verified: appliedFilters.verified,
+      profiPlus: appliedFilters.profiPlus,
+      minRating: appliedFilters.minRating || undefined,
     })
       .then(data => { if (alive) setSikulove(data.sikulove || []); })
       .catch(() => { if (alive) setSikulove([]); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [filters.category, filters.city, filters.verified, filters.profiPlus, filters.minRating]);
+  }, [appliedFilters]);
+
+  const search = () => setApplied(filters);
+  const reset = () => { setFilters(initial); setApplied(initial); };
 
   return (
     <div style={{ minHeight: '100vh', background: T.bg }}>
@@ -55,14 +60,20 @@ export default function SikuloveListPage({ onBack, onProfile, onReg, onOrder }) 
           </p>
 
           {/* FILTERS */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10, marginTop: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr)) auto', gap: 10, marginTop: 8, alignItems: 'stretch' }}>
             <select value={filters.category} onChange={e => setFilters(f => ({ ...f, category: e.target.value }))}
+              onKeyDown={e => e.key === 'Enter' && search()}
               style={selStyle}>
               <option value="">Všechny kategorie</option>
               {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
             </select>
             <input placeholder="Město (např. Praha)" value={filters.city} onChange={e => setFilters(f => ({ ...f, city: e.target.value }))}
+              onKeyDown={e => e.key === 'Enter' && search()}
               style={inpStyle} />
+            <button onClick={search}
+              style={{ height: 42, padding: '0 28px', borderRadius: 10, border: 'none', background: T.orange, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', boxShadow: '0 2px 8px rgba(249,115,22,.3)' }}>
+              🔍 Hledej
+            </button>
           </div>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginTop: 12, alignItems: 'center', fontSize: 13, color: T.ink3 }}>
