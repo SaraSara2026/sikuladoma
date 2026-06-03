@@ -16,7 +16,7 @@ import { CATEGORIES, SUBCATEGORIES, OTHER, CAT_COLORS } from "../lib/categories"
 const STEP_LABELS = ["Kategorie", "Služba", "Upřesnění", "Místo", "Čas", "Kontakt"];
 const TOTAL = 6;
 
-export default function OrderForm({ initialService, initialCategory, initialCity, onClose }) {
+export default function OrderForm({ initialService, initialCategory, initialCity, onClose, onHome }) {
   const initCat = initialService
     ? CATEGORIES.find(c => c.id === initialService.id) || null
     : initialCategory
@@ -131,7 +131,7 @@ export default function OrderForm({ initialService, initialCategory, initialCity
             ))}
           </div>
           <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-            <button onClick={onClose}
+            <button onClick={() => { onClose(); onHome?.(); }}
               style={{ height: 42, padding: "0 22px", borderRadius: 10, border: "none", background: T.orange, color: "#fff", fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
               Zpět na úvod
             </button>

@@ -61,9 +61,10 @@ async function createOrder(req, res) {
   if (!EMAIL_RE.test(customer_email))                return res.status(400).json({ error: 'Zadejte platný e-mail.' });
 
   // Anonymní poptávka: vytvoř customer účet + pošli email s nastavením hesla.
-  // Pokud už účet s tímto e-mailem existuje, použij ho.
+  // Pokud už účet s tímto e-mailem existuje, použij ho a pošli mu reset link
+  // (pomůže obnovit přístup, pokud zapomněl heslo).
   let customerId = me?.id || null;
-  let createdNewAccount = false;
+  const isAnonymous = !me;
   if (!customerId) {
     const [existing] = await sql`SELECT id FROM users WHERE email = ${customer_email}`;
     if (existing) {
@@ -77,7 +78,6 @@ async function createOrder(req, res) {
         RETURNING id
       `;
       customerId = newUser.id;
-      createdNewAccount = true;
     }
   }
 
@@ -94,10 +94,12 @@ async function createOrder(req, res) {
     RETURNING *
   `;
 
-  // Pokud byl vytvořen nový účet, pošli mu reset-password token aby si nastavil heslo.
+  // Anonymní poptávka → pošli reset-password email pro nastavení / obnovu hesla.
   // Selhání emailu nesmí zrušit poptávku — uživatel ji už má v DB.
-  if (createdNewAccount) {
+  if (isAnonymous) {
     try {
+      // Smaž stará nepoužitá tokeny aby měl jen nejnovější
+      await sql`DELETE FROM password_resets WHERE user_id = ${customerId} AND used_at IS NULL`;
       const token = genToken();
       const expires = new Date(Date.now() + RESET_TOKEN_TTL_MS);
       await sql`
@@ -110,7 +112,7 @@ async function createOrder(req, res) {
     }
   }
 
-  return res.status(201).json({ order: row, accountCreated: createdNewAccount });
+  return res.status(201).json({ order: row, emailSent: isAnonymous });
 }
 
 async function listOrders(req, res) {
