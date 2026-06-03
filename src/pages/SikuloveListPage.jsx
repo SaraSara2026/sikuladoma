@@ -16,7 +16,7 @@ const PLAN_BADGE = {
 export default function SikuloveListPage({ onBack, onProfile, onReg }) {
   const [sikulove, setSikulove] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({ category: '', city: '', search: '', verified: false, profiPlus: false, minRating: 0 });
+  const [filters, setFilters] = useState({ category: '', city: '', verified: false, profiPlus: false, minRating: 0 });
 
   useEffect(() => {
     let alive = true;
@@ -24,7 +24,6 @@ export default function SikuloveListPage({ onBack, onProfile, onReg }) {
     usersApi.listSikulove({
       category: filters.category,
       city: filters.city,
-      search: filters.search,
       verified: filters.verified,
       profiPlus: filters.profiPlus,
       minRating: filters.minRating || undefined,
@@ -33,7 +32,7 @@ export default function SikuloveListPage({ onBack, onProfile, onReg }) {
       .catch(() => { if (alive) setSikulove([]); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [filters.category, filters.city, filters.search, filters.verified, filters.profiPlus, filters.minRating]);
+  }, [filters.category, filters.city, filters.verified, filters.profiPlus, filters.minRating]);
 
   return (
     <div style={{ minHeight: '100vh', background: T.bg }}>
@@ -50,8 +49,8 @@ export default function SikuloveListPage({ onBack, onProfile, onReg }) {
           <h1 style={{ fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 800, color: T.ink, letterSpacing: '-.03em', marginBottom: 8 }}>
             Šikulové, kterým můžeš věřit
           </h1>
-          <p style={{ fontSize: 15, color: T.ink3, marginBottom: 24, maxWidth: 560 }}>
-            Procházej ověřené šikuly podle kategorie a oblasti. Klikni na profil — uvidíš recenze, plán a kontakt.
+          <p style={{ fontSize: 15, color: T.ink3, marginBottom: 24, maxWidth: 620, lineHeight: 1.6 }}>
+            Procházej ověřené šikuly podle kategorie a oblasti — uvidíš jejich recenze, hodnocení a co nabízejí. Zaujal tě někdo? <strong>Zadej poptávku</strong> a šikulové z okolí (včetně toho vybraného) ti pošlou nabídky.
           </p>
 
           {/* FILTERS */}
@@ -62,8 +61,6 @@ export default function SikuloveListPage({ onBack, onProfile, onReg }) {
               {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
             </select>
             <input placeholder="Město (např. Praha)" value={filters.city} onChange={e => setFilters(f => ({ ...f, city: e.target.value }))}
-              style={inpStyle} />
-            <input placeholder="Hledat (jméno, popis)" value={filters.search} onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
               style={inpStyle} />
           </div>
 
