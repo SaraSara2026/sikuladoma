@@ -4,8 +4,10 @@ import Icon from '../../components/Icon'
 import InvoicePage from '../InvoicePage'
 import PricingPage from '../PricingPage'
 import ChatPage from '../ChatPage'
-import { ordersApi, offersApi, reviewsApi } from '../../lib/api'
+import { ordersApi, offersApi, reviewsApi, usersApi } from '../../lib/api'
 import VerificationBanner from '../../components/VerificationBanner'
+import AvatarUpload from '../../components/AvatarUpload'
+import { SERVICES } from '../../lib/categories'
 
 // Mapování id kategorie → emoji ikona (pro hezké zobrazení v dashboardu).
 const CAT_ICON = Object.fromEntries(CATEGORIES.map(c => [c.id, c.icon]))
@@ -173,10 +175,59 @@ function CalendarSection() {
   )
 }
 
-export default function SikulaDashboard({ currentUser, onNav, onLogout }) {
+export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdateUser }) {
   const [activePage, setActivePage] = useState('overview')
   const [available, setAvailable] = useState(true)
   const [stripeMsg, setStripeMsg] = useState(null)   // { type: 'success'|'cancel', plan? }
+
+  // Profil edit state
+  const [profileForm, setProfileForm] = useState({
+    name: '', bio: '', ico: '', phone: '', city: '', hourly_rate: '', services: [], avatar: '',
+  })
+  const [profileSaving, setProfileSaving] = useState(false)
+  const [profileMsg, setProfileMsg] = useState(null)
+  useEffect(() => {
+    if (!currentUser) return
+    setProfileForm({
+      name: currentUser.name || '',
+      bio: currentUser.bio || '',
+      ico: currentUser.ico || '',
+      phone: currentUser.phone || '',
+      city: currentUser.city || '',
+      hourly_rate: currentUser.hourly_rate ?? '',
+      services: currentUser.services || [],
+      avatar: currentUser.avatar || '',
+    })
+  }, [currentUser?.id])
+
+  const saveProfile = async () => {
+    setProfileSaving(true)
+    setProfileMsg(null)
+    try {
+      const { user } = await usersApi.updateMe({
+        name: profileForm.name,
+        bio: profileForm.bio,
+        ico: profileForm.ico,
+        phone: profileForm.phone,
+        city: profileForm.city,
+        hourly_rate: profileForm.hourly_rate === '' ? null : Number(profileForm.hourly_rate),
+        services: profileForm.services,
+        avatar: profileForm.avatar,
+      })
+      onUpdateUser?.(user)
+      setProfileMsg({ type: 'success', text: 'Profil uložen ✓' })
+      setTimeout(() => setProfileMsg(null), 3000)
+    } catch (e) {
+      setProfileMsg({ type: 'error', text: e.message || 'Nepodařilo se uložit.' })
+    } finally {
+      setProfileSaving(false)
+    }
+  }
+
+  const toggleService = (id) => setProfileForm(p => ({
+    ...p,
+    services: p.services.includes(id) ? p.services.filter(s => s !== id) : [...p.services, id],
+  }))
   const { orders, loading: ordersLoading, error: ordersError } = useOpenOrders()
   const { offers: myOffers, reload: reloadMyOffers } = useMyOffers()
   const { reviews: myReviews, summary: reviewsSummary, loading: reviewsLoading } = useMyReviews(currentUser?.id)
@@ -546,12 +597,16 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout }) {
             <div className="dash-title" style={{ marginBottom: 24 }}>Profil šikuly</div>
             <div className="card" style={{ marginBottom: 16 }}>
               <div className="profile-hero">
-                <div className="profile-avatar-big">{avatar}</div>
+                <AvatarUpload
+                  currentSrc={profileForm.avatar}
+                  name={profileForm.name || currentUser?.name}
+                  onChange={src => setProfileForm(p => ({ ...p, avatar: src }))}
+                />
                 <div className="profile-info">
-                  <h2>{currentUser?.name}</h2>
-                  <p>📍 {currentUser?.city || '—'}</p>
+                  <h2>{profileForm.name || '—'}</h2>
+                  <p>📍 {profileForm.city || '—'}</p>
                   <div className="profile-badges">
-                    {currentUser?.verified && <span className="badge badge-green">✓ Ověřený šikula</span>}
+                    {currentUser?.email_verified_at && <span className="badge badge-green">✓ Ověřený e-mail</span>}
                     {currentUser?.plan && <span className="badge badge-blue">👑 {currentUser.plan}</span>}
                     {currentUser?.rating && <span className="badge badge-orange">⭐ {currentUser.rating} ({jobsCount} recenzí)</span>}
                   </div>
@@ -559,20 +614,69 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout }) {
               </div>
               <div style={{ padding: 24 }}>
                 <div className="form-group">
+                  <label className="form-label">Jméno a příjmení</label>
+                  <input className="form-input" value={profileForm.name}
+                    onChange={e => setProfileForm(p => ({ ...p, name: e.target.value }))}
+                    placeholder="Jan Novák" />
+                </div>
+                <div className="form-group">
                   <label className="form-label">Bio / Představení</label>
-                  <textarea className="form-textarea" defaultValue={currentUser?.bio || ''} placeholder="Napiš pár vět o sobě, své praxi a tom co děláš..." />
+                  <textarea className="form-textarea" value={profileForm.bio}
+                    onChange={e => setProfileForm(p => ({ ...p, bio: e.target.value }))}
+                    placeholder="Napiš pár vět o sobě, své praxi a tom co děláš..." />
                 </div>
                 <div className="form-group">
                   <label className="form-label">Moje služby</label>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
-                    {(currentUser?.services ?? []).map(s => <span key={s} className="pill-tag">{s}</span>)}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
+                    {SERVICES.map(s => {
+                      const sel = profileForm.services.includes(s.id)
+                      return (
+                        <button key={s.id} type="button" onClick={() => toggleService(s.id)}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+                            borderRadius: 8, border: `1.5px solid ${sel ? '#0EA5A4' : 'var(--border)'}`,
+                            background: sel ? '#F0FDFA' : '#fff', cursor: 'pointer',
+                            fontSize: 12, fontWeight: 600, color: sel ? '#0F766E' : 'var(--text2)',
+                            transition: 'all .14s', fontFamily: 'inherit',
+                          }}>
+                          {s.label}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
                 <div className="form-row">
-                  <div className="form-group"><label className="form-label">IČO</label><input className="form-input" defaultValue={currentUser?.ico || ''} placeholder="12345678" /></div>
-                  <div className="form-group"><label className="form-label">Hodinová sazba</label><input className="form-input" defaultValue={currentUser?.hourly_rate || ''} placeholder="350 Kč" /></div>
+                  <div className="form-group"><label className="form-label">IČO</label>
+                    <input className="form-input" value={profileForm.ico}
+                      onChange={e => setProfileForm(p => ({ ...p, ico: e.target.value }))}
+                      placeholder="12345678" /></div>
+                  <div className="form-group"><label className="form-label">Hodinová sazba (Kč)</label>
+                    <input className="form-input" type="number" min="0" value={profileForm.hourly_rate}
+                      onChange={e => setProfileForm(p => ({ ...p, hourly_rate: e.target.value }))}
+                      placeholder="350" /></div>
                 </div>
-                <button className="btn btn-primary">Uložit změny</button>
+                <div className="form-row">
+                  <div className="form-group"><label className="form-label">Telefon</label>
+                    <input className="form-input" value={profileForm.phone}
+                      onChange={e => setProfileForm(p => ({ ...p, phone: e.target.value }))}
+                      placeholder="+420 777 123 456" /></div>
+                  <div className="form-group"><label className="form-label">Město / oblast</label>
+                    <input className="form-input" value={profileForm.city}
+                      onChange={e => setProfileForm(p => ({ ...p, city: e.target.value }))}
+                      placeholder="Praha a okolí" /></div>
+                </div>
+                {profileMsg && (
+                  <div style={{ marginBottom: 12, padding: '10px 14px', borderRadius: 10,
+                    background: profileMsg.type === 'success' ? '#F0FDF4' : '#FEF2F2',
+                    border: `1px solid ${profileMsg.type === 'success' ? '#BBF7D0' : '#FECACA'}`,
+                    color: profileMsg.type === 'success' ? '#166534' : '#B91C1C',
+                    fontSize: 13 }}>
+                    {profileMsg.text}
+                  </div>
+                )}
+                <button className="btn btn-primary" onClick={saveProfile} disabled={profileSaving}>
+                  {profileSaving ? 'Ukládám…' : 'Uložit změny'}
+                </button>
               </div>
             </div>
           </div>

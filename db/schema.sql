@@ -197,6 +197,11 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_expires_at        TIMESTAMPTZ;
 
 -- ============================================================
+-- PROFIL ŠIKULY — rozšíření
+-- ============================================================
+ALTER TABLE users ADD COLUMN IF NOT EXISTS hourly_rate INTEGER;
+
+-- ============================================================
 -- EMAIL VERIFIKACE + RESET HESLA
 -- ============================================================
 ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ;

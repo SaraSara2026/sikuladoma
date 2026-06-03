@@ -85,6 +85,9 @@ export const usersApi = {
     const qs = q.toString();
     return fetch(`/api/users${qs ? '?' + qs : ''}`, opts()).then(unwrap);
   },
+  updateMe: (patch) => fetch('/api/users/me', opts({
+    method: 'PATCH', headers: json, body: JSON.stringify(patch),
+  })).then(unwrap),
 };
 
 // ─── Admin ──────────────────────────────────────────────────────────────────

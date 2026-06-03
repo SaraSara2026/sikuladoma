@@ -25,6 +25,8 @@ import VerifyEmailPage from "./pages/VerifyEmailPage.jsx";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 import SikuloveListPage from "./pages/SikuloveListPage.jsx";
+import NotFoundPage from "./pages/NotFoundPage.jsx";
+import PageMeta from "./components/PageMeta.jsx";
 
 // Modaly
 import OrderForm  from "./modals/OrderForm.jsx";
@@ -38,6 +40,29 @@ import { IcSearch, IcArrow, IcShield, IcStar, IcCheck, IcGlobe } from "./ui/icon
 
 // Data (jen pro homepage tile grid)
 import { SERVICES } from "./lib/categories";
+
+// SEO metadata pro každou hlavní route. Klíče = hodnoty `page` state.
+const PAGE_META = {
+  home:              { title: null, description: null }, // default z index.html
+  sikulove:          { title: 'Šikulové v ČR',          description: 'Procházej ověřené šikuly podle kategorie a oblasti. Recenze, plán, kontakt.' },
+  kontakt:           { title: 'Kontakt',                description: 'Napiš nám — odpovídáme do 24 hodin. ŠikulaDoma, Stavira s.r.o.' },
+  sikuly:            { title: 'Chci vydělávat jako šikula', description: 'Registruj se zdarma a začni dostávat poptávky z okolí.' },
+  'pro-sikuly':      { title: 'Pro šikuly',             description: 'Vše co potřebuješ jako šikula — tarify, jak to funguje, často kladené dotazy.' },
+  faktury:           { title: 'Fakturace',              description: 'Vytvoř fakturu do 60 sekund — splňuje právní požadavky ČR.', noindex: true },
+  dashboard:         { title: 'Můj dashboard',          description: null, noindex: true },
+  chat:              { title: 'Zprávy',                 description: null, noindex: true },
+  'order-detail':    { title: 'Detail poptávky',        description: null, noindex: true },
+  'send-offer':      { title: 'Poslat nabídku',         description: null, noindex: true },
+  cookies:           { title: 'Cookies',                description: 'Jak používáme cookies na ŠikulaDoma.' },
+  gdpr:              { title: 'GDPR',                   description: 'Zásady ochrany osobních údajů.' },
+  'ochrana-soukromi':   { title: 'Ochrana soukromí',    description: null },
+  'podminky-pouziti':   { title: 'Podmínky používání',  description: null },
+  'podminky-sikuly':    { title: 'Podmínky pro šikuly', description: null },
+  'podpora-sikuly':     { title: 'Podpora pro šikuly',  description: null },
+  'verify-email':       { title: 'Ověření e-mailu',     description: null, noindex: true },
+  'forgot-password':    { title: 'Zapomenuté heslo',    description: null, noindex: true },
+  'reset-password':     { title: 'Reset hesla',         description: null, noindex: true },
+};
 
 // Demo šikula pro testovací login bez DB záznamu (zachováno z původního App.jsx).
 const DEMO_SIKULA = {
@@ -59,9 +84,13 @@ export default function App() {
     try {
       const p = new URL(window.location.href).searchParams.get('page');
       if (p === 'verify-email' || p === 'reset-password' || p === 'forgot-password') return p;
+      if (p === 'sikulove' || p === 'kontakt' || p === 'sikuly' || p === 'pricing') return p;
     } catch {}
     return "home";
   });
+
+  // SEO: per-route title + description
+  const meta = PAGE_META[page] || PAGE_META.home;
   const [orderForm,   setOrderForm]    = useState(null);
   const [regForm,     setRegForm]      = useState(null);
   const [loginModal,  setLoginModal]   = useState(false);
@@ -104,6 +133,13 @@ export default function App() {
     setPage("dashboard");
     window.scrollTo(0, 0);
   };
+
+  // Update přihlášeného uživatele (po PATCH /api/users/me) bez změny page.
+  const updateSikula = (user) => {
+    if (!user) return;
+    try { localStorage.setItem("sd_user", JSON.stringify(user)); } catch {}
+    setSikulaUser(user);
+  };
   const logoutSikula = () => {
     try { localStorage.removeItem("sd_user"); } catch {}
     setSikulaUser(null);
@@ -117,6 +153,7 @@ export default function App() {
 
   return (
     <>
+      <PageMeta title={meta.title} description={meta.description} noindex={meta.noindex} />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -172,7 +209,7 @@ export default function App() {
           ? <AdminDashboard     currentUser={sikulaUser} onLogout={logoutSikula} />
           : sikulaUser?.role === "customer"
             ? <CustomerDashboard currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} />
-            : <SikulaDashboard   currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} />
+            : <SikulaDashboard   currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} onUpdateUser={updateSikula} />
       ) : page === "send-offer" ? (
         <SendOfferPage order={currentOrder} onNav={handleNav} onSend={() => { setCurrentOrder(null); }} />
       ) : page === "order-detail" ? (

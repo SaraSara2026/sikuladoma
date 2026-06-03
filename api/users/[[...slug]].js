@@ -1,31 +1,75 @@
 // Konsolidovaný users endpoint (Vercel Hobby 12-function limit):
 //
-//   GET /api/users              → veřejný katalog šikulů s filtry
-//   GET /api/users/:id          → veřejný profil + recenze + souhrn
+//   GET   /api/users              → veřejný katalog šikulů s filtry
+//   GET   /api/users/:id          → veřejný profil + recenze + souhrn
+//   PATCH /api/users/me           → update vlastního profilu (vyžaduje auth)
 //
 // Šikulové se řadí: plán priorita (top > profi > plus > start) + rating DESC + jobs DESC.
 // Vrací jen safe pole — bez emailu, telefonu, IČO atd.
 
 import { sql } from '../_db.js';
-
-const PLAN_RANK = { top: 4, profi: 3, plus: 2, start: 1 };
+import { requireUser } from '../_auth.js';
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    res.setHeader('Allow', 'GET');
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
   try {
     const slug = req.query?.slug;
-    const id = Array.isArray(slug) && slug[0] ? Number(slug[0]) : null;
+    const seg = Array.isArray(slug) && slug[0] ? slug[0] : null;
 
+    // PATCH /api/users/me
+    if (req.method === 'PATCH' && seg === 'me') return await updateMe(req, res);
+
+    if (req.method !== 'GET') {
+      res.setHeader('Allow', 'GET, PATCH');
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    const id = seg && /^\d+$/.test(seg) ? Number(seg) : null;
     if (id) return await getSingle(id, res);
     return await getList(req, res);
   } catch (err) {
     console.error('[/api/users]', err);
     return res.status(500).json({ error: 'Server error' });
   }
+}
+
+// ─── PATCH /api/users/me ────────────────────────────────────────────────────
+async function updateMe(req, res) {
+  const me = await requireUser(req, res);
+  if (!me) return;
+
+  const b = req.body ?? {};
+  const name = b.name != null ? String(b.name).trim() : null;
+  const bio  = b.bio  != null ? String(b.bio).slice(0, 1000) : null;
+  const ico  = b.ico  != null ? String(b.ico).trim() : null;
+  const phone = b.phone != null ? String(b.phone).trim() : null;
+  const city = b.city != null ? String(b.city).trim() : null;
+  const hourly_rate = b.hourly_rate != null && b.hourly_rate !== ''
+    ? Math.max(0, Math.min(99999, Number(b.hourly_rate) || 0)) : null;
+  const services = Array.isArray(b.services) ? b.services.filter(s => typeof s === 'string').slice(0, 30) : null;
+  const avatar = b.avatar != null ? String(b.avatar).slice(0, 500000) : null;  // base64 do ~500KB
+
+  // Validace jména pokud je posláno
+  if (name !== null && name.length > 0 && !/^\S+\s+\S+/.test(name)) {
+    return res.status(400).json({ error: 'Zadej jméno i příjmení.' });
+  }
+
+  const [row] = await sql`
+    UPDATE users SET
+      name         = COALESCE(${name},   name),
+      bio          = COALESCE(${bio},    bio),
+      ico          = COALESCE(${ico},    ico),
+      phone        = COALESCE(${phone},  phone),
+      city         = COALESCE(${city},   city),
+      hourly_rate  = COALESCE(${hourly_rate}, hourly_rate),
+      services     = COALESCE(${services}, services),
+      avatar       = COALESCE(${avatar}, avatar),
+      updated_at   = NOW()
+    WHERE id = ${me.id}
+    RETURNING id, email, role, name, phone, city, avatar, ico, services, plan,
+              stripe_customer_id, plan_expires_at, verified, email_verified_at,
+              rating, jobs_count, bio, hourly_rate
+  `;
+  return res.status(200).json({ user: row });
 }
 
 // ─── List šikulů s filtry ───────────────────────────────────────────────────
