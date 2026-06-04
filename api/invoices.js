@@ -46,7 +46,7 @@ async function listInvoices(req, res) {
 }
 
 async function createInvoice(req, res) {
-  const me = await requireVerifiedUser(req, res);
+  const me = await requireUser(req, res);
   if (!me) return;
   if (me.role !== 'sikula' && me.role !== 'admin') {
     return res.status(403).json({ error: 'Faktury může vystavovat jen šikula.' });
