@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { INVOICE_STATUS_MAP } from '../data'
 import { useAuth } from '../contexts/AuthContext'
 
 function dnes() {
@@ -23,6 +22,29 @@ function parseCzechDate(s) {
 }
 
 const EMPTY_PROFIL = { jmeno: '', ico: '', dic: '', adresa: '', platceDph: false }
+
+function parseCzechDateToObj(s) {
+  if (!s) return null
+  const m = String(s).match(/(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/)
+  if (!m) return null
+  const [, d, mo, y] = m
+  return new Date(Number(y), Number(mo) - 1, Number(d))
+}
+
+function effectivniStav(inv) {
+  if (inv.status === 'paid') return 'paid'
+  if (inv.status === 'draft') return 'draft'
+  const due = parseCzechDateToObj(inv.splatnost || inv.due)
+  if (due && due < new Date()) return 'late'
+  return 'sent'
+}
+
+const STATUS_STYLE = {
+  paid:  { label: 'Zaplacená',    color: '#16A34A', bg: '#F0FDF4', border: '#BBF7D0' },
+  late:  { label: 'Po splatnosti', color: '#DC2626', bg: '#FEF2F2', border: '#FECACA' },
+  sent:  { label: 'Odesláno',     color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
+  draft: { label: 'Koncept',      color: '#6B7280', bg: '#F9FAFB', border: '#E5E7EB' },
+}
 
 // Inicializuje fakturační profil z přihlášeného uživatele + uloženého localStorage.
 function initProfilFor(user) {
@@ -410,7 +432,8 @@ export default function InvoicePage() {
   const [showNova, setShowNova] = useState(false)
   const [showProfil, setShowProfil] = useState(false)
   const [nahled, setNahled] = useState(null)
-  const [editing, setEditing] = useState(null)  // faktura která se právě edituje (null = nová)
+  const [editing, setEditing] = useState(null)
+  const [filter, setFilter] = useState('all')
 
   // POST nové faktury do DB
   const saveInvoice = async (inv) => {
@@ -504,37 +527,70 @@ export default function InvoicePage() {
         <div className="stat-card"><div className="stat-val">{invoices.length}</div><div className="stat-label">Faktur celkem</div></div>
       </div>
 
-      {invoices.map(inv => {
-        const base = inv.castka || inv.amount || 0
-        const celk = profil.platceDph ? Math.round(base*1.21) : base
-        const st = INVOICE_STATUS_MAP[inv.status] || { label:inv.status, color:'badge-gray' }
-        return (
-          <div key={inv.id} style={{ background:'#fff', border:'1px solid #E5E7EB', borderRadius:14, padding:'16px 18px', marginBottom:10, boxShadow:'0 1px 3px rgba(0,0,0,.04)' }}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
-              <div style={{ flex:1 }}>
-                <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:4 }}>
-                  <span style={{ fontSize:12, fontWeight:700, color:'#9CA3AF' }}>{inv.id}</span>
-                  <span className={`badge ${st.color}`}>{st.label}</span>
-                  {profil.platceDph && <span style={{ fontSize:11, padding:'1px 7px', borderRadius:999, background:'#F0FDF4', color:'#16A34A', fontWeight:600 }}>DPH 21%</span>}
-                </div>
-                <div style={{ fontWeight:700, fontSize:14, color:'#1A1F2E', marginBottom:2 }}>{inv.sluzba||inv.title}</div>
-                <div style={{ fontSize:12, color:'#9CA3AF' }}>{inv.zakaznik||inv.customer} · {inv.datumVystaveni||inv.created} · Splatnost {inv.splatnost||inv.due}</div>
-              </div>
-              <div style={{ textAlign:'right', marginLeft:16 }}>
-                <div style={{ fontWeight:800, fontSize:17, color:inv.status==='paid'?'#22C55E':'#1A1F2E' }}>{fKc(celk)}</div>
-                {profil.platceDph && <div style={{ fontSize:11, color:'#9CA3AF' }}>základ {fKc(base)}</div>}
-              </div>
-            </div>
-            <div style={{ display:'flex', gap:7, marginTop:12, paddingTop:12, borderTop:'1px solid #F3F4F6', flexWrap:'wrap' }}>
-              <button style={BS} onClick={()=>setNahled(inv)}>👁 Náhled / PDF</button>
-              {inv.status==='draft' && <button style={{ ...BS, background:'#FFF7ED', color:'#C2410C', border:'1px solid #FED7AA' }} onClick={()=>setEditing(inv)}>✎ Upravit</button>}
-              {inv.status==='draft' && <button style={{ ...BS, background:'#EFF6FF', color:'#1D4ED8', border:'1px solid #BFDBFE' }} onClick={()=>changeStatus(inv.id,'sent')}>✉ Odeslat zákazníkovi</button>}
-              {inv.status==='sent' && <button style={{ ...BS, background:'#F0FDF4', color:'#16A34A', border:'1px solid #BBF7D0' }} onClick={()=>changeStatus(inv.id,'paid')}>✓ Zaplaceno</button>}
-              {inv.status==='draft' && <button style={{ ...BS, background:'#FEF2F2', color:'#B91C1C', border:'1px solid #FECACA' }} onClick={()=>deleteInvoice(inv.id)}>🗑 Smazat</button>}
-            </div>
-          </div>
-        )
-      })}
+      {/* Filtry */}
+      <div style={{ display:'flex', gap:8, marginBottom:16, flexWrap:'wrap' }}>
+        {[['all','Vše'],['unpaid','Nezaplacené'],['paid','Zaplacené']].map(([k,l]) => (
+          <button key={k} onClick={()=>setFilter(k)} style={{ height:34, padding:'0 14px', borderRadius:8, border:`1.5px solid ${filter===k?'#F07800':'#E5E7EB'}`, background:filter===k?'#FFF7ED':'#fff', color:filter===k?'#F07800':'#6B7280', fontWeight:filter===k?700:500, fontSize:13, cursor:'pointer', fontFamily:'inherit', transition:'all .12s' }}>{l}</button>
+        ))}
+      </div>
+
+      {/* Tabulka */}
+      <div style={{ background:'#fff', border:'1px solid #E5E7EB', borderRadius:14, overflow:'hidden', boxShadow:'0 1px 3px rgba(0,0,0,.04)' }}>
+        <table style={{ width:'100%', borderCollapse:'collapse' }}>
+          <thead>
+            <tr style={{ background:'#F9FAFB', borderBottom:'1px solid #E5E7EB' }}>
+              <th style={TH}>Vystavena</th>
+              <th style={TH}>Číslo faktury</th>
+              <th style={TH}>Stav</th>
+              <th style={TH}>Zákazník</th>
+              <th style={{ ...TH, textAlign:'right' }}>Částka</th>
+              <th style={{ ...TH, textAlign:'right' }}>Akce</th>
+            </tr>
+          </thead>
+          <tbody>
+            {invoices.filter(inv => {
+              if (filter === 'paid') return inv.status === 'paid'
+              if (filter === 'unpaid') return inv.status !== 'paid'
+              return true
+            }).map((inv, idx, arr) => {
+              const base = inv.castka || inv.amount || 0
+              const celk = profil.platceDph ? Math.round(base*1.21) : base
+              const stav = effectivniStav(inv)
+              const st = STATUS_STYLE[stav]
+              return (
+                <tr key={inv.id} style={{ borderBottom: idx < arr.length-1 ? '1px solid #F3F4F6' : 'none', background: stav==='late' ? '#FFF5F5' : '#fff' }}>
+                  <td style={TD}><span style={{ fontSize:13, color:'#6B7280' }}>{inv.datumVystaveni||inv.created||'—'}</span></td>
+                  <td style={TD}><span style={{ fontSize:13, fontWeight:600, color:'#1D4ED8' }}>{inv.id}</span></td>
+                  <td style={TD}>
+                    <div style={{ display:'inline-flex', flexDirection:'column', alignItems:'center' }}>
+                      <span style={{ fontSize:12, fontWeight:700, color:st.color, background:st.bg, border:`1px solid ${st.border}`, borderRadius:6, padding:'2px 8px', whiteSpace:'nowrap' }}>{st.label}</span>
+                      {stav==='paid' && inv.splatnost && <span style={{ fontSize:10, color:'#9CA3AF', marginTop:1 }}>{inv.splatnost}</span>}
+                      {stav==='late' && inv.splatnost && <span style={{ fontSize:10, color:'#DC2626', marginTop:1, textDecoration:'underline dotted' }}>{inv.splatnost}</span>}
+                    </div>
+                  </td>
+                  <td style={TD}><span style={{ fontSize:13, color:'#1A1F2E' }}>{inv.zakaznik||inv.customer||'—'}</span></td>
+                  <td style={{ ...TD, textAlign:'right' }}>
+                    <span style={{ fontSize:14, fontWeight:700, color:stav==='paid'?'#16A34A':'#1A1F2E' }}>{fKc(celk)}</span>
+                    {profil.platceDph && <div style={{ fontSize:11, color:'#9CA3AF' }}>základ {fKc(base)}</div>}
+                  </td>
+                  <td style={{ ...TD, textAlign:'right' }}>
+                    <div style={{ display:'flex', gap:5, justifyContent:'flex-end', flexWrap:'wrap' }}>
+                      <button title="Náhled / PDF" style={BI} onClick={()=>setNahled(inv)}>👁</button>
+                      {inv.status==='draft' && <button title="Upravit" style={BI} onClick={()=>setEditing(inv)}>✎</button>}
+                      {inv.status!=='paid' && <button title="Označit jako zaplaceno" style={{ ...BI, background:'#F0FDF4', color:'#16A34A', border:'1px solid #BBF7D0', fontWeight:700 }} onClick={()=>changeStatus(inv.id,'paid')}>✓ Zaplaceno</button>}
+                      {inv.status==='paid' && <button title="Označit jako nezaplaceno" style={{ ...BI, background:'#FFF7ED', color:'#D97706', border:'1px solid #FDE68A' }} onClick={()=>changeStatus(inv.id,'sent')}>↩ Vrátit</button>}
+                      {inv.status==='draft' && <button title="Smazat" style={{ ...BI, background:'#FEF2F2', color:'#B91C1C', border:'1px solid #FECACA' }} onClick={()=>deleteInvoice(inv.id)}>🗑</button>}
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+            {invoices.filter(inv => filter==='paid'?inv.status==='paid':filter==='unpaid'?inv.status!=='paid':true).length === 0 && (
+              <tr><td colSpan={6} style={{ padding:'32px', textAlign:'center', color:'#9CA3AF', fontSize:13 }}>Žádné faktury</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {showNova && <NovaFaktura profil={profil} pocet={invoices.length} onSave={saveInvoice} onClose={()=>setShowNova(false)} />}
       {editing && <NovaFaktura profil={profil} editing={editing} onSave={editInvoice} onClose={()=>setEditing(null)} />}
@@ -552,3 +608,6 @@ const BP = { display:'inline-flex', alignItems:'center', gap:6, height:38, paddi
 const BG = { display:'inline-flex', alignItems:'center', gap:6, height:38, padding:'0 14px', borderRadius:10, border:'1.5px solid #E5E7EB', background:'transparent', color:'#6B7280', fontWeight:500, fontSize:13, cursor:'pointer', fontFamily:'inherit' }
 const BC = { width:28, height:28, borderRadius:7, border:'none', background:'#F1F5F9', color:'#6B7280', cursor:'pointer', fontFamily:'inherit' }
 const BS = { display:'inline-flex', alignItems:'center', gap:5, height:30, padding:'0 11px', borderRadius:8, border:'1px solid #E5E7EB', background:'#F9FAFB', color:'#4B5563', fontWeight:500, fontSize:12, cursor:'pointer', fontFamily:'inherit' }
+const TH = { padding:'10px 14px', fontSize:11, fontWeight:700, color:'#6B7280', textAlign:'left', textTransform:'uppercase', letterSpacing:'.05em', whiteSpace:'nowrap' }
+const TD = { padding:'12px 14px', verticalAlign:'middle' }
+const BI = { display:'inline-flex', alignItems:'center', gap:4, height:28, padding:'0 9px', borderRadius:7, border:'1px solid #E5E7EB', background:'#F9FAFB', color:'#4B5563', fontWeight:500, fontSize:12, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }
