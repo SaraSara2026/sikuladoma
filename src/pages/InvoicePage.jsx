@@ -209,12 +209,14 @@ function FakturaView({ inv, profil, onClose }) {
             {/* Rekapitulace */}
             <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:16 }}>
               <div style={{ minWidth:220 }}>
-                {profil.platceDph && (
+                {profil.platceDph ? (
                   <>
                     <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 0', fontSize:12, color:'#6B7280' }}><span>Základ DPH</span><span>{fKc(base)}</span></div>
                     <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 0', fontSize:12, color:'#6B7280' }}><span>DPH 21 %</span><span>{fKc(dphC)}</span></div>
                     <div style={{ height:1, background:'#E5E7EB', margin:'6px 0' }} />
                   </>
+                ) : (
+                  <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 0', fontSize:12, color:'#6B7280' }}><span>DPH</span><span>Neplátce DPH</span></div>
                 )}
                 <div style={{ display:'flex', justifyContent:'space-between', padding:'10px 14px', background:'#EFF6FF', border:'1.5px solid #BFDBFE', borderRadius:10 }}>
                   <span style={{ fontWeight:700, color:'#1E3A5F' }}>K úhradě</span>
@@ -223,11 +225,18 @@ function FakturaView({ inv, profil, onClose }) {
               </div>
             </div>
 
-            {inv.poznamka && (
-              <div style={{ padding:'10px 12px', background:'#FFFBEB', border:'1px solid #FEF08A', borderRadius:8, fontSize:12, color:'#6B7280' }}>
-                <strong>Poznámka:</strong> {inv.poznamka}
-              </div>
-            )}
+            <div style={{ display:'flex', gap:10, marginBottom:10, flexWrap:'wrap' }}>
+              {(inv.zpusobPlatby) && (
+                <div style={{ padding:'8px 12px', background:'#F0FDF4', border:'1px solid #BBF7D0', borderRadius:8, fontSize:12, color:'#166534' }}>
+                  <strong>Způsob platby:</strong> {inv.zpusobPlatby}
+                </div>
+              )}
+              {inv.poznamka && (
+                <div style={{ padding:'8px 12px', background:'#FFFBEB', border:'1px solid #FEF08A', borderRadius:8, fontSize:12, color:'#6B7280', flex:1 }}>
+                  <strong>Poznámka:</strong> {inv.poznamka}
+                </div>
+              )}
+            </div>
             <div style={{ marginTop:32, paddingTop:14, borderTop:'1px solid #F3F4F6', fontSize:10, color:'#CBD5E1', textAlign:'center', paddingBottom:8, letterSpacing:'.02em' }}>
               Vystaveno přes ŠikulaDoma
             </div>
@@ -248,8 +257,9 @@ function NovaFaktura({ profil, pocet, editing, onSave, onClose }) {
     zakaznikAdresa: editing.zakaznikAdresa || '',
     zakaznikIco: editing.zakaznikIco || '',
     datumPlneni: editing.datumPlneni || editing.created || dnes(),
+    zpusobPlatby: editing.zpusobPlatby || 'převodem',
     poznamka: editing.poznamka || '',
-  } : { sluzba:'', castka:'', zakaznik:'', zakaznikAdresa:'', zakaznikIco:'', datumPlneni:dnes(), poznamka:'' })
+  } : { sluzba:'', castka:'', zakaznik:'', zakaznikAdresa:'', zakaznikIco:'', datumPlneni:dnes(), zpusobPlatby:'převodem', poznamka:'' })
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState(null)
   const u = (k,v) => setF(p=>({...p,[k]:v}))
@@ -289,11 +299,25 @@ function NovaFaktura({ profil, pocet, editing, onSave, onClose }) {
               <input style={{ ...IN, paddingRight:42 }} type="number" value={f.castka} onChange={e=>u('castka',e.target.value)} placeholder="1500" />
               <span style={{ position:'absolute', right:13, top:'50%', transform:'translateY(-50%)', color:'#9CA3AF', fontSize:13 }}>Kč</span>
             </div>
-            {profil.platceDph && f.castka && (
+            {f.castka && (
               <div style={{ fontSize:12, color:'#6B7280', marginTop:4 }}>
-                DPH 21 %: {fKc(Math.round(Number(f.castka)*0.21))} · Celkem s DPH: <strong>{fKc(Math.round(Number(f.castka)*1.21))}</strong>
+                {profil.platceDph
+                  ? <>DPH 21 %: {fKc(Math.round(Number(f.castka)*0.21))} · Celkem s DPH: <strong>{fKc(Math.round(Number(f.castka)*1.21))}</strong></>
+                  : <>DPH: Neplátce DPH · K úhradě: <strong>{fKc(Number(f.castka))}</strong></>
+                }
               </div>
             )}
+          </div>
+          <div>
+            <label style={LB}>Způsob platby</label>
+            <div style={{ display:'flex', gap:10 }}>
+              {['převodem','hotově'].map(v => (
+                <label key={v} style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:8, border:`1.5px solid ${f.zpusobPlatby===v?'#F07800':'#E5E7EB'}`, background:f.zpusobPlatby===v?'#FFF7ED':'#fff', cursor:'pointer', fontSize:13, fontWeight:f.zpusobPlatby===v?600:400, transition:'all .12s' }}>
+                  <input type="radio" name="zpusobPlatby" value={v} checked={f.zpusobPlatby===v} onChange={()=>u('zpusobPlatby',v)} style={{ accentColor:'#F07800' }} />
+                  {v.charAt(0).toUpperCase() + v.slice(1)}
+                </label>
+              ))}
+            </div>
           </div>
           <div><label style={LB}>Zákazník *</label><input style={IN} value={f.zakaznik} onChange={e=>u('zakaznik',e.target.value)} placeholder="Jana Nováková" /></div>
           <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:10 }}>
