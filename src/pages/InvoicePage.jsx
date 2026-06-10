@@ -42,8 +42,8 @@ function effectivniStav(inv) {
 const STATUS_STYLE = {
   paid:  { label: 'Zaplacená',     color: '#16A34A', bg: '#F0FDF4', border: '#BBF7D0' },
   late:  { label: 'Po splatnosti', color: '#fff',    bg: '#1A1F2E', border: '#1A1F2E' },
-  sent:  { label: 'Nezaplacená',   color: '#DC2626', bg: '#FEF2F2', border: '#FECACA' },
-  draft: { label: 'Koncept',       color: '#6B7280', bg: '#F9FAFB', border: '#E5E7EB' },
+  sent:  { label: 'Posláno',       color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
+  draft: { label: 'Vytvořeno',     color: '#6B7280', bg: '#F9FAFB', border: '#E5E7EB' },
 }
 
 // Inicializuje fakturační profil z přihlášeného uživatele + uloženého localStorage.
@@ -739,7 +739,7 @@ export default function InvoicePage() {
                     <div style={{ display:'flex', gap:5, justifyContent:'flex-end', flexWrap:'wrap' }}>
                       <button title="Náhled / PDF" style={BI} onClick={()=>setNahled(inv)}>👁</button>
                       {inv.status==='draft' && <button title="Upravit" style={BI} onClick={()=>setEditing(inv)}>✎</button>}
-                      {inv.status!=='paid' && <button title="Označit jako zaplaceno" style={{ ...BI, background:'#F0FDF4', color:'#16A34A', border:'1px solid #BBF7D0', fontWeight:700 }} onClick={()=>changeStatus(inv.id,'paid')}>✓ Zaplaceno</button>}
+                      {inv.status!=='paid' && <button title="Označit jako zaplaceno" style={{ ...BI, background: stav==='late'?'#FEF2F2':'#F0FDF4', color: stav==='late'?'#DC2626':'#16A34A', border: `1px solid ${stav==='late'?'#FECACA':'#BBF7D0'}`, fontWeight:700 }} onClick={()=>changeStatus(inv.id,'paid')}>✓ Zaplaceno</button>}
                       {inv.status==='paid' && <button title="Označit jako nezaplaceno" style={{ ...BI, background:'#FFF7ED', color:'#D97706', border:'1px solid #FDE68A' }} onClick={()=>changeStatus(inv.id,'sent')}>↩ Vrátit</button>}
                       {inv.status==='draft' && <button title="Smazat" style={{ ...BI, background:'#FEF2F2', color:'#B91C1C', border:'1px solid #FECACA' }} onClick={()=>deleteInvoice(inv.id)}>🗑</button>}
                     </div>
