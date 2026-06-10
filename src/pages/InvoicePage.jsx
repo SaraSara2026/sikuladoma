@@ -63,9 +63,10 @@ function initProfilFor(user) {
 }
 
 // ─── Náhled / tisk faktury ────────────────────────────────────────────────────
-function FakturaView({ inv, profil, onClose }) {
+function FakturaView({ inv, profil, onClose, onEdit }) {
   const base = Number(inv.castka || inv.amount || 0)
-  const dphC = profil.platceDph ? Math.round(base * 0.21) : 0
+  const sazba = Number(inv.sazba_dph ?? (profil.platceDph ? 21 : 0))
+  const dphC = sazba > 0 ? Math.round(base * sazba / 100) : 0
   const celk = base + dphC
 
   const stahnout = async () => {
@@ -166,6 +167,7 @@ function FakturaView({ inv, profil, onClose }) {
           <div style={{ fontWeight:700, fontSize:16, color:'#1A1F2E' }}>Náhled faktury</div>
           <div style={{ display:'flex', gap:8 }}>
             <button style={BG} onClick={onClose}>Zavřít</button>
+            {onEdit && <button style={{ ...BG, color:'#C2410C', borderColor:'#FED7AA' }} onClick={onEdit}>✎ Upravit</button>}
             <button style={{ ...BG }} onClick={tisk}>🖨 Tisknout</button>
             <button style={BP} onClick={stahnout}>⬇ Stáhnout PDF</button>
           </div>
@@ -212,7 +214,7 @@ function FakturaView({ inv, profil, onClose }) {
             <table style={{ width:'100%', borderCollapse:'collapse', marginBottom:18 }}>
               <thead>
                 <tr style={{ background:'#EFF6FF', color:'#1E3A5F', borderBottom:'2px solid #BFDBFE' }}>
-                  {['Popis', 'Ks', profil.platceDph?'Základ':'Cena', profil.platceDph&&'DPH 21%', profil.platceDph&&'S DPH'].filter(Boolean).map(h=>(
+                  {['Popis', 'Ks', sazba>0?'Základ':'Cena', sazba>0&&`DPH ${sazba}%`, sazba>0&&'S DPH'].filter(Boolean).map(h=>(
                     <th key={h} style={{ padding:'8px 10px', textAlign:h==='Popis'?'left':'right', fontSize:11, fontWeight:700 }}>{h}</th>
                   ))}
                 </tr>
@@ -222,8 +224,8 @@ function FakturaView({ inv, profil, onClose }) {
                   <td style={{ padding:'10px 10px', fontSize:13 }}>{inv.sluzba||inv.title}</td>
                   <td style={{ padding:'10px 10px', textAlign:'right', fontSize:13 }}>1</td>
                   <td style={{ padding:'10px 10px', textAlign:'right', fontSize:13 }}>{fKc(base)}</td>
-                  {profil.platceDph && <td style={{ padding:'10px 10px', textAlign:'right', fontSize:13 }}>{fKc(dphC)}</td>}
-                  {profil.platceDph && <td style={{ padding:'10px 10px', textAlign:'right', fontWeight:700, fontSize:13 }}>{fKc(celk)}</td>}
+                  {sazba>0 && <td style={{ padding:'10px 10px', textAlign:'right', fontSize:13 }}>{fKc(dphC)}</td>}
+                  {sazba>0 && <td style={{ padding:'10px 10px', textAlign:'right', fontWeight:700, fontSize:13 }}>{fKc(celk)}</td>}
                 </tr>
               </tbody>
             </table>
@@ -231,10 +233,10 @@ function FakturaView({ inv, profil, onClose }) {
             {/* Rekapitulace */}
             <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:16 }}>
               <div style={{ minWidth:220 }}>
-                {profil.platceDph ? (
+                {sazba > 0 ? (
                   <>
                     <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 0', fontSize:12, color:'#6B7280' }}><span>Základ DPH</span><span>{fKc(base)}</span></div>
-                    <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 0', fontSize:12, color:'#6B7280' }}><span>DPH 21 %</span><span>{fKc(dphC)}</span></div>
+                    <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 0', fontSize:12, color:'#6B7280' }}><span>DPH {sazba} %</span><span>{fKc(dphC)}</span></div>
                     <div style={{ height:1, background:'#E5E7EB', margin:'6px 0' }} />
                   </>
                 ) : (
@@ -272,6 +274,7 @@ function FakturaView({ inv, profil, onClose }) {
 // ─── Nová / upravit fakturu ──────────────────────────────────────────────────
 function NovaFaktura({ profil, pocet, editing, onSave, onClose }) {
   const isEdit = !!editing
+  const defaultSazba = profil.platceDph ? 21 : 0
   const [f, setF] = useState(editing ? {
     sluzba: editing.sluzba || editing.title || '',
     castka: editing.castka || editing.amount || '',
@@ -280,8 +283,9 @@ function NovaFaktura({ profil, pocet, editing, onSave, onClose }) {
     zakaznikIco: editing.zakaznikIco || '',
     datumPlneni: editing.datumPlneni || editing.created || dnes(),
     zpusobPlatby: editing.zpusobPlatby || 'převodem',
+    sazba_dph: editing.sazba_dph ?? defaultSazba,
     poznamka: editing.poznamka || '',
-  } : { sluzba:'', castka:'', zakaznik:'', zakaznikAdresa:'', zakaznikIco:'', datumPlneni:dnes(), zpusobPlatby:'převodem', poznamka:'' })
+  } : { sluzba:'', castka:'', zakaznik:'', zakaznikAdresa:'', zakaznikIco:'', datumPlneni:dnes(), zpusobPlatby:'převodem', sazba_dph: defaultSazba, poznamka:'' })
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState(null)
   const u = (k,v) => setF(p=>({...p,[k]:v}))
@@ -316,16 +320,27 @@ function NovaFaktura({ profil, pocet, editing, onSave, onClose }) {
           </div>
           <div><label style={LB}>Popis služby *</label><input style={IN} value={f.sluzba} onChange={e=>u('sluzba',e.target.value)} placeholder="Montáž nábytku, úklid bytu…" autoFocus /></div>
           <div>
-            <label style={LB}>Částka {profil.platceDph?'(bez DPH) *':'*'}</label>
+            <label style={LB}>Sazba DPH</label>
+            <div style={{ display:'flex', gap:8 }}>
+              {[[0,'Bez DPH'],[12,'12 %'],[21,'21 %']].map(([v,l]) => (
+                <label key={v} style={{ display:'flex', alignItems:'center', gap:5, padding:'7px 13px', borderRadius:8, border:`1.5px solid ${f.sazba_dph===v?'#F07800':'#E5E7EB'}`, background:f.sazba_dph===v?'#FFF7ED':'#fff', cursor:'pointer', fontSize:13, fontWeight:f.sazba_dph===v?600:400, transition:'all .12s' }}>
+                  <input type="radio" name="sazba_dph" value={v} checked={f.sazba_dph===v} onChange={()=>u('sazba_dph',v)} style={{ accentColor:'#F07800' }} />
+                  {l}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label style={LB}>Částka {f.sazba_dph>0?'(bez DPH) *':'*'}</label>
             <div style={{ position:'relative' }}>
               <input style={{ ...IN, paddingRight:42 }} type="number" value={f.castka} onChange={e=>u('castka',e.target.value)} placeholder="1500" />
               <span style={{ position:'absolute', right:13, top:'50%', transform:'translateY(-50%)', color:'#9CA3AF', fontSize:13 }}>Kč</span>
             </div>
             {f.castka && (
               <div style={{ fontSize:12, color:'#6B7280', marginTop:4 }}>
-                {profil.platceDph
-                  ? <>DPH 21 %: {fKc(Math.round(Number(f.castka)*0.21))} · Celkem s DPH: <strong>{fKc(Math.round(Number(f.castka)*1.21))}</strong></>
-                  : <>DPH: Neplátce DPH · K úhradě: <strong>{fKc(Number(f.castka))}</strong></>
+                {f.sazba_dph > 0
+                  ? <>DPH {f.sazba_dph} %: {fKc(Math.round(Number(f.castka)*f.sazba_dph/100))} · Celkem s DPH: <strong>{fKc(Math.round(Number(f.castka)*(1+f.sazba_dph/100)))}</strong></>
+                  : <>Bez DPH · K úhradě: <strong>{fKc(Number(f.castka))}</strong></>
                 }
               </div>
             )}
@@ -595,7 +610,7 @@ export default function InvoicePage() {
       {showNova && <NovaFaktura profil={profil} pocet={invoices.length} onSave={saveInvoice} onClose={()=>setShowNova(false)} />}
       {editing && <NovaFaktura profil={profil} editing={editing} onSave={editInvoice} onClose={()=>setEditing(null)} />}
       {showProfil && <ProfilModal profil={profil} onSave={setProfil} onClose={()=>setShowProfil(false)} />}
-      {nahled && <FakturaView inv={nahled} profil={profil} onClose={()=>setNahled(null)} />}
+      {nahled && <FakturaView inv={nahled} profil={profil} onClose={()=>setNahled(null)} onEdit={nahled.status==='draft' ? ()=>{ setEditing(nahled); setNahled(null) } : undefined} />}
     </div>
   )
 }
