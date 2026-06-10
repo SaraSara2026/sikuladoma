@@ -60,7 +60,7 @@ function initProfilFor(user) {
     ulice: '',
     mesto: user.city || '',
     psc: '',
-    platceDph: false,
+    platceDph: user.platce_dph || false,
   }
 }
 

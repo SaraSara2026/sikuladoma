@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS users (
   rating          NUMERIC(2,1),
   jobs_count      INTEGER DEFAULT 0,
   bio             TEXT,
+  hourly_rate     INTEGER,
+  platce_dph      BOOLEAN DEFAULT FALSE,
   created_at      TIMESTAMPTZ DEFAULT NOW(),
   updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
@@ -200,6 +202,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_expires_at        TIMESTAMPTZ;
 -- PROFIL ŠIKULY — rozšíření
 -- ============================================================
 ALTER TABLE users ADD COLUMN IF NOT EXISTS hourly_rate INTEGER;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS platce_dph BOOLEAN DEFAULT FALSE;
 
 -- ============================================================
 -- EMAIL VERIFIKACE + RESET HESLA

@@ -47,6 +47,7 @@ async function updateMe(req, res) {
     ? Math.max(0, Math.min(99999, Number(b.hourly_rate) || 0)) : null;
   const services = Array.isArray(b.services) ? b.services.filter(s => typeof s === 'string').slice(0, 30) : null;
   const avatar = b.avatar != null ? String(b.avatar).slice(0, 500000) : null;  // base64 do ~500KB
+  const platce_dph = b.platce_dph != null ? Boolean(b.platce_dph) : null;
 
   // Validace jména pokud je posláno
   if (name !== null && name.length > 0 && !/^\S+\s+\S+/.test(name)) {
@@ -63,11 +64,12 @@ async function updateMe(req, res) {
       hourly_rate  = COALESCE(${hourly_rate}, hourly_rate),
       services     = COALESCE(${services}, services),
       avatar       = COALESCE(${avatar}, avatar),
+      platce_dph   = COALESCE(${platce_dph}, platce_dph),
       updated_at   = NOW()
     WHERE id = ${me.id}
     RETURNING id, email, role, name, phone, city, avatar, ico, services, plan,
               stripe_customer_id, plan_expires_at, verified, email_verified_at,
-              rating, jobs_count, bio, hourly_rate
+              rating, jobs_count, bio, hourly_rate, platce_dph
   `;
   return res.status(200).json({ user: row });
 }

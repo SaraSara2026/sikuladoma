@@ -84,7 +84,7 @@ export async function getCurrentUser(req) {
   const [user] = await sql`
     SELECT id, email, role, name, phone, city, avatar, ico, services, plan,
            stripe_customer_id, stripe_subscription_id, plan_expires_at,
-           verified, rating, jobs_count, bio
+           verified, rating, jobs_count, bio, hourly_rate, platce_dph
     FROM users WHERE id = ${Number(payload.sub)}
   `;
   if (!user) return null;

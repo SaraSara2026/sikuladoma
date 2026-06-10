@@ -182,7 +182,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
 
   // Profil edit state
   const [profileForm, setProfileForm] = useState({
-    name: '', bio: '', ico: '', phone: '', city: '', hourly_rate: '', services: [], avatar: '',
+    name: '', bio: '', ico: '', phone: '', city: '', hourly_rate: '', services: [], avatar: '', platce_dph: false,
   })
   const [profileSaving, setProfileSaving] = useState(false)
   const [profileMsg, setProfileMsg] = useState(null)
@@ -197,6 +197,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
       hourly_rate: currentUser.hourly_rate ?? '',
       services: currentUser.services || [],
       avatar: currentUser.avatar || '',
+      platce_dph: currentUser.platce_dph || false,
     })
   }, [currentUser?.id])
 
@@ -227,6 +228,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
         hourly_rate: profileForm.hourly_rate === '' ? null : Number(profileForm.hourly_rate),
         services: profileForm.services,
         avatar: profileForm.avatar,
+        platce_dph: profileForm.platce_dph,
       })
       onUpdateUser?.(user)
       setProfileMsg({ type: 'success', text: 'Profil uložen ✓' })
@@ -662,12 +664,22 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                 <div className="form-row">
                   <div className="form-group"><label className="form-label">IČO</label>
                     <input className="form-input" value={profileForm.ico}
-                      onChange={e => setProfileForm(p => ({ ...p, ico: e.target.value }))}
-                      placeholder="12345678" /></div>
+                      onChange={e => setProfileForm(p => ({ ...p, ico: e.target.value.replace(/\D/g,'').slice(0,8) }))}
+                      placeholder="12345678" inputMode="numeric" /></div>
                   <div className="form-group"><label className="form-label">Hodinová sazba (Kč)</label>
                     <input className="form-input" type="number" min="0" value={profileForm.hourly_rate}
                       onChange={e => setProfileForm(p => ({ ...p, hourly_rate: e.target.value }))}
                       placeholder="350" /></div>
+                </div>
+                <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background:'#F9FAFB', borderRadius:10, border:'1px solid #E5E7EB', cursor:'pointer', marginBottom:4 }}
+                  onClick={() => setProfileForm(p => ({ ...p, platce_dph: !p.platce_dph }))}>
+                  <div style={{ width:20, height:20, borderRadius:4, border:`2px solid ${profileForm.platce_dph?'#F07800':'#D1D5DB'}`, background:profileForm.platce_dph?'#F07800':'#fff', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, transition:'all .14s' }}>
+                    {profileForm.platce_dph && <span style={{ color:'#fff', fontSize:11, fontWeight:800 }}>✓</span>}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight:600, fontSize:14 }}>Jsem plátce DPH</div>
+                    <div style={{ fontSize:12, color:'#6B7280' }}>Fakturám přidáš sazbu DPH 12 % nebo 21 %</div>
+                  </div>
                 </div>
                 <div className="form-row">
                   <div className="form-group"><label className="form-label">Telefon</label>
