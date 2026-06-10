@@ -191,7 +191,7 @@ function FakturaView({ inv, profil, onClose, onEdit }) {
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:20 }}>
               {[
                 ['Dodavatel', [profil.jmeno, profil.adresa, `IČO: ${profil.ico}`, profil.dic && `DIČ: ${profil.dic}`, !profil.platceDph && 'Neplátce DPH'].filter(Boolean)],
-                ['Odběratel', [inv.zakaznik || inv.customer, inv.zakaznikAdresa, inv.zakaznikIco && `IČO: ${inv.zakaznikIco}`].filter(Boolean)],
+                ['Odběratel', [inv.zakaznik || inv.customer, inv.zakaznikAdresa, [inv.zakaznikPsc, inv.zakaznikMesto].filter(Boolean).join(' '), inv.zakaznikIco && `IČO: ${inv.zakaznikIco}`].filter(Boolean)],
               ].map(([tit, radky]) => (
                 <div key={tit} style={{ background:'#F9FAFB', borderRadius:9, padding:'12px 14px', border:'1px solid #E5E7EB' }}>
                   <div style={{ fontSize:10, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', color:'#9CA3AF', marginBottom:6 }}>{tit}</div>
@@ -272,7 +272,7 @@ function FakturaView({ inv, profil, onClose, onEdit }) {
 }
 
 // ─── Nová / upravit fakturu ──────────────────────────────────────────────────
-function NovaFaktura({ profil, pocet, editing, onSave, onClose }) {
+function NovaFaktura({ profil, pocet, editing, onSave, onClose, zakaznici = [] }) {
   const isEdit = !!editing
   const defaultSazba = profil.platceDph ? 21 : 0
   const [f, setF] = useState(editing ? {
@@ -280,16 +280,29 @@ function NovaFaktura({ profil, pocet, editing, onSave, onClose }) {
     castka: editing.castka || editing.amount || '',
     zakaznik: editing.zakaznik || editing.customer || '',
     zakaznikAdresa: editing.zakaznikAdresa || '',
+    zakaznikMesto: editing.zakaznikMesto || '',
+    zakaznikPsc: editing.zakaznikPsc || '',
     zakaznikIco: editing.zakaznikIco || '',
+    datumVystaveni: editing.datumVystaveni || dnes(),
     datumPlneni: editing.datumPlneni || editing.created || dnes(),
     zpusobPlatby: editing.zpusobPlatby || 'převodem',
     sazba_dph: editing.sazba_dph ?? defaultSazba,
     poznamka: editing.poznamka || '',
-  } : { sluzba:'', castka:'', zakaznik:'', zakaznikAdresa:'', zakaznikIco:'', datumPlneni:dnes(), zpusobPlatby:'převodem', sazba_dph: defaultSazba, poznamka:'' })
+  } : { sluzba:'', castka:'', zakaznik:'', zakaznikAdresa:'', zakaznikMesto:'', zakaznikPsc:'', zakaznikIco:'', datumVystaveni:dnes(), datumPlneni:dnes(), zpusobPlatby:'převodem', sazba_dph: defaultSazba, poznamka:'' })
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState(null)
+  const [acOpen, setAcOpen] = useState(false)
   const u = (k,v) => setF(p=>({...p,[k]:v}))
   const ok = f.sluzba && f.castka && f.zakaznik
+
+  const acMatches = f.zakaznik.length >= 1
+    ? zakaznici.filter(z => z.jmeno.toLowerCase().includes(f.zakaznik.toLowerCase()))
+    : []
+
+  const vyberZakaznika = (z) => {
+    setF(p => ({ ...p, zakaznik: z.jmeno, zakaznikAdresa: z.adresa||'', zakaznikMesto: z.mesto||'', zakaznikPsc: z.psc||'', zakaznikIco: z.ico||'' }))
+    setAcOpen(false)
+  }
 
   const submit = async () => {
     if (!ok || saving) return
@@ -298,7 +311,7 @@ function NovaFaktura({ profil, pocet, editing, onSave, onClose }) {
       if (isEdit) {
         await onSave({ id: editing.id, ...f, castka: Number(f.castka) })
       } else {
-        await onSave({ id: noveCislo(pocet), ...f, castka: Number(f.castka), datumVystaveni: dnes(), splatnost: plusDni(14), status: 'draft' })
+        await onSave({ id: noveCislo(pocet), ...f, castka: Number(f.castka), splatnost: plusDni(14), status: 'draft' })
       }
     } catch (e) {
       setErr(e.message || 'Něco se pokazilo.')
@@ -307,9 +320,12 @@ function NovaFaktura({ profil, pocet, editing, onSave, onClose }) {
     }
   }
 
+  const datToInput = (s) => { const m = String(s||'').match(/(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/); return m ? `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}` : '' }
+  const inputToDat = (s) => { const [y,m,d] = (s||'').split('-'); return d ? `${d}.${m}.${y}` : '' }
+
   return (
     <div style={OV} onClick={onClose}>
-      <div style={{ ...MOD, maxWidth:500 }} onClick={e=>e.stopPropagation()}>
+      <div style={{ ...MOD, maxWidth:520 }} onClick={e=>e.stopPropagation()}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'16px 20px', borderBottom:'1px solid #E5E7EB' }}>
           <div style={{ fontWeight:700, fontSize:16, color:'#1A1F2E' }}>{isEdit ? `Upravit ${editing.id}` : 'Nová faktura'}</div>
           <button style={BC} onClick={onClose}>✕</button>
@@ -318,36 +334,49 @@ function NovaFaktura({ profil, pocet, editing, onSave, onClose }) {
           <div style={{ background:'#EFF6FF', border:'1px solid #BFDBFE', borderRadius:9, padding:'9px 13px', fontSize:13, color:'#1D4ED8' }}>
             Fakturant: <strong>{profil.jmeno}</strong> · IČO {profil.ico}{profil.platceDph?' · Plátce DPH':' · Neplátce DPH'}
           </div>
+
           <div><label style={LB}>Popis služby *</label><input style={IN} value={f.sluzba} onChange={e=>u('sluzba',e.target.value)} placeholder="Montáž nábytku, úklid bytu…" autoFocus /></div>
+
+          {/* DPH */}
           <div>
             <label style={LB}>Sazba DPH</label>
-            <div style={{ display:'flex', gap:8 }}>
-              {[[0,'Bez DPH'],[12,'12 %'],[21,'21 %']].map(([v,l]) => (
-                <label key={v} style={{ display:'flex', alignItems:'center', gap:5, padding:'7px 13px', borderRadius:8, border:`1.5px solid ${f.sazba_dph===v?'#F07800':'#E5E7EB'}`, background:f.sazba_dph===v?'#FFF7ED':'#fff', cursor:'pointer', fontSize:13, fontWeight:f.sazba_dph===v?600:400, transition:'all .12s' }}>
-                  <input type="radio" name="sazba_dph" value={v} checked={f.sazba_dph===v} onChange={()=>u('sazba_dph',v)} style={{ accentColor:'#F07800' }} />
-                  {l}
-                </label>
-              ))}
-            </div>
+            {!profil.platceDph ? (
+              <div style={{ padding:'9px 13px', background:'#F9FAFB', border:'1.5px solid #E5E7EB', borderRadius:8, fontSize:13, color:'#6B7280' }}>
+                Bez DPH — nejste plátce DPH
+              </div>
+            ) : (
+              <div style={{ display:'flex', gap:8 }}>
+                {[[12,'12 %','domácnosti, bytové stavby'],[21,'21 %','firmy, ostatní']].map(([v,l,hint]) => (
+                  <label key={v} style={{ flex:1, display:'flex', flexDirection:'column', gap:2, padding:'9px 13px', borderRadius:8, border:`1.5px solid ${f.sazba_dph===v?'#F07800':'#E5E7EB'}`, background:f.sazba_dph===v?'#FFF7ED':'#fff', cursor:'pointer', transition:'all .12s' }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                      <input type="radio" name="sazba_dph" value={v} checked={f.sazba_dph===v} onChange={()=>u('sazba_dph',v)} style={{ accentColor:'#F07800' }} />
+                      <span style={{ fontSize:13, fontWeight:f.sazba_dph===v?700:500 }}>{l}</span>
+                    </div>
+                    <span style={{ fontSize:11, color:'#9CA3AF', paddingLeft:20 }}>{hint}</span>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
+
+          {/* Částka */}
           <div>
             <label style={LB}>Částka {f.sazba_dph>0?'(bez DPH) *':'*'}</label>
             <div style={{ position:'relative' }}>
               <input style={{ ...IN, paddingRight:42 }} type="number" value={f.castka} onChange={e=>u('castka',e.target.value)} placeholder="1500" />
               <span style={{ position:'absolute', right:13, top:'50%', transform:'translateY(-50%)', color:'#9CA3AF', fontSize:13 }}>Kč</span>
             </div>
-            {f.castka && (
+            {f.castka && f.sazba_dph > 0 && (
               <div style={{ fontSize:12, color:'#6B7280', marginTop:4 }}>
-                {f.sazba_dph > 0
-                  ? <>DPH {f.sazba_dph} %: {fKc(Math.round(Number(f.castka)*f.sazba_dph/100))} · Celkem s DPH: <strong>{fKc(Math.round(Number(f.castka)*(1+f.sazba_dph/100)))}</strong></>
-                  : <>Bez DPH · K úhradě: <strong>{fKc(Number(f.castka))}</strong></>
-                }
+                DPH {f.sazba_dph} %: {fKc(Math.round(Number(f.castka)*f.sazba_dph/100))} · Celkem: <strong>{fKc(Math.round(Number(f.castka)*(1+f.sazba_dph/100)))}</strong>
               </div>
             )}
           </div>
+
+          {/* Způsob platby */}
           <div>
             <label style={LB}>Způsob platby</label>
-            <div style={{ display:'flex', gap:10 }}>
+            <div style={{ display:'flex', gap:8 }}>
               {['převodem','hotově'].map(v => (
                 <label key={v} style={{ display:'flex', alignItems:'center', gap:6, padding:'8px 14px', borderRadius:8, border:`1.5px solid ${f.zpusobPlatby===v?'#F07800':'#E5E7EB'}`, background:f.zpusobPlatby===v?'#FFF7ED':'#fff', cursor:'pointer', fontSize:13, fontWeight:f.zpusobPlatby===v?600:400, transition:'all .12s' }}>
                   <input type="radio" name="zpusobPlatby" value={v} checked={f.zpusobPlatby===v} onChange={()=>u('zpusobPlatby',v)} style={{ accentColor:'#F07800' }} />
@@ -356,12 +385,43 @@ function NovaFaktura({ profil, pocet, editing, onSave, onClose }) {
               ))}
             </div>
           </div>
-          <div><label style={LB}>Zákazník *</label><input style={IN} value={f.zakaznik} onChange={e=>u('zakaznik',e.target.value)} placeholder="Jana Nováková" /></div>
-          <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:10 }}>
-            <div><label style={LB}>Adresa zákazníka</label><input style={IN} value={f.zakaznikAdresa} onChange={e=>u('zakaznikAdresa',e.target.value)} placeholder="Ulice 1, Praha" /></div>
-            <div><label style={LB}>IČO zákazníka</label><input style={IN} value={f.zakaznikIco} onChange={e=>u('zakaznikIco',e.target.value)} placeholder="volitelné" /></div>
+
+          {/* Zákazník s autocomplete */}
+          <div style={{ position:'relative' }}>
+            <label style={LB}>Zákazník *</label>
+            <input style={IN} value={f.zakaznik}
+              onChange={e=>{ u('zakaznik',e.target.value); setAcOpen(true) }}
+              onFocus={()=>setAcOpen(true)}
+              onBlur={()=>setTimeout(()=>setAcOpen(false),150)}
+              placeholder="Jana Nováková" />
+            {acOpen && acMatches.length > 0 && (
+              <div style={{ position:'absolute', top:'100%', left:0, right:0, background:'#fff', border:'1.5px solid #E5E7EB', borderRadius:10, boxShadow:'0 4px 16px rgba(0,0,0,.1)', zIndex:10, maxHeight:180, overflowY:'auto', marginTop:2 }}>
+                {acMatches.map(z => (
+                  <div key={z.jmeno} onMouseDown={()=>vyberZakaznika(z)} style={{ padding:'9px 13px', cursor:'pointer', fontSize:13, borderBottom:'1px solid #F3F4F6' }}
+                    onMouseEnter={e=>e.currentTarget.style.background='#F9FAFB'}
+                    onMouseLeave={e=>e.currentTarget.style.background='#fff'}>
+                    <div style={{ fontWeight:600 }}>{z.jmeno}</div>
+                    {(z.adresa||z.mesto) && <div style={{ fontSize:11, color:'#9CA3AF' }}>{[z.adresa, z.mesto].filter(Boolean).join(', ')}</div>}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <div><label style={LB}>Datum plnění</label><input style={IN} type="date" value={f.datumPlneni.split('.').reverse().join('-')} onChange={e=>{ const[y,m,d]=e.target.value.split('-'); u('datumPlneni',`${d}.${m}.${y}`) }} /></div>
+
+          {/* Adresa zákazníka */}
+          <div><label style={LB}>Ulice a číslo popisné</label><input style={IN} value={f.zakaznikAdresa} onChange={e=>u('zakaznikAdresa',e.target.value)} placeholder="Hlavní 123/4" /></div>
+          <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr', gap:8 }}>
+            <div><label style={LB}>Město</label><input style={IN} value={f.zakaznikMesto} onChange={e=>u('zakaznikMesto',e.target.value)} placeholder="Praha" /></div>
+            <div><label style={LB}>PSČ</label><input style={IN} value={f.zakaznikPsc} onChange={e=>u('zakaznikPsc',e.target.value)} placeholder="19000" /></div>
+            <div><label style={LB}>IČO</label><input style={IN} value={f.zakaznikIco} onChange={e=>u('zakaznikIco',e.target.value)} placeholder="volitelné" /></div>
+          </div>
+
+          {/* Datumy */}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+            <div><label style={LB}>Datum vystavení</label><input style={IN} type="date" value={datToInput(f.datumVystaveni)} onChange={e=>u('datumVystaveni', inputToDat(e.target.value))} /></div>
+            <div><label style={LB}>Datum plnění</label><input style={IN} type="date" value={datToInput(f.datumPlneni)} onChange={e=>u('datumPlneni', inputToDat(e.target.value))} /></div>
+          </div>
+
           <div><label style={LB}>Poznámka</label><textarea style={{ ...IN, minHeight:60, resize:'vertical' }} value={f.poznamka} onChange={e=>u('poznamka',e.target.value)} placeholder="Platba převodem…" /></div>
           {err && <div style={{ padding:'9px 12px', background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:8, fontSize:12, color:'#B91C1C' }}>{err}</div>}
         </div>
@@ -427,7 +487,7 @@ export default function InvoicePage() {
         amount: Number(i.amount),
         sluzba: i.title, castka: Number(i.amount), zakaznik: i.customer,
         datumVystaveni: i.created, datumPlneni: i.created, splatnost: i.due,
-        poznamka: '', zakaznikAdresa: '', zakaznikIco: '',
+        poznamka: '', zakaznikAdresa: '', zakaznikMesto: '', zakaznikPsc: '', zakaznikIco: '',
       }))))
       .catch(err => console.error('Načítání faktur selhalo:', err))
       .finally(() => setLoading(false))
@@ -449,6 +509,7 @@ export default function InvoicePage() {
   const [nahled, setNahled] = useState(null)
   const [editing, setEditing] = useState(null)
   const [filter, setFilter] = useState('all')
+  const [view, setView] = useState('faktury')
 
   // POST nové faktury do DB
   const saveInvoice = async (inv) => {
@@ -523,6 +584,18 @@ export default function InvoicePage() {
   const zaplaceno = invoices.filter(i=>i.status==='paid').reduce((s,i)=>s+(i.castka||0),0)
   const ceka = invoices.filter(i=>i.status!=='paid').reduce((s,i)=>s+(i.castka||0),0)
 
+  // Unikátní zákazníci z faktur (pro autocomplete + seznam)
+  const zakaznici = Object.values(
+    invoices.reduce((acc, inv) => {
+      const jmeno = inv.zakaznik || inv.customer
+      if (!jmeno) return acc
+      if (!acc[jmeno]) acc[jmeno] = { jmeno, adresa: inv.zakaznikAdresa||'', mesto: inv.zakaznikMesto||'', psc: inv.zakaznikPsc||'', ico: inv.zakaznikIco||'', pocetFaktur:0, celkem:0 }
+      acc[jmeno].pocetFaktur++
+      acc[jmeno].celkem += (inv.castka || inv.amount || 0)
+      return acc
+    }, {})
+  ).sort((a,b) => a.jmeno.localeCompare(b.jmeno, 'cs'))
+
   return (
     <div className="page-enter">
       <div className="dash-header">
@@ -542,6 +615,14 @@ export default function InvoicePage() {
         <div className="stat-card"><div className="stat-val">{invoices.length}</div><div className="stat-label">Faktur celkem</div></div>
       </div>
 
+      {/* Tabs */}
+      <div style={{ display:'flex', gap:0, marginBottom:20, borderBottom:'2px solid #E5E7EB' }}>
+        {[['faktury','Faktury'],['zakaznici','Zákazníci']].map(([k,l]) => (
+          <button key={k} onClick={()=>setView(k)} style={{ padding:'8px 20px', border:'none', borderBottom:`2.5px solid ${view===k?'#F07800':'transparent'}`, background:'transparent', color:view===k?'#F07800':'#6B7280', fontWeight:view===k?700:500, fontSize:14, cursor:'pointer', fontFamily:'inherit', marginBottom:-2, transition:'all .12s' }}>{l}</button>
+        ))}
+      </div>
+
+      {view === 'faktury' && <>
       {/* Filtry */}
       <div style={{ display:'flex', gap:8, marginBottom:16, flexWrap:'wrap' }}>
         {[['all','Vše'],['unpaid','Nezaplacené'],['paid','Zaplacené']].map(([k,l]) => (
@@ -606,9 +687,44 @@ export default function InvoicePage() {
           </tbody>
         </table>
       </div>
+      </>}
 
-      {showNova && <NovaFaktura profil={profil} pocet={invoices.length} onSave={saveInvoice} onClose={()=>setShowNova(false)} />}
-      {editing && <NovaFaktura profil={profil} editing={editing} onSave={editInvoice} onClose={()=>setEditing(null)} />}
+      {view === 'zakaznici' && (
+        <div style={{ background:'#fff', border:'1px solid #E5E7EB', borderRadius:14, overflow:'hidden', boxShadow:'0 1px 3px rgba(0,0,0,.04)' }}>
+          <table style={{ width:'100%', borderCollapse:'collapse' }}>
+            <thead>
+              <tr style={{ background:'#F9FAFB', borderBottom:'1px solid #E5E7EB' }}>
+                <th style={TH}>Zákazník</th>
+                <th style={TH}>Adresa</th>
+                <th style={TH}>IČO</th>
+                <th style={{ ...TH, textAlign:'right' }}>Faktur</th>
+                <th style={{ ...TH, textAlign:'right' }}>Celkem</th>
+                <th style={{ ...TH, textAlign:'right' }}>Akce</th>
+              </tr>
+            </thead>
+            <tbody>
+              {zakaznici.length === 0 && (
+                <tr><td colSpan={6} style={{ padding:'32px', textAlign:'center', color:'#9CA3AF', fontSize:13 }}>Zatím žádní zákazníci</td></tr>
+              )}
+              {zakaznici.map((z, idx, arr) => (
+                <tr key={z.jmeno} style={{ borderBottom: idx < arr.length-1 ? '1px solid #F3F4F6' : 'none' }}>
+                  <td style={TD}><span style={{ fontWeight:600, fontSize:13 }}>{z.jmeno}</span></td>
+                  <td style={TD}><span style={{ fontSize:12, color:'#6B7280' }}>{[z.adresa, z.psc, z.mesto].filter(Boolean).join(', ') || '—'}</span></td>
+                  <td style={TD}><span style={{ fontSize:12, color:'#6B7280' }}>{z.ico || '—'}</span></td>
+                  <td style={{ ...TD, textAlign:'right' }}><span style={{ fontSize:13 }}>{z.pocetFaktur}</span></td>
+                  <td style={{ ...TD, textAlign:'right' }}><span style={{ fontSize:13, fontWeight:600 }}>{fKc(z.celkem)}</span></td>
+                  <td style={{ ...TD, textAlign:'right' }}>
+                    <button style={BI} onClick={()=>{ setShowNova(true); }}>+ Faktura</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {showNova && <NovaFaktura profil={profil} pocet={invoices.length} zakaznici={zakaznici} onSave={saveInvoice} onClose={()=>setShowNova(false)} />}
+      {editing && <NovaFaktura profil={profil} editing={editing} zakaznici={zakaznici} onSave={editInvoice} onClose={()=>setEditing(null)} />}
       {showProfil && <ProfilModal profil={profil} onSave={setProfil} onClose={()=>setShowProfil(false)} />}
       {nahled && <FakturaView inv={nahled} profil={profil} onClose={()=>setNahled(null)} onEdit={nahled.status==='draft' ? ()=>{ setEditing(nahled); setNahled(null) } : undefined} />}
     </div>
