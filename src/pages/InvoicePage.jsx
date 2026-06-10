@@ -192,7 +192,7 @@ function FakturaView({ inv, profil, onClose, onEdit }) {
             {/* Strany */}
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:20 }}>
               {[
-                ['Dodavatel', [profil.jmeno, profil.ulice, [profil.psc, profil.mesto].filter(Boolean).join(' '), `IČO: ${profil.ico}`, profil.platceDph && profil.dic && `DIČ: ${profil.dic}`, !profil.platceDph && 'Neplátce DPH'].filter(Boolean)],
+                ['Dodavatel', [profil.jmeno, profil.ulice, [profil.psc, profil.mesto].filter(Boolean).join(' '), profil.ico && `IČO: ${profil.ico}`, profil.platceDph && profil.dic && `DIČ: ${profil.dic}`, profil.platceDph ? 'Plátce DPH' : 'Neplátce DPH'].filter(Boolean)],
                 ['Odběratel', [inv.zakaznik || inv.customer, inv.zakaznikAdresa, [inv.zakaznikPsc, inv.zakaznikMesto].filter(Boolean).join(' '), inv.zakaznikIco && `IČO: ${inv.zakaznikIco}`, inv.zakaznikEmail, inv.zakaznikTel].filter(Boolean)],
               ].map(([tit, radky]) => (
                 <div key={tit} style={{ background:'#F9FAFB', borderRadius:9, padding:'12px 14px', border:'1px solid #E5E7EB' }}>
