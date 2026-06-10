@@ -78,6 +78,22 @@ async function listOffers(req, res) {
 
   if (!orderId) {
     if (me.role !== 'sikula') return res.status(400).json({ error: 'Zadejte order_id.' });
+
+    // ?accepted=1 → přijaté nabídky s daty zákazníka pro předvyplnění faktury
+    if (req.query?.accepted === '1') {
+      const rows = await sql`
+        SELECT o.id, o.order_id, o.price, o.created_at,
+               ord.title AS order_title, ord.city AS order_city,
+               ord.customer_name, ord.customer_email, ord.customer_phone,
+               ord.address AS order_address, ord.description AS order_description
+        FROM offers o
+        JOIN orders ord ON ord.id = o.order_id
+        WHERE o.sikula_id = ${me.id} AND o.status = 'accepted'
+        ORDER BY o.created_at DESC LIMIT 50
+      `;
+      return res.status(200).json({ offers: rows });
+    }
+
     const rows = await sql`
       SELECT o.*, ord.title AS order_title, ord.city AS order_city
       FROM offers o JOIN orders ord ON ord.id = o.order_id

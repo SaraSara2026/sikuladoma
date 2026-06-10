@@ -296,8 +296,33 @@ function NovaFaktura({ profil, pocet, editing, onSave, onClose, zakaznici = [] }
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState(null)
   const [acOpen, setAcOpen] = useState(false)
+  const [zakázkyOpen, setZakázkyOpen] = useState(false)
+  const [zakázky, setZakázky] = useState(null)
   const u = (k,v) => setF(p=>({...p,[k]:v}))
   const ok = f.sluzba && f.castka && f.zakaznik
+
+  const nacistZakazky = async () => {
+    if (zakázky) { setZakázkyOpen(v => !v); return }
+    try {
+      const res = await fetch('/api/offers?accepted=1', { credentials: 'include' })
+      const data = await res.json()
+      setZakázky(data.offers || [])
+      setZakázkyOpen(true)
+    } catch { setZakázky([]) }
+  }
+
+  const vyplnitZeZakazky = (z) => {
+    setF(p => ({
+      ...p,
+      sluzba: z.order_title || p.sluzba,
+      zakaznik: z.customer_name || p.zakaznik,
+      zakaznikEmail: z.customer_email || p.zakaznikEmail,
+      zakaznikTel: z.customer_phone || p.zakaznikTel,
+      zakaznikMesto: z.order_city || p.zakaznikMesto,
+      zakaznikAdresa: z.order_address || p.zakaznikAdresa,
+    }))
+    setZakázkyOpen(false)
+  }
 
   const acMatches = f.zakaznik.length >= 1
     ? zakaznici.filter(z => z.jmeno.toLowerCase().includes(f.zakaznik.toLowerCase()))
@@ -338,6 +363,30 @@ function NovaFaktura({ profil, pocet, editing, onSave, onClose, zakaznici = [] }
           <div style={{ background:'#EFF6FF', border:'1px solid #BFDBFE', borderRadius:9, padding:'9px 13px', fontSize:13, color:'#1D4ED8' }}>
             Fakturant: <strong>{profil.jmeno}</strong> · IČO {profil.ico}{profil.platceDph?' · Plátce DPH':' · Neplátce DPH'}
           </div>
+
+          {/* Předvyplnit ze zakázky */}
+          {!isEdit && (
+            <div style={{ position:'relative' }}>
+              <button type="button" style={{ ...BG, width:'100%', justifyContent:'center', gap:8 }} onClick={nacistZakazky}>
+                📋 Vyplnit ze zakázky {zakázkyOpen ? '▲' : '▼'}
+              </button>
+              {zakázkyOpen && (
+                <div style={{ position:'absolute', top:'calc(100% + 4px)', left:0, right:0, background:'#fff', border:'1.5px solid #E5E7EB', borderRadius:12, boxShadow:'0 8px 24px rgba(0,0,0,.12)', zIndex:20, maxHeight:240, overflowY:'auto' }}>
+                  {zakázky === null && <div style={{ padding:16, textAlign:'center', color:'#9CA3AF', fontSize:13 }}>Načítám…</div>}
+                  {zakázky?.length === 0 && <div style={{ padding:16, textAlign:'center', color:'#9CA3AF', fontSize:13 }}>Žádné přijaté zakázky</div>}
+                  {zakázky?.map(z => (
+                    <div key={z.id} onMouseDown={()=>vyplnitZeZakazky(z)}
+                      style={{ padding:'10px 14px', cursor:'pointer', borderBottom:'1px solid #F3F4F6' }}
+                      onMouseEnter={e=>e.currentTarget.style.background='#F9FAFB'}
+                      onMouseLeave={e=>e.currentTarget.style.background='#fff'}>
+                      <div style={{ fontWeight:600, fontSize:13 }}>{z.order_title}</div>
+                      <div style={{ fontSize:12, color:'#6B7280' }}>{z.customer_name} · {z.order_city}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div><label style={LB}>Popis služby *</label><input style={IN} value={f.sluzba} onChange={e=>u('sluzba',e.target.value)} placeholder="Montáž nábytku, úklid bytu…" autoFocus /></div>
 
