@@ -58,12 +58,15 @@ for (const u of DEMO_USERS) {
     const hash = await bcryptHash(DEMO_PASSWORD, 12);
     await sql`
       INSERT INTO users (email, password_hash, role, name, phone, city, avatar,
-                         ico, services, plan, verified, rating, jobs_count, bio)
+                         ico, services, plan, verified, rating, jobs_count, bio, email_verified_at)
       VALUES (${u.email}, ${hash}, ${u.role}, ${u.name}, ${u.phone || null},
               ${u.city || null}, ${u.avatar || null}, ${u.ico || null},
               ${u.services || []}, ${u.plan || 'start'}, ${u.verified || false},
-              ${u.rating || null}, ${u.jobs_count || 0}, ${u.bio || null})
-      ON CONFLICT (email) DO NOTHING
+              ${u.rating || null}, ${u.jobs_count || 0}, ${u.bio || null}, NOW())
+      ON CONFLICT (email) DO UPDATE SET
+        email_verified_at = COALESCE(users.email_verified_at, NOW()),
+        services = EXCLUDED.services,
+        bio = EXCLUDED.bio
     `;
     console.log(`  ✓ ${u.email} (${u.role})`);
   } catch (err) {
