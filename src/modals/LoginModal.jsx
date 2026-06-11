@@ -108,11 +108,11 @@ export default function LoginModal({ onClose, onReg, onOrder, onFaktury, onDemoL
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={() => { onClose(); onReg(); }}
               style={{ flex: 1, height: 42, borderRadius: 10, border: `1.5px solid ${T.orange}`, background: "#FFF7ED", color: T.orange, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
-              Registrovat se jako šikula
+              Šikula – založit profil
             </button>
             <button onClick={() => { onClose(); onOrder(); }}
               style={{ flex: 1, height: 42, borderRadius: 10, border: `1.5px solid ${T.blue}`, background: "#EFF6FF", color: T.blue, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
-              Zadat poptávku jako zákazník
+              Zákazník – zadat poptávku
             </button>
           </div>
         </div>
