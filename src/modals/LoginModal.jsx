@@ -107,12 +107,18 @@ export default function LoginModal({ onClose, onReg, onOrder, onFaktury, onDemoL
           <div style={{ fontSize: 12, color: T.ink3, textAlign: "center", marginBottom: 10 }}>Nemáte účet?</div>
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={() => { onClose(); onReg(); }}
-              style={{ flex: 1, height: 42, borderRadius: 10, border: `1.5px solid ${T.orange}`, background: "#FFF7ED", color: T.orange, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
-              Šikula – založit profil
+              style={{ flex: 1, height: 52, borderRadius: 10, border: `1.5px solid ${T.orange}`, background: "#FFF7ED", color: T.orange, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+              <span style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <span style={{ fontSize: 14, fontWeight: 700 }}>Šikula</span>
+                <span style={{ fontSize: 11, fontWeight: 500, opacity: .85 }}>Založit účet</span>
+              </span>
             </button>
             <button onClick={() => { onClose(); onOrder(); }}
-              style={{ flex: 1, height: 42, borderRadius: 10, border: `1.5px solid ${T.blue}`, background: "#EFF6FF", color: T.blue, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
-              Zákazník – zadat poptávku
+              style={{ flex: 1, height: 52, borderRadius: 10, border: `1.5px solid ${T.blue}`, background: "#EFF6FF", color: T.blue, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+              <span style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <span style={{ fontSize: 14, fontWeight: 700 }}>Zákazník</span>
+                <span style={{ fontSize: 11, fontWeight: 500, opacity: .85 }}>Zadat poptávku</span>
+              </span>
             </button>
           </div>
         </div>
