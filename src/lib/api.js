@@ -86,7 +86,7 @@ export const usersApi = {
     if (profiPlus) q.set('profiPlus', '1');
     if (minRating) q.set('minRating', String(minRating));
     const qs = q.toString();
-    return fetch(`/api/users${qs ? '?' + qs : ''}`, opts()).then(unwrap);
+    return fetch(`/api/users/search${qs ? '?' + qs : ''}`, opts()).then(unwrap);
   },
   updateMe: (patch) => fetch('/api/users/me', opts({
     method: 'PATCH', headers: json, body: JSON.stringify(patch),

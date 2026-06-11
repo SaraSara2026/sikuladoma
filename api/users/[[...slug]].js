@@ -25,7 +25,7 @@ export default async function handler(req, res) {
 
     const id = seg && /^\d+$/.test(seg) ? Number(seg) : null;
     if (id) return await getSingle(id, res);
-    return await getList(req, res);
+    return await getList(req, res);  // handles /api/users/me (no id), /api/users/search, /api/users/anything
   } catch (err) {
     console.error('[/api/users]', err);
     return res.status(500).json({ error: 'Server error' });
