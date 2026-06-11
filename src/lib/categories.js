@@ -35,7 +35,7 @@ export const OTHER = "Jiné / nevím";
 
 export const SUBCATEGORIES = {
   domacnost:  ["Běžný úklid bytu / domu", "Jednorázový velký úklid", "Úklid po rekonstrukci", "Mytí oken", "Žehlení", "Praní / péče o prádlo", "Úklid společných prostor", "Úklid kanceláře", OTHER],
-  opravy:     ["Montáž polic", "Montáž nábytku", "Vrtání", "Drobné opravy v bytě", "Výměna kliky, zámku, pantů", "Zavěšení obrazů, garnýží, zrcadel", "Seřízení dveří / skříněk", OTHER],
+  opravy:     ["Montáž polic", "Montáž nábytku", "Vrtání", "Drobné opravy v bytě", "Výměna kliky, zámku, pantů", "Zavěšení obrazů, garnýží, zrcadel", "Seřízení dveří / skříněk", "Zámečník", OTHER],
   instalater: ["Oprava kapající baterie", "Výměna baterie", "Čištění odpadu", "Oprava WC", "Výměna sifonu", "Montáž umyvadla", "Montáž sprchového koutu", "Připojení pračky / myčky", OTHER],
   elektro:    ["Výměna zásuvky / vypínače", "Montáž světla", "Výměna jističe", "Oprava drobné elektroinstalace", "Zapojení varné desky", "Montáž ventilátoru", "Kontrola elektroinstalace", OTHER],
   malovani:   ["Malování pokojů", "Oprava prasklin", "Štukování", "Sádrokarton", "Drobné zednické práce", "Oprava omítky", "Silikonování koupelny", OTHER],
