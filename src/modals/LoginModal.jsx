@@ -108,16 +108,18 @@ export default function LoginModal({ onClose, onReg, onOrder, onFaktury, onDemoL
           </div>
         </div>
 
-        <div style={{ padding: "12px 22px 22px", borderTop: `1px solid ${T.border}`, fontSize: 12, color: T.ink4, textAlign: "center", lineHeight: 1.7 }}>
-          Zákazník?{" "}
-          <span style={{ color: T.orange, fontWeight: 600, cursor: "pointer" }} onClick={() => { onClose(); onOrder(); }}>
-            Zadejte poptávku zdarma
-          </span>
-          {" "}– registrace není nutná.<br />
-          Nový šikula?{" "}
-          <span style={{ color: T.blue, fontWeight: 600, cursor: "pointer" }} onClick={() => { onClose(); onReg(); }}>
-            Zaregistrujte se
-          </span>.
+        <div style={{ padding: "12px 22px 22px", borderTop: `1px solid ${T.border}` }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#94A3B8", letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 10, textAlign: "center" }}>Nemáte účet?</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => { onClose(); onReg(); }}
+              style={{ flex: 1, height: 40, borderRadius: 10, border: `1.5px solid ${T.orange}`, background: "#FFF7ED", color: T.orange, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+              Registrace šikuly
+            </button>
+            <button onClick={() => { onClose(); onOrder(); }}
+              style={{ flex: 1, height: 40, borderRadius: 10, border: `1.5px solid ${T.blue}`, background: "#EFF6FF", color: T.blue, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+              Poptávka zákazníka
+            </button>
+          </div>
         </div>
       </div>
     </div>

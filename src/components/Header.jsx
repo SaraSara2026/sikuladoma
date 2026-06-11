@@ -15,7 +15,7 @@ export default function Header({ T, BtnPrimary, onHome, onScrollTo, onOrder, onL
           <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
             <button className="nav-link" onClick={() => onScrollTo("how")}>Jak to funguje</button>
             <button className="nav-link" onClick={() => onScrollTo("services")}>Služby</button>
-            {onSikulove && <button className="nav-link" onClick={onSikulove}>Šikulové</button>}
+            {onSikulove && <button className="nav-link" onClick={onSikulove}>Pro šikuly</button>}
           </div>
         </div>
 
