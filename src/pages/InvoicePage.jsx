@@ -743,7 +743,7 @@ export default function InvoicePage() {
                     <div style={{ display:'flex', gap:5, justifyContent:'flex-end', flexWrap:'wrap' }}>
                       <button title="Náhled / PDF" style={BI} onClick={()=>setNahled(inv)}>👁</button>
                       {inv.status==='draft' && <button title="Upravit" style={BI} onClick={()=>setEditing(inv)}>✎</button>}
-                      {inv.status!=='paid' && <button title="Označit jako zaplaceno" style={{ ...BI, background: stav==='late'?'#FEF2F2':'#F0FDF4', color: stav==='late'?'#DC2626':'#16A34A', border: `1px solid ${stav==='late'?'#FECACA':'#BBF7D0'}`, fontWeight:700 }} onClick={()=>changeStatus(inv.id,'paid')}>✓ Zaplaceno</button>}
+                      {inv.status!=='paid' && <button title="Označit jako zaplaceno" style={{ ...BI, background: stav==='late'?'#FEF2F2':'#F9FAFB', color: stav==='late'?'#DC2626':'#4B5563', border: `1px solid ${stav==='late'?'#FECACA':'#E5E7EB'}`, fontWeight: stav==='late'?700:500 }} onClick={()=>changeStatus(inv.id,'paid')}>✓ Zaplaceno</button>}
                       {inv.status==='paid' && <button title="Označit jako nezaplaceno" style={{ ...BI, background:'#FFF7ED', color:'#D97706', border:'1px solid #FDE68A' }} onClick={()=>changeStatus(inv.id,'sent')}>↩ Vrátit</button>}
                       {inv.status==='draft' && <button title="Smazat" style={{ ...BI, background:'#FEF2F2', color:'#B91C1C', border:'1px solid #FECACA' }} onClick={()=>deleteInvoice(inv.id)}>🗑</button>}
                     </div>
