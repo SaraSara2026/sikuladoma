@@ -65,7 +65,7 @@ export default function Footer({ onOrder, onReg, onKontakt, onHow, onSikuly, onP
           </div>
         </div>
         <div style={{ borderTop: "1px solid rgba(255,255,255,.06)", paddingTop: 18, display: "flex", justifyContent: "space-between", fontSize: 12, flexWrap: "wrap", gap: 8, color: "rgba(255,255,255,.25)" }}>
-          <span>© 2026 ŠikulaDoma s.r.o.</span>
+          <span>© 2026 Stavira s.r.o. – provozovatel portálu ŠikulaDoma.cz</span>
           <span>Vyrobeno v Praze</span>
         </div>
       </div>
