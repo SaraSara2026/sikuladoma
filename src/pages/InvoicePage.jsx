@@ -25,7 +25,11 @@ const EMPTY_PROFIL = { jmeno: '', ico: '', dic: '', ulice: '', mesto: '', psc: '
 
 function parseCzechDateToObj(s) {
   if (!s) return null
-  const m = String(s).match(/(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/)
+  const str = String(s)
+  // ISO formát z DB: "2026-06-18" nebo "2026-06-18T..."
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) return new Date(str)
+  // Český formát: "18.06.2026"
+  const m = str.match(/(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/)
   if (!m) return null
   const [, d, mo, y] = m
   return new Date(Number(y), Number(mo) - 1, Number(d))
@@ -33,9 +37,9 @@ function parseCzechDateToObj(s) {
 
 function effectivniStav(inv) {
   if (inv.status === 'paid') return 'paid'
-  if (inv.status === 'draft') return 'draft'
   const due = parseCzechDateToObj(inv.splatnost || inv.due)
   if (due && due < new Date()) return 'late'
+  if (inv.status === 'draft') return 'draft'
   return 'sent'
 }
 
