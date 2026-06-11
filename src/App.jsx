@@ -121,7 +121,7 @@ export default function App() {
     window.scrollTo(0, 0);
   };
 
-  // Login: uloží uživatele do localStorage + state.
+  // Login: uloží uživatele do localStorage + state, přesměruje dle role.
   const loginSikula = (user) => {
     try {
       localStorage.setItem("sd_user", JSON.stringify(user));
@@ -132,6 +132,7 @@ export default function App() {
       }
     } catch {}
     setSikulaUser(user);
+    // Přesměrování dle role — všechny vedou na "dashboard", komponenta se vybere podle role
     setPage("dashboard");
     window.scrollTo(0, 0);
   };

@@ -49,11 +49,17 @@ export default function LoginModal({ onClose, onReg, onOrder, onFaktury, onDemoL
   return (
     <div style={S.overlay} onClick={onClose}>
       <div style={{ ...S.modal, maxWidth: 420 }} onClick={e => e.stopPropagation()}>
+
+        {/* Hlavička */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${T.border}` }}>
-          <div style={{ fontSize: 17, fontWeight: 700, color: T.ink }}>Přihlášení</div>
+          <div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: T.ink }}>Přihlásit se</div>
+            <div style={{ fontSize: 12, color: T.ink3, marginTop: 2 }}>Máte už účet? Přihlaste se.</div>
+          </div>
           <IconBtn onClick={onClose}><IcX /></IconBtn>
         </div>
 
+        {/* Formulář */}
         <div style={{ padding: "22px 22px 14px" }}>
           <div style={{ marginBottom: 14 }}>
             <label style={lbl}>E-mail</label>
@@ -87,17 +93,32 @@ export default function LoginModal({ onClose, onReg, onOrder, onFaktury, onDemoL
           </button>
 
           {onForgot && (
-            <div style={{ textAlign: "center", marginTop: 12 }}>
+            <div style={{ textAlign: "center", marginTop: 10 }}>
               <button type="button" onClick={() => { onClose(); onForgot(); }}
-                style={{ background: "none", border: "none", color: T.blue, fontSize: 13, cursor: "pointer", fontFamily: "inherit", padding: 0, textDecoration: "underline" }}>
+                style={{ background: "none", border: "none", color: T.blue, fontSize: 12, cursor: "pointer", fontFamily: "inherit", padding: 0, textDecoration: "underline" }}>
                 Zapomenuté heslo?
               </button>
             </div>
           )}
         </div>
 
+        {/* Nemáte účet */}
+        <div style={{ padding: "14px 22px 20px", borderTop: `1px solid ${T.border}` }}>
+          <div style={{ fontSize: 12, color: T.ink3, textAlign: "center", marginBottom: 10 }}>Nemáte účet?</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => { onClose(); onReg(); }}
+              style={{ flex: 1, height: 42, borderRadius: 10, border: `1.5px solid ${T.orange}`, background: "#FFF7ED", color: T.orange, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+              Registrovat se jako šikula
+            </button>
+            <button onClick={() => { onClose(); onOrder(); }}
+              style={{ flex: 1, height: 42, borderRadius: 10, border: `1.5px solid ${T.blue}`, background: "#EFF6FF", color: T.blue, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
+              Zadat poptávku jako zákazník
+            </button>
+          </div>
+        </div>
+
         {/* Demo přístup */}
-        <div style={{ margin: "0 22px 16px", padding: "12px 14px", background: "#F8FAFC", border: "1px dashed #CBD5E1", borderRadius: 10 }}>
+        <div style={{ margin: "0 22px 20px", padding: "10px 14px", background: "#F8FAFC", border: "1px dashed #CBD5E1", borderRadius: 10 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: "#94A3B8", letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 8 }}>Demo přístup</div>
           <button onClick={loginAsDemoSikula} disabled={busy}
             style={{ width: "100%", height: 36, borderRadius: 9, border: "1px solid #CBD5E1", background: "#fff", color: "#1A1F2E", fontWeight: 600, fontSize: 13, cursor: busy ? "wait" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
@@ -108,19 +129,6 @@ export default function LoginModal({ onClose, onReg, onOrder, onFaktury, onDemoL
           </div>
         </div>
 
-        <div style={{ padding: "12px 22px 22px", borderTop: `1px solid ${T.border}` }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#94A3B8", letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 10, textAlign: "center" }}>Nemáte účet?</div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => { onClose(); onReg(); }}
-              style={{ flex: 1, height: 40, borderRadius: 10, border: `1.5px solid ${T.orange}`, background: "#FFF7ED", color: T.orange, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
-              Registrace šikuly
-            </button>
-            <button onClick={() => { onClose(); onOrder(); }}
-              style={{ flex: 1, height: 40, borderRadius: 10, border: `1.5px solid ${T.blue}`, background: "#EFF6FF", color: T.blue, fontWeight: 700, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
-              Poptávka zákazníka
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
