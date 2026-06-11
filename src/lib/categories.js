@@ -50,7 +50,7 @@ export const SUBCATEGORIES = {
   zvirata:    ["Venčení psů", "Hlídání psa / kočky", "Krmení zvířat", "Péče o zvíře během dovolené", OTHER],
   hlidani:    ["Jednorázové hlídání", "Večerní hlídání", "Vyzvednutí ze školy", "Hlídání o víkendu", OTHER],
   hodinovy:   ["Montáž nábytku", "Zavěšení TV", "Vrtání a upevnění", "Drobné opravy", "Výměna baterie", "Montáž polic", OTHER],
-  kotle:      ["Oprava kotle", "Servis kotle", "Revize kotle", "Radiátory", "Podlahové topení", "Tepelná čerpadla", OTHER],
+  kotle:      ["Oprava kotle", "Servis kotle", "Revize kotle", "Radiátory", "Podlahové topení", "Tepelná čerpadla", "Kominík", "Čištění komínu", "Revize komínu", "Kontrola spalinové cesty", "Kominické práce", OTHER],
   it:         ["Nastavení Wi-Fi", "Pomoc s počítačem", "Instalace tiskárny", "Chytrá TV", "Mobilní telefon", "Chytrá domácnost", OTHER],
 };
 
