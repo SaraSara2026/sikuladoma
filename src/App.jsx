@@ -345,7 +345,7 @@ export default function App() {
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 4, flexWrap: "wrap", rowGap: 8 }}>
             {[
               { Icon: IcShield, text: "Ověření šikulové",       iconColor: "#059669" },
-              { Icon: IcStar,   text: "Nabídky zdarma",         iconColor: T.orange },
+              { Icon: IcStar,   text: "Poptávka zdarma",         iconColor: T.orange },
               { Icon: IcCheck,  text: "Zákazník nic neplatí",   iconColor: "#059669" },
               { Icon: IcGlobe,  text: "Platíte přímo šikulovi", iconColor: T.blue },
             ].map(({ Icon, text, iconColor }, i, arr) => (
@@ -459,8 +459,8 @@ export default function App() {
         <div style={{ maxWidth: 960, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 24 }}>
           {[
             { emoji: "🔍", title: "Ověření šikulové",       desc: "Profily i recenze jsou reálné.",      color: "#3B82F6", bg: "#EFF6FF" },
-            { emoji: "💬", title: "Nabídky zdarma",         desc: "Zákazník za poptávku neplatí nic.",   color: "#22C55E", bg: "#F0FDF4" },
-            { emoji: "⚡", title: "Reakce do 48 hodin",     desc: "Urgentní zakázky vyřídíme rychle.",   color: "#F97316", bg: "#FFF7ED" },
+            { emoji: "💬", title: "Poptávka zdarma",         desc: "Zákazník za poptávku neplatí nic.",   color: "#22C55E", bg: "#F0FDF4" },
+            { emoji: "⚡", title: "Reakce do 48 hodin",     desc: "Urgentní požadavky zobrazíme šikulům přednostně.", color: "#F97316", bg: "#FFF7ED" },
             { emoji: "🤝", title: "Platíte přímo šikulovi", desc: "Žádná provize, žádný prostředník.",   color: "#A855F7", bg: "#FAF5FF" },
           ].map(({ emoji, title, desc, color, bg }) => (
             <div key={title} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
