@@ -13,19 +13,25 @@ import { requireUser } from '../_auth.js';
 export default async function handler(req, res) {
   try {
     const slug = req.query?.slug;
-    const seg = Array.isArray(slug) && slug[0] ? slug[0] : null;
+    const seg = Array.isArray(slug) && slug[0] ? slug[0]
+              : typeof slug === 'string' && slug ? slug
+              : null;
+
+    // Fallback: extract segment directly from URL path (Vercel sometimes omits slug for numeric IDs)
+    const urlSeg = req.url?.split('?')[0].replace(/^\/api\/users\/?/, '').split('/')[0] || null;
+    const effectiveSeg = seg || urlSeg || null;
 
     // PATCH /api/users/me
-    if (req.method === 'PATCH' && seg === 'me') return await updateMe(req, res);
+    if (req.method === 'PATCH' && effectiveSeg === 'me') return await updateMe(req, res);
 
     if (req.method !== 'GET') {
       res.setHeader('Allow', 'GET, PATCH');
       return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const id = seg && /^\d+$/.test(seg) ? Number(seg) : null;
+    const id = effectiveSeg && /^\d+$/.test(effectiveSeg) ? Number(effectiveSeg) : null;
     if (id) return await getSingle(id, res);
-    return await getList(req, res);  // handles /api/users/me (no id), /api/users/search, /api/users/anything
+    return await getList(req, res);
   } catch (err) {
     console.error('[/api/users]', err);
     return res.status(500).json({ error: 'Server error' });
