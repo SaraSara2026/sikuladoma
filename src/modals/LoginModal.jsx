@@ -123,18 +123,6 @@ export default function LoginModal({ onClose, onReg, onOrder, onFaktury, onDemoL
           </div>
         </div>
 
-        {/* Demo přístup */}
-        <div style={{ margin: "0 22px 20px", padding: "10px 14px", background: "#F8FAFC", border: "1px dashed #CBD5E1", borderRadius: 10 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#94A3B8", letterSpacing: ".06em", textTransform: "uppercase", marginBottom: 8 }}>Demo přístup</div>
-          <button onClick={loginAsDemoSikula} disabled={busy}
-            style={{ width: "100%", height: 36, borderRadius: 9, border: "1px solid #CBD5E1", background: "#fff", color: "#1A1F2E", fontWeight: 600, fontSize: 13, cursor: busy ? "wait" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-            🔑 Přihlásit jako demo šikula
-          </button>
-          <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 6, textAlign: "center" }}>
-            pavel@example.com · heslo demo1234
-          </div>
-        </div>
-
       </div>
     </div>
   );
