@@ -27,7 +27,7 @@ export const CATEGORIES = [
   { id: "zvirata",     label: "Zvířata",                      Icon: IcPaw },
   { id: "hlidani",     label: "Hlídání dětí",                 Icon: IcChild },
   { id: "hodinovy",    label: "Hodinový manžel",              Icon: IcHammer },
-  { id: "kotle",       label: "Kotle a topení",               Icon: IcFlameSvc },
+  { id: "kotle",       label: "Kotle, topení, komíny",        Icon: IcFlameSvc },
   { id: "it",          label: "IT pomoc",                     Icon: IcMonitor },
 ];
 
