@@ -11,7 +11,7 @@ import {
 } from "../ui/icons/ServiceIcons.jsx";
 
 export const CATEGORIES = [
-  { id: "domacnost",   label: "Domácnost",                    Icon: IcClean },
+  { id: "domacnost",   label: "Domácnost a úklid",            Icon: IcClean },
   { id: "opravy",      label: "Drobné opravy a montáže",      Icon: IcWrench },
   { id: "instalater",  label: "Instalatérské práce",          Icon: IcPlumbing },
   { id: "elektro",     label: "Elektro práce",                Icon: IcElectric },
