@@ -22,7 +22,7 @@ export const CATEGORIES = [
   { id: "zahrada",     label: "Zahrada",                      Icon: IcGarden },
   { id: "stehovani",   label: "Stěhování a odvoz",            Icon: IcMove },
   { id: "spotrebice",  label: "Spotřebiče a technika",        Icon: IcTech },
-  { id: "doprava",     label: "Auto / doprava / pomoc",       Icon: IcCar },
+  { id: "doprava",     label: "Auto, doprava, pomoc",         Icon: IcCar },
   { id: "seniori",     label: "Péče o seniory",               Icon: IcHeart },
   { id: "zvirata",     label: "Zvířata",                      Icon: IcPaw },
   { id: "hlidani",     label: "Hlídání dětí",                 Icon: IcChild },
