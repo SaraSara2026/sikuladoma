@@ -143,22 +143,9 @@ export default function RegForm({ plan, onClose, onRegistered }) {
                   );
                 })}
               </div>
-              <p style={hint}>Tarif</p>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                {PLANS.map(p => {
-                  const sel = form.plan === p.id;
-                  return (
-                    <button key={p.id} onClick={() => upd("plan", p.id)} style={{
-                      padding: "11px 13px", borderRadius: 9, textAlign: "left",
-                      border: `1.5px solid ${sel ? T.orange : T.border}`,
-                      background: sel ? T.orangeLt : "#fff", cursor: "pointer",
-                      transition: "all .14s", fontFamily: "inherit",
-                    }}>
-                      <div style={{ fontWeight: 700, fontSize: 13, color: sel ? T.orangeDk : T.ink }}>{p.name}</div>
-                      <div style={{ fontSize: 12, color: T.ink4, marginTop: 2 }}>{p.price}{p.period}</div>
-                    </button>
-                  );
-                })}
+              <div style={{ padding: "10px 13px", borderRadius: 9, border: `1.5px solid ${T.orange}`, background: T.orangeLt }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: T.orangeDk }}>Aktivní šikula — první měsíc zdarma</div>
+                <div style={{ fontSize: 12, color: T.ink4, marginTop: 2 }}>399 Kč / měsíc · první platba až po skončení zkušebního měsíce</div>
               </div>
             </div>
           )}
