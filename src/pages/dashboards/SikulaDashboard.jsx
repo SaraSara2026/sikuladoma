@@ -109,18 +109,47 @@ function useMyOffers() {
 }
 
 const menuItems = [
-  { id: 'profile', icon: '👤', label: 'Profil šikuly' },
-  { id: 'overview', icon: '📊', label: 'Přehled' },
-  { id: 'new-jobs', icon: '🔔', label: 'Nové zakázky' },
-  { id: 'offers-sent', icon: '📤', label: 'Odeslané nabídky' },
-  { id: 'active', icon: '⚡', label: 'Aktivní zakázky' },
-  { id: 'calendar', icon: '📅', label: 'Kalendář' },
-  { id: 'earnings', icon: '💰', label: 'Výdělky' },
-  { id: 'invoices', icon: '🧾', label: 'Faktury' },
-  { id: 'reviews', icon: '⭐', label: 'Recenze' },
-  { id: 'history', icon: '📁', label: 'Historie' },
-  { id: 'membership', icon: '👑', label: 'Členství' },
+  { id: 'profile',      icon: '👤', label: 'Profil šikuly' },
+  { id: 'overview',     icon: '📊', label: 'Přehled' },
+  { id: 'new-jobs',     icon: '🔔', label: 'Nové zakázky',      lock: 'plan' },
+  { id: 'offers-sent',  icon: '📤', label: 'Odeslané nabídky',  lock: 'plan' },
+  { id: 'active',       icon: '⚡', label: 'Aktivní zakázky',   lock: 'plan' },
+  { id: 'calendar',     icon: '📅', label: 'Kalendář',          lock: 'plan' },
+  { id: 'earnings',     icon: '💰', label: 'Výdělky',           lock: 'plan' },
+  { id: 'invoices',     icon: '🧾', label: 'Faktury',           lock: 'fakturovac' },
+  { id: 'reviews',      icon: '⭐', label: 'Recenze',           lock: 'plan' },
+  { id: 'history',      icon: '📁', label: 'Historie',          lock: 'plan' },
+  { id: 'membership',   icon: '👑', label: 'Členství' },
 ]
+
+// Obrazovka pro zamčenou funkci
+function LockedScreen({ type, onActivate }) {
+  const isFak = type === 'fakturovac'
+  return (
+    <div className="page-enter" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
+      <div style={{ maxWidth: 420, textAlign: 'center', padding: '40px 24px' }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>{isFak ? '🧾' : '🔒'}</div>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1A1F2E', marginBottom: 12 }}>
+          {isFak ? 'Fakturovač není aktivní' : 'Tato funkce je dostupná po aktivaci profilu'}
+        </h2>
+        <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.7, marginBottom: 24 }}>
+          {isFak
+            ? 'Aktivujte si fakturovač za +100 Kč / měsíc a mějte zákazníky, zakázky i faktury na jednom místě.'
+            : 'Aktivujte si tarif Aktivní šikula za 399 Kč měsíčně. První měsíc máte zdarma.'}
+        </p>
+        <button onClick={onActivate}
+          style={{ height: 48, padding: '0 28px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#F97316,#EA580C)', color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 16px rgba(249,115,22,.35)', marginBottom: 14 }}>
+          {isFak ? 'Přidat fakturovač' : 'Spustit měsíc zdarma'}
+        </button>
+        <p style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.6 }}>
+          {isFak
+            ? 'Fakturovač se přidá k vašemu aktivnímu tarifu.'
+            : 'Kartu zadáte při aktivaci, první platba se strhne až po skončení zkušebního měsíce. Pokud tarif předtím zrušíte, neplatíte nic.'}
+        </p>
+      </div>
+    </div>
+  )
+}
 
 function CalendarSection() {
   const days = ['Po','Út','St','Čt','Pá','So','Ne']
@@ -424,6 +453,14 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
   const initials = (currentUser?.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
   const avatar = currentUser?.avatar || initials
 
+  // Zamčenost dle tarifu
+  const isActivePlan = currentUser?.plan && currentUser.plan !== 'start'
+  const hasFakturovac = isActivePlan
+  const activeItem = menuItems.find(m => m.id === activePage)
+  const lockedType = activeItem?.lock === 'plan' && !isActivePlan ? 'plan'
+                   : activeItem?.lock === 'fakturovac' && !hasFakturovac ? 'fakturovac'
+                   : null
+
   return (
     <div className="dash-layout">
       <div className="dash-sidebar">
@@ -435,11 +472,24 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             {available ? 'Dostupný' : 'Nedostupný'}
           </div>
         </div>
-        {menuItems.map(m => (
-          <button key={m.id} className={`dash-nav-item ${activePage === m.id ? 'active' : ''}`} onClick={() => setActivePage(m.id)}>
-            <span>{m.icon}</span>{m.label}
-          </button>
-        ))}
+        {menuItems.map(m => {
+          const isActivePlan = currentUser?.plan && currentUser.plan !== 'start'
+          const hasFakturovac = isActivePlan // TODO: rozšířit o DB pole has_fakturovac
+          const locked = m.lock === 'plan' ? !isActivePlan
+                       : m.lock === 'fakturovac' ? !hasFakturovac
+                       : false
+          const menuLabel = m.id === 'membership' && !isActivePlan ? 'Aktivace tarifu' : m.label
+          return (
+            <button key={m.id}
+              className={`dash-nav-item ${activePage === m.id ? 'active' : ''}`}
+              style={{ opacity: locked ? 0.55 : 1 }}
+              onClick={() => setActivePage(m.id)}>
+              <span>{m.icon}</span>
+              {menuLabel}
+              {locked && <span style={{ marginLeft: 'auto', fontSize: 11 }}>🔒</span>}
+            </button>
+          )
+        })}
         {onLogout && (
           <button className="dash-nav-item" onClick={onLogout}
             style={{ marginTop: 'auto', color: 'var(--red, #B91C1C)' }}>
@@ -472,7 +522,10 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
           </div>
         )}
 
-        {activePage === 'overview' && (
+        {/* Zamčená sekce */}
+        {lockedType && <LockedScreen type={lockedType} onActivate={() => setActivePage('membership')} />}
+
+        {!lockedType && activePage === 'overview' && (
           <div className="page-enter">
             <div className="dash-header">
               <div>
@@ -564,7 +617,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
           </div>
         )}
 
-        {activePage === 'new-jobs' && (
+        {!lockedType && activePage === 'new-jobs' && (
           <div className="page-enter">
             <div className="dash-title" style={{ marginBottom: 24 }}>Nové zakázky v okolí</div>
             {ordersLoading && <div style={{ color: 'var(--text3)' }}>Načítám zakázky…</div>}
