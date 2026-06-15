@@ -482,7 +482,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
           return (
             <button key={m.id}
               className={`dash-nav-item ${activePage === m.id ? 'active' : ''}`}
-              style={{ opacity: locked ? 0.55 : 1 }}
+              style={{ opacity: 1 }}
               onClick={() => setActivePage(m.id)}>
               <span>{m.icon}</span>
               {menuLabel}
