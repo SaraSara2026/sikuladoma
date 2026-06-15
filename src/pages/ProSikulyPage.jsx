@@ -12,7 +12,6 @@ const VYHODY = [
   'Aktivní profil šikuly',
   'Možnost reagovat na poptávky',
   'Zobrazení v katalogu služeb',
-  'Fotky realizací',
   'Recenze a hodnocení od zákazníků',
   'Upozornění na nové poptávky',
   'Žádná provize ze zakázky',
