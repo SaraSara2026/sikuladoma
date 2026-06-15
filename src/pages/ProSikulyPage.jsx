@@ -20,7 +20,7 @@ const VYHODY = [
 
 const STEPS = [
   { n: 1, Icon: IcUser,    bg: '#FFF7ED', color: '#F97316', title: 'Zaregistrujete se jako šikula',          desc: 'Vyplníte základní údaje, lokalitu a služby, které nabízíte.' },
-  { n: 2, Icon: IcTag,     bg: '#EFF6FF', color: '#3B82F6', title: 'Spustíte zkušební měsíc zdarma',         desc: 'Zadáte platební kartu — první platba 399 Kč se strhne až po skončení prvního měsíce.' },
+  { n: 2, Icon: IcTag,     bg: '#EFF6FF', color: '#3B82F6', title: 'Spustíte zkušební období zdarma',         desc: 'Zadáte platební kartu — první platba 399 Kč se strhne až po skončení prvního měsíce.' },
   { n: 3, Icon: IcBell,    bg: '#F0FDF4', color: '#22C55E', title: 'Dostáváte poptávky z okolí',             desc: 'Když zákazník ve vaší lokalitě zadá poptávku, dostanete upozornění.' },
   { n: 4, Icon: IcCheck,   bg: '#FAF5FF', color: '#A855F7', title: 'Reagujete jen na zakázky, které chcete', desc: 'Vy sami si vyberete, na co odpovíte. Žádné povinné zakázky, žádný tlak.' },
   { n: 5, Icon: IcUsers,   bg: '#F0F9FF', color: '#0EA5E9', title: 'Domluvíte se přímo se zákazníkem',      desc: 'Cenu, termín i podrobnosti práce si domluvíte přímo mezi sebou.' },
@@ -80,7 +80,7 @@ export default function ProSikulyPage({ onBack, onReg }) {
           <div style={{ maxWidth: 440, margin: '0 auto', background: '#fff', borderRadius: 20, border: '2px solid #FED7AA', boxShadow: '0 8px 32px rgba(249,115,22,.12)', padding: '36px 32px 28px', textAlign: 'left' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
               <div style={{ fontSize: 18, fontWeight: 800, color: '#1A1F2E' }}>Aktivní šikula</div>
-              <div style={{ background: '#FFF7ED', color: '#EA580C', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, border: '1px solid #FED7AA' }}>1. měsíc zdarma</div>
+              <div style={{ background: '#FFF7ED', color: '#EA580C', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, border: '1px solid #FED7AA' }}>14 dní zdarma</div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 12 }}>
@@ -107,7 +107,7 @@ export default function ProSikulyPage({ onBack, onReg }) {
               style={{ width: '100%', height: 50, borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#F97316 0%,#EA580C 100%)', color: '#fff', fontWeight: 700, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 16px rgba(249,115,22,.35)', transition: 'all .15s' }}
               onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg,#EA580C 0%,#C2410C 100%)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg,#F97316 0%,#EA580C 100%)'; e.currentTarget.style.transform = 'none'; }}>
-              Spustit měsíc zdarma <IcArrow />
+              Spustit 14 dní zdarma <IcArrow />
             </button>
 
             <p style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.6, marginTop: 12, textAlign: 'center' }}>
@@ -127,7 +127,7 @@ export default function ProSikulyPage({ onBack, onReg }) {
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: '#3B82F6', marginBottom: 10 }}>JAK TO FUNGUJE</div>
             <h2 style={{ fontSize: 'clamp(22px,3vw,30px)', fontWeight: 700, color: '#1A1F2E', letterSpacing: '-.02em' }}>
-              Zaregistrujete se, spustíte zkušební měsíc a reagujete jen na zakázky, které vám dávají smysl.
+              Zaregistrujete se, spustíte zkušební období a reagujete jen na zakázky, které vám dávají smysl.
             </h2>
           </div>
 
@@ -155,13 +155,13 @@ export default function ProSikulyPage({ onBack, onReg }) {
           <div style={{ textAlign: 'center', marginTop: 56, padding: '40px 32px', background: '#fff', borderRadius: 20, border: '1px solid #F3F4F6', boxShadow: '0 1px 4px rgba(0,0,0,.05)' }}>
             <h3 style={{ fontSize: 20, fontWeight: 700, color: '#1A1F2E', letterSpacing: '-.02em', marginBottom: 8 }}>Připraveni začít?</h3>
             <p style={{ fontSize: 14, color: '#9CA3AF', marginBottom: 24, lineHeight: 1.65 }}>
-              První měsíc zdarma. Bez závazků — zrušit lze kdykoliv před první platbou.
+              14 dní zdarma. Bez závazků — zrušit lze kdykoliv před první platbou.
             </p>
             <button onClick={onReg}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 50, padding: '0 32px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#F97316 0%,#EA580C 100%)', color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer', boxShadow: '0 4px 16px rgba(249,115,22,.35)', transition: 'all .15s' }}
               onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg,#EA580C 0%,#C2410C 100%)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg,#F97316 0%,#EA580C 100%)'; e.currentTarget.style.transform = 'none'; }}>
-              Spustit měsíc zdarma <IcArrow />
+              Spustit 14 dní zdarma <IcArrow />
             </button>
           </div>
         </div>

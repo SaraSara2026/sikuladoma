@@ -135,11 +135,11 @@ function LockedScreen({ type, onActivate }) {
         <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.7, marginBottom: 24 }}>
           {isFak
             ? 'Aktivujte si fakturovač za +100 Kč / měsíc a mějte zákazníky, zakázky i faktury na jednom místě.'
-            : 'Aktivujte si tarif Aktivní šikula za 399 Kč měsíčně. První měsíc máte zdarma.'}
+            : 'Aktivujte si tarif Aktivní šikula za 399 Kč měsíčně. 14 dní máte zdarma.'}
         </p>
         <button onClick={onActivate}
           style={{ height: 48, padding: '0 28px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#F97316,#EA580C)', color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 16px rgba(249,115,22,.35)', marginBottom: 14 }}>
-          {isFak ? 'Přidat fakturovač' : 'Spustit měsíc zdarma'}
+          {isFak ? 'Přidat fakturovač' : 'Spustit 14 dní zdarma'}
         </button>
         <p style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.6 }}>
           {isFak

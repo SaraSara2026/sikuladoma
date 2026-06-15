@@ -144,7 +144,7 @@ export default function RegForm({ plan, onClose, onRegistered }) {
                 })}
               </div>
               <div style={{ padding: "16px 13px", borderRadius: 12, border: `2px solid ${T.orange}`, background: "linear-gradient(135deg,#FFF7ED,#FFEDD5)", textAlign: "center", boxShadow: "0 2px 12px rgba(249,115,22,.15)" }}>
-                <div style={{ fontWeight: 800, fontSize: 15, color: T.orangeDk, marginBottom: 4 }}>Aktivní šikula — první měsíc zdarma</div>
+                <div style={{ fontWeight: 800, fontSize: 15, color: T.orangeDk, marginBottom: 4 }}>Aktivní šikula — 14 dní zdarma</div>
                 <div style={{ fontSize: 13, color: T.ink3 }}>399 Kč / měsíc · první platba až po skončení zkušebního měsíce</div>
               </div>
             </div>
