@@ -175,6 +175,104 @@ function CalendarSection() {
   )
 }
 
+function VylepseniProfilu({ currentUser }) {
+  const plan = currentUser?.plan || 'start'
+  const isActive = plan !== 'start'
+  const trialEnd = currentUser?.plan_expires_at
+  const fmtDate = (d) => d ? new Date(d).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' }) : null
+
+  const ADDONS = [
+    {
+      id: 'fakturovac',
+      title: 'Jednoduchý fakturovač',
+      price: '+100 Kč / měsíc',
+      desc: 'Chcete mít zákazníky, zakázky a jednoduché faktury na jednom místě? Přidejte si fakturovač k aktivnímu profilu.',
+      btn: 'Přidat fakturovač',
+      color: '#3B82F6', bg: '#EFF6FF', border: '#BFDBFE',
+    },
+    {
+      id: 'priorita',
+      title: 'Přednostní zobrazení',
+      price: '+200 Kč / měsíc',
+      desc: 'Chcete být častěji vidět mezi prvními šikuly ve své kategorii a lokalitě? Zapněte si přednostní zobrazení profilu.',
+      btn: 'Zapnout přednostní zobrazení',
+      color: '#A855F7', bg: '#FAF5FF', border: '#E9D5FF',
+    },
+  ]
+
+  return (
+    <div className="page-enter">
+      <div className="dash-title" style={{ marginBottom: 24 }}>Vylepšení profilu</div>
+
+      {/* Aktuální tarif */}
+      <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 14, padding: '20px 22px', marginBottom: 20 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>Váš aktivní tarif</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#1A1F2E' }}>
+              {isActive ? 'Aktivní šikula' : 'Základní (neaktivní)'}
+            </div>
+            <div style={{ fontSize: 14, color: '#6B7280', marginTop: 4 }}>
+              {isActive ? '399 Kč / měsíc' : 'Pro přijímání poptávek aktivujte profil.'}
+            </div>
+            {trialEnd && (
+              <div style={{ fontSize: 13, color: '#F97316', marginTop: 6, fontWeight: 600 }}>
+                Zkušební období do: {fmtDate(trialEnd)} — první platba 399 Kč se strhne poté.
+              </div>
+            )}
+          </div>
+          {isActive ? (
+            <span style={{ fontSize: 12, fontWeight: 700, background: '#F0FDF4', color: '#16A34A', border: '1px solid #BBF7D0', borderRadius: 999, padding: '4px 12px' }}>✓ Aktivní</span>
+          ) : (
+            <span style={{ fontSize: 12, fontWeight: 700, background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', borderRadius: 999, padding: '4px 12px' }}>Neaktivní</span>
+          )}
+        </div>
+        {trialEnd && (
+          <div style={{ marginTop: 14, padding: '10px 14px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 9, fontSize: 13, color: '#92400E' }}>
+            Pokud zrušíte obnovu před koncem zkušebního období, nic se vám nestrhne.
+            <button style={{ marginLeft: 12, background: 'none', border: 'none', color: '#DC2626', fontSize: 13, fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+              Zrušit obnovu tarifu
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Doplňkové funkce */}
+      <div style={{ fontSize: 15, fontWeight: 700, color: '#1A1F2E', marginBottom: 14 }}>Doplňkové funkce</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {ADDONS.map(a => (
+          <div key={a.id} style={{ background: '#fff', border: `1.5px solid ${a.border}`, borderRadius: 14, padding: '18px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                <span style={{ fontSize: 15, fontWeight: 700, color: '#1A1F2E' }}>{a.title}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: a.color, background: a.bg, border: `1px solid ${a.border}`, borderRadius: 999, padding: '2px 10px' }}>{a.price}</span>
+              </div>
+              <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6, margin: 0 }}>{a.desc}</p>
+            </div>
+            <button style={{ height: 38, padding: '0 16px', borderRadius: 9, border: `1.5px solid ${a.border}`, background: a.bg, color: a.color, fontWeight: 600, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+              {a.btn}
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Přehled cen */}
+      <div style={{ marginTop: 20, background: '#F9FAFB', borderRadius: 12, padding: '14px 18px', border: '1px solid #E5E7EB' }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>Celková cena</div>
+        {[
+          ['Základní aktivní tarif', '399 Kč / měsíc'],
+          ['S fakturovačem', '499 Kč / měsíc'],
+          ['S přednostním zobrazením', '599 Kč / měsíc'],
+        ].map(([l, p]) => (
+          <div key={l} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#4B5563', padding: '5px 0', borderBottom: '1px solid #F3F4F6' }}>
+            <span>{l}</span><span style={{ fontWeight: 600 }}>{p}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdateUser }) {
   const [activePage, setActivePage] = useState('overview')
   const [available, setAvailable] = useState(true)
@@ -526,7 +624,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
 
         {activePage === 'invoices' && <InvoicePage />}
         {activePage === 'calendar' && <CalendarSection />}
-        {activePage === 'membership' && <PricingPage onNav={onNav} inDash currentUser={currentUser} />}
+        {activePage === 'membership' && <VylepseniProfilu currentUser={currentUser} />}
         {activePage === 'messages' && <ChatPage />}
 
         {activePage === 'earnings' && (
