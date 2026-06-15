@@ -213,19 +213,24 @@ function VylepseniProfilu({ currentUser }) {
   const [fakturovac, setFakturovac] = useState(false)
   const [priorita, setPriorita] = useState(false)
 
-  // Cenová logika
   const base = 399
-  const cenaFak = fakturovac ? 100 : 0
-  const cenaPri = priorita ? 150 : 0
-  const obojeSlevaUspori = fakturovac && priorita ? 50 : 0  // 649 → 599
-  const celkem = base + cenaFak + cenaPri - obojeSlevaUspori
+  const celkem = base + (fakturovac ? 100 : 0) + (priorita ? 99 : 0)
+
+  // Datum aktivní do: +30 dní od dnes (simulace)
+  const aktivniDo = new Date(); aktivniDo.setDate(aktivniDo.getDate() + 30)
 
   const CENY = [
     ['Aktivní šikula', '399 Kč / měsíc'],
     ['+ Jednoduchý fakturovač', '499 Kč / měsíc'],
-    ['+ Přednostní zobrazení', '549 Kč / měsíc'],
-    ['Fakturovač + přednostní zobrazení', '599 Kč / měsíc (místo 649 Kč)'],
+    ['+ Přednostní zobrazení', '498 Kč / měsíc'],
+    ['Fakturovač + přednostní zobrazení', '598 Kč / měsíc'],
   ]
+
+  const row = (label, val) => (
+    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#4B5563', padding: '6px 0', borderBottom: '1px solid #F3F4F6' }}>
+      <span>{label}</span><span style={{ fontWeight: 600 }}>{val}</span>
+    </div>
+  )
 
   return (
     <div className="page-enter">
@@ -236,9 +241,7 @@ function VylepseniProfilu({ currentUser }) {
         <div style={{ fontSize: 12, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>Váš aktivní tarif</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#1A1F2E' }}>
-              {isActive ? 'Aktivní šikula' : 'Základní (neaktivní)'}
-            </div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#1A1F2E' }}>{isActive ? 'Aktivní šikula' : 'Základní (neaktivní)'}</div>
             <div style={{ fontSize: 14, color: '#6B7280', marginTop: 4 }}>
               {isActive
                 ? <><strong style={{ color: '#F97316' }}>{celkem} Kč / měsíc</strong>{(fakturovac || priorita) ? ' (vč. doplňků)' : ''}</>
@@ -268,7 +271,7 @@ function VylepseniProfilu({ currentUser }) {
       {/* Doplňkové funkce */}
       {!isActive && (
         <div style={{ padding: '12px 16px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, fontSize: 13, color: '#B91C1C', marginBottom: 16 }}>
-          Doplňkové funkce jsou dostupné až po aktivaci základního tarifu (399 Kč / měsíc).
+          Doplňkové funkce jsou dostupné až po aktivaci základního tarifu 399 Kč / měsíc.
         </div>
       )}
 
@@ -283,10 +286,12 @@ function VylepseniProfilu({ currentUser }) {
                 <span style={{ fontSize: 15, fontWeight: 700, color: '#1A1F2E' }}>Jednoduchý fakturovač</span>
                 <span style={{ fontSize: 12, fontWeight: 700, color: '#3B82F6', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 999, padding: '2px 10px' }}>+100 Kč / měsíc</span>
               </div>
-              <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6, margin: 0 }}>Chcete mít zákazníky, zakázky a jednoduché faktury na jednom místě? Přidejte si fakturovač k aktivnímu profilu.</p>
+              <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6, margin: 0 }}>
+                Chcete mít zákazníky, zakázky a jednoduché faktury na jednom místě? Přidejte si fakturovač k aktivnímu profilu.
+                {fakturovac && <><br /><strong style={{ color: '#3B82F6' }}>Aktivní šikula + fakturovač = 499 Kč / měsíc</strong></>}
+              </p>
             </div>
-            <button disabled={!isActive}
-              onClick={() => setFakturovac(v => !v)}
+            <button disabled={!isActive} onClick={() => setFakturovac(v => !v)}
               style={{ height: 38, padding: '0 16px', borderRadius: 9, border: `1.5px solid ${fakturovac ? '#3B82F6' : '#E5E7EB'}`, background: fakturovac ? '#3B82F6' : '#F9FAFB', color: fakturovac ? '#fff' : '#4B5563', fontWeight: 600, fontSize: 13, cursor: isActive ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', flexShrink: 0, transition: 'all .14s' }}>
               {fakturovac ? '✓ Aktivní' : 'Přidat fakturovač'}
             </button>
@@ -299,46 +304,41 @@ function VylepseniProfilu({ currentUser }) {
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                 <span style={{ fontSize: 15, fontWeight: 700, color: '#1A1F2E' }}>Přednostní zobrazení</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#A855F7', background: '#FAF5FF', border: '1px solid #E9D5FF', borderRadius: 999, padding: '2px 10px' }}>+150 Kč / měsíc</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#A855F7', background: '#FAF5FF', border: '1px solid #E9D5FF', borderRadius: 999, padding: '2px 10px' }}>+99 Kč / měsíc</span>
               </div>
-              <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6, margin: 0 }}>Chcete být častěji vidět mezi prvními šikuly ve své kategorii a lokalitě? Zapněte si přednostní zobrazení profilu.</p>
+              <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6, margin: 0 }}>
+                Chcete být tento měsíc více vidět? Zapněte si přednostní zobrazení profilu. Profil se bude zobrazovat přednostněji ve výsledcích podle služby a lokality.
+              </p>
+              {priorita && (
+                <div style={{ marginTop: 10, padding: '8px 12px', background: '#FAF5FF', border: '1px solid #E9D5FF', borderRadius: 8, fontSize: 13 }}>
+                  <div style={{ fontWeight: 600, color: '#7C3AED', marginBottom: 6 }}>
+                    Přednostní zobrazení je aktivní do: {fmtDate(aktivniDo.toISOString())}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button style={{ height: 30, padding: '0 12px', borderRadius: 7, border: '1px solid #E9D5FF', background: '#EDE9FE', color: '#7C3AED', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>
+                      Prodloužit o měsíc
+                    </button>
+                    <button onClick={() => setPriorita(false)} style={{ height: 30, padding: '0 12px', borderRadius: 7, border: '1px solid #FECACA', background: '#FEF2F2', color: '#DC2626', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>
+                      Vypnout automatické prodloužení
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-            <button disabled={!isActive}
-              onClick={() => setPriorita(v => !v)}
-              style={{ height: 38, padding: '0 16px', borderRadius: 9, border: `1.5px solid ${priorita ? '#A855F7' : '#E5E7EB'}`, background: priorita ? '#A855F7' : '#F9FAFB', color: priorita ? '#fff' : '#4B5563', fontWeight: 600, fontSize: 13, cursor: isActive ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', flexShrink: 0, transition: 'all .14s' }}>
-              {priorita ? '✓ Aktivní' : 'Zapnout přednostní zobrazení'}
-            </button>
+            {!priorita && (
+              <button disabled={!isActive} onClick={() => setPriorita(true)}
+                style={{ height: 38, padding: '0 16px', borderRadius: 9, border: '1.5px solid #E9D5FF', background: '#FAF5FF', color: '#A855F7', fontWeight: 600, fontSize: 13, cursor: isActive ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', flexShrink: 0, transition: 'all .14s' }}>
+                Zapnout přednostní zobrazení
+              </button>
+            )}
           </div>
         </div>
-
-        {/* Combo banner */}
-        {isActive && (fakturovac || priorita) && !(fakturovac && priorita) && (
-          <div style={{ padding: '14px 18px', background: 'linear-gradient(135deg,#FAF5FF,#EFF6FF)', border: '1.5px solid #C4B5FD', borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#1A1F2E', marginBottom: 3 }}>Fakturovač + přednostní zobrazení</div>
-              <div style={{ fontSize: 13, color: '#6B7280' }}>Nejvýhodnější kombinace — <strong style={{ color: '#A855F7' }}>599 Kč / měsíc</strong> <s style={{ color: '#9CA3AF', fontSize: 12 }}>649 Kč</s></div>
-            </div>
-            <button onClick={() => { setFakturovac(true); setPriorita(true); }}
-              style={{ height: 36, padding: '0 14px', borderRadius: 9, border: '1.5px solid #A855F7', background: '#FAF5FF', color: '#A855F7', fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-              Aktivovat oboje
-            </button>
-          </div>
-        )}
-        {isActive && fakturovac && priorita && (
-          <div style={{ padding: '12px 16px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, fontSize: 13, color: '#166534', fontWeight: 600 }}>
-            ✓ Máte aktivní zvýhodněnou kombinaci — 599 Kč / měsíc (ušetříte 50 Kč oproti zvlášť)
-          </div>
-        )}
       </div>
 
       {/* Přehled cen */}
       <div style={{ marginTop: 20, background: '#F9FAFB', borderRadius: 12, padding: '14px 18px', border: '1px solid #E5E7EB' }}>
         <div style={{ fontSize: 12, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>Přehled cen</div>
-        {CENY.map(([l, p]) => (
-          <div key={l} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#4B5563', padding: '6px 0', borderBottom: '1px solid #F3F4F6' }}>
-            <span>{l}</span><span style={{ fontWeight: 600 }}>{p}</span>
-          </div>
-        ))}
+        {CENY.map(([l, p]) => row(l, p))}
       </div>
     </div>
   )
