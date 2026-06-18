@@ -134,17 +134,17 @@ function LockedScreen({ type, onActivate }) {
         </h2>
         <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.7, marginBottom: 24 }}>
           {isFak
-            ? 'Aktivujte si fakturovač za +100 Kč / měsíc a mějte zákazníky, zakázky i faktury na jednom místě.'
-            : 'Aktivujte si tarif Aktivní šikula za 399 Kč měsíčně. 14 dní máte zdarma.'}
+            ? 'Přidejte fakturovač za +100 Kč / měsíc a mějte zákazníky, zakázky i faktury na jednom místě.'
+            : 'Tato funkce je dostupná po aktivaci profilu. Aktivujte tarif Aktivní šikula za 399 Kč / měsíc.'}
         </p>
         <button onClick={onActivate}
           style={{ height: 48, padding: '0 28px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#F97316,#EA580C)', color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 16px rgba(249,115,22,.35)', marginBottom: 14 }}>
-          {isFak ? 'Přidat fakturovač' : 'Spustit 14 dní zdarma'}
+          {isFak ? 'Přidat fakturovač' : 'Aktivovat profil za 399 Kč'}
         </button>
         <p style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.6 }}>
           {isFak
             ? 'Fakturovač se přidá k vašemu aktivnímu tarifu.'
-            : 'Kartu zadáte při aktivaci, první platba se strhne až po skončení zkušebního měsíce. Pokud tarif předtím zrušíte, neplatíte nic.'}
+            : 'Platba probíhá kartou přes Stripe. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.'}
         </p>
       </div>
     </div>
@@ -206,8 +206,8 @@ function CalendarSection() {
 
 function VylepseniProfilu({ currentUser }) {
   const subStatus = currentUser?.subscription_status || 'inactive'
-  const isActive = subStatus === 'trial_active' || subStatus === 'paid_active'
-  const trialEnd = currentUser?.trial_ends_at || currentUser?.plan_expires_at
+  const isActive = subStatus === 'active'
+  const renewalEnd = currentUser?.plan_expires_at
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' }) : null
 
   const [fakturovac, setFakturovac] = useState(false)
@@ -215,9 +215,6 @@ function VylepseniProfilu({ currentUser }) {
 
   const base = 399
   const celkem = base + (fakturovac ? 100 : 0) + (priorita ? 99 : 0)
-
-  // Datum aktivní do: +30 dní od dnes (simulace)
-  const aktivniDo = new Date(); aktivniDo.setDate(aktivniDo.getDate() + 30)
 
   const CENY = [
     ['Aktivní šikula', '399 Kč / měsíc'],
@@ -247,9 +244,9 @@ function VylepseniProfilu({ currentUser }) {
                 ? <><strong style={{ color: '#F97316' }}>{celkem} Kč / měsíc</strong>{(fakturovac || priorita) ? ' (vč. doplňků)' : ''}</>
                 : 'Pro přijímání poptávek aktivujte profil.'}
             </div>
-            {trialEnd && isActive && (
-              <div style={{ fontSize: 13, color: '#F97316', marginTop: 6, fontWeight: 600 }}>
-                Zkušební období do: {fmtDate(trialEnd)} — první platba {celkem} Kč se strhne poté.
+            {renewalEnd && isActive && (
+              <div style={{ fontSize: 13, color: '#6B7280', marginTop: 6 }}>
+                Obnoví se: {fmtDate(renewalEnd)}
               </div>
             )}
           </div>
@@ -258,11 +255,14 @@ function VylepseniProfilu({ currentUser }) {
             : <span style={{ fontSize: 12, fontWeight: 700, background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', borderRadius: 999, padding: '4px 12px' }}>Neaktivní</span>
           }
         </div>
-        {trialEnd && isActive && (
-          <div style={{ marginTop: 14, padding: '10px 14px', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 9, fontSize: 13, color: '#92400E' }}>
-            Pokud zrušíte obnovu před koncem zkušebního období, nic se vám nestrhne.
-            <button style={{ marginLeft: 12, background: 'none', border: 'none', color: '#DC2626', fontSize: 13, fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
-              Zrušit obnovu tarifu
+        {isActive && (
+          <div style={{ marginTop: 14, padding: '10px 14px', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 9, fontSize: 13, color: '#6B7280', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+            <span>Tarif se obnovuje měsíčně. Zrušit lze kdykoliv v profilu.</span>
+            <button onClick={() => {
+              fetch('/api/stripe?action=portal', { credentials: 'include' })
+                .then(r => r.json()).then(d => { if (d.url) window.location.href = d.url; });
+            }} style={{ background: 'none', border: 'none', color: '#DC2626', fontSize: 13, fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', padding: 0, whiteSpace: 'nowrap' }}>
+              Zrušit tarif
             </button>
           </div>
         )}
@@ -273,17 +273,17 @@ function VylepseniProfilu({ currentUser }) {
         <div style={{ padding: '16px 18px', background: '#FFF7ED', border: '1.5px solid #FED7AA', borderRadius: 12, marginBottom: 20 }}>
           <div style={{ fontWeight: 700, color: '#C2410C', fontSize: 14, marginBottom: 6 }}>Profil není aktivní</div>
           <div style={{ fontSize: 13, color: '#92400E', lineHeight: 1.6, marginBottom: 12 }}>
-            Aktivujte tarif Aktivní šikula za 399 Kč / měsíc. Kartu zadáte při aktivaci, první platba se strhne až po 14 dnech. Pokud tarif předtím zrušíte, neplatíte nic.
+            Aktivujte profil za 399 Kč / měsíc. Platba probíhá kartou přes Stripe. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit v profilu.
           </div>
           <button onClick={() => {
             fetch('/api/stripe?action=checkout', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan: 'aktiv' }) })
               .then(r => r.json()).then(d => { if (d.url) window.location.href = d.url; });
           }}
             style={{ height: 44, padding: '0 24px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#F97316,#EA580C)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
-            Spustit 14 dní zdarma
+            Aktivovat profil za 399 Kč
           </button>
           <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 10 }}>
-            Doplňkové funkce jsou dostupné až po aktivaci základního tarifu.
+            Doplňkové funkce jsou dostupné až po aktivaci tarifu.
           </div>
         </div>
       )}
@@ -468,8 +468,8 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
 
   // Zamčenost dle subscription_status
   const subStatus = currentUser?.subscription_status || 'inactive'
-  const isActivePlan = subStatus === 'trial_active' || subStatus === 'paid_active'
-  const isTrialCancelled = subStatus === 'trial_cancelled' || subStatus === 'inactive'
+  const isActivePlan = subStatus === 'active'
+  const isInactive = !isActivePlan
   const hasFakturovac = isActivePlan  // TODO: oddělit přes DB pole has_fakturovac
   const activeItem = menuItems.find(m => m.id === activePage)
   const lockedType = activeItem?.lock === 'plan' && !isActivePlan ? 'plan'
@@ -537,15 +537,17 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
           </div>
         )}
 
-        {/* Banner pro zrušený trial / neaktivní profil */}
-        {isTrialCancelled && activePage !== 'membership' && activePage !== 'profile' && (
+        {/* Banner pro neaktivní / zrušený profil */}
+        {isInactive && activePage !== 'membership' && activePage !== 'profile' && (
           <div style={{ margin: '0 0 20px', padding: '14px 20px', borderRadius: 12, background: '#FEF2F2', border: '1px solid #FECACA', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 13, color: '#B91C1C' }}>
-              Zrušili jste obnovu tarifu. Váš profil zůstává uložený, ale není aktivní, nezobrazuje se zákazníkům a nové poptávky vám nebudou chodit.
+              {subStatus === 'payment_failed'
+                ? 'Platba selhala. Váš profil není aktivní a nezobrazuje se zákazníkům.'
+                : 'Váš profil není aktivní. Nezobrazuje se zákazníkům a nové poptávky vám nechodí.'}
             </span>
             <button onClick={() => setActivePage('membership')}
               style={{ height: 36, padding: '0 16px', borderRadius: 9, border: 'none', background: '#F97316', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-              Znovu aktivovat tarif
+              Aktivovat profil
             </button>
           </div>
         )}

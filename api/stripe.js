@@ -81,7 +81,7 @@ async function handleCheckout(req, res, me) {
   const [user] = await sql`SELECT stripe_customer_id FROM users WHERE id = ${me.id}`;
   const existingCustomer = user?.stripe_customer_id || undefined;
 
-  const sessionParams = {
+  const session = await stripe.checkout.sessions.create({
     mode: 'subscription',
     ...(existingCustomer
       ? { customer: existingCustomer }
@@ -92,15 +92,11 @@ async function handleCheckout(req, res, me) {
     metadata: { user_id: String(me.id), plan },
     subscription_data: {
       metadata: { user_id: String(me.id), plan },
-      // 14denní zkušební doba pro nový plán aktiv
-      ...(plan === 'aktiv' ? { trial_period_days: 14 } : {}),
     },
-    allow_promotion_codes: true,
+    payment_method_types: ['card'],
     locale: 'cs',
-    payment_method_collection: 'always',
-  };
+  });
 
-  const session = await stripe.checkout.sessions.create(sessionParams);
   return res.status(200).json({ url: session.url });
 }
 
@@ -177,35 +173,26 @@ async function processEvent(event) {
       const subscriptionId = session.subscription;
 
       let expiresAt = null;
-      let trialEndsAt = null;
-      let subStatus = 'paid_active';
-
       if (subscriptionId) {
         try {
-          const stripe = getStripe();
-          const sub = await stripe.subscriptions.retrieve(subscriptionId);
+          const sub = await getStripe().subscriptions.retrieve(subscriptionId);
           if (sub.current_period_end) {
             expiresAt = new Date(sub.current_period_end * 1000).toISOString();
-          }
-          if (sub.trial_end) {
-            trialEndsAt = new Date(sub.trial_end * 1000).toISOString();
-            subStatus = 'trial_active';
           }
         } catch {}
       }
 
       await sql`
         UPDATE users
-        SET plan = ${plan},
+        SET plan                   = ${plan},
             stripe_customer_id     = ${customerId},
             stripe_subscription_id = ${subscriptionId},
             plan_expires_at        = ${expiresAt},
-            subscription_status    = ${subStatus},
-            trial_ends_at          = ${trialEndsAt},
+            subscription_status    = 'active',
             updated_at             = NOW()
         WHERE id = ${userId}
       `;
-      console.log(`[stripe] ✅ User ${userId} aktivován: ${plan} (${subStatus})`);
+      console.log(`[stripe] ✅ User ${userId} aktivován: ${plan}`);
       break;
     }
 
@@ -219,21 +206,17 @@ async function processEvent(event) {
 
       const expiresAt = sub.current_period_end
         ? new Date(sub.current_period_end * 1000).toISOString() : null;
-      const trialEndsAt = sub.trial_end
-        ? new Date(sub.trial_end * 1000).toISOString() : null;
 
-      let subStatus = 'paid_active';
-      if (sub.status === 'trialing') subStatus = 'trial_active';
-      else if (sub.status === 'canceled') subStatus = 'inactive';
-      else if (sub.status === 'past_due') subStatus = 'payment_failed';
+      const subStatus = sub.status === 'active' ? 'active'
+                      : sub.status === 'past_due' ? 'payment_failed'
+                      : 'inactive';
 
       await sql`
         UPDATE users
-        SET plan = ${plan},
+        SET plan                   = ${plan},
             stripe_subscription_id = ${sub.id},
             plan_expires_at        = ${expiresAt},
             subscription_status    = ${subStatus},
-            trial_ends_at          = ${trialEndsAt},
             updated_at             = NOW()
         WHERE id = ${userId}
       `;
@@ -252,18 +235,10 @@ async function processEvent(event) {
             stripe_subscription_id = NULL,
             plan_expires_at        = NULL,
             subscription_status    = 'inactive',
-            trial_ends_at          = NULL,
             updated_at             = NOW()
         WHERE id = ${userId}
       `;
       console.log(`[stripe] ℹ️  User ${userId} zrušil předplatné → inactive`);
-      break;
-    }
-
-    case 'customer.subscription.trial_will_end': {
-      // Stripe upozorní 3 dny před koncem trialu — logujeme, email posílá Stripe
-      const sub = event.data.object;
-      console.log(`[stripe] ⚠️  Trial ends soon for subscription ${sub.id}`);
       break;
     }
 

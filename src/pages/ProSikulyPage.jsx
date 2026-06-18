@@ -78,18 +78,16 @@ export default function ProSikulyPage({ onBack, onReg }) {
 
           {/* ── CENOVÁ KARTA ── */}
           <div style={{ maxWidth: 440, margin: '0 auto', background: '#fff', borderRadius: 20, border: '2px solid #FED7AA', boxShadow: '0 8px 32px rgba(249,115,22,.12)', padding: '36px 32px 28px', textAlign: 'left' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-              <div style={{ fontSize: 18, fontWeight: 800, color: '#1A1F2E' }}>Aktivní šikula</div>
-              <div style={{ background: '#FFF7ED', color: '#EA580C', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, border: '1px solid #FED7AA' }}>14 dní zdarma</div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 12 }}>
-              <span style={{ fontSize: 36, fontWeight: 800, color: '#F97316' }}>399</span>
-              <span style={{ fontSize: 15, color: '#9CA3AF', fontWeight: 500 }}>Kč / měsíc</span>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: '#1A1F2E', marginBottom: 4 }}>Aktivní šikula</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                <span style={{ fontSize: 36, fontWeight: 800, color: '#F97316' }}>399</span>
+                <span style={{ fontSize: 15, color: '#9CA3AF', fontWeight: 500 }}>Kč / měsíc</span>
+              </div>
             </div>
 
             <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.65, marginBottom: 20 }}>
-              Získejte aktivní profil šikuly, možnost reagovat na poptávky a být vidět u zákazníků ve vaší lokalitě. Ze zakázek si nebereme žádnou provizi. Zákazník platí přímo vám.
+              Aktivujte si profil šikuly, zobrazujte se zákazníkům ve své lokalitě a reagujte na poptávky. Bez provize ze zakázky. Co si domluvíte se zákazníkem, je vaše.
             </p>
 
             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: 9 }}>
@@ -107,16 +105,16 @@ export default function ProSikulyPage({ onBack, onReg }) {
               style={{ width: '100%', height: 50, borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#F97316 0%,#EA580C 100%)', color: '#fff', fontWeight: 700, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 16px rgba(249,115,22,.35)', transition: 'all .15s' }}
               onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg,#EA580C 0%,#C2410C 100%)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg,#F97316 0%,#EA580C 100%)'; e.currentTarget.style.transform = 'none'; }}>
-              Spustit 14 dní zdarma <IcArrow />
+              Aktivovat profil za 399 Kč <IcArrow />
             </button>
 
             <p style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.6, marginTop: 12, textAlign: 'center' }}>
-              Kartu zadáte při registraci, ale první platba 399 Kč se strhne až po skončení zkušebního měsíce. Pokud tarif předtím zrušíte, neplatíte nic.
+              Platba probíhá kartou přes Stripe. Po úspěšné platbě se profil aktivuje. Tarif se obnovuje měsíčně a můžete ho kdykoliv zrušit v profilu.
             </p>
           </div>
 
           <p style={{ fontSize: 13, color: '#9CA3AF', marginTop: 20, lineHeight: 1.6 }}>
-            Po aktivaci profilu si můžete ve svém účtu zapnout další nástroje pro větší viditelnost, jednodušší správu zakázek nebo fakturaci.
+            Po aktivaci si můžete v profilu volitelně zapnout fakturovač nebo přednostní zobrazení.
           </p>
         </div>
       </section>
@@ -155,13 +153,13 @@ export default function ProSikulyPage({ onBack, onReg }) {
           <div style={{ textAlign: 'center', marginTop: 56, padding: '40px 32px', background: '#fff', borderRadius: 20, border: '1px solid #F3F4F6', boxShadow: '0 1px 4px rgba(0,0,0,.05)' }}>
             <h3 style={{ fontSize: 20, fontWeight: 700, color: '#1A1F2E', letterSpacing: '-.02em', marginBottom: 8 }}>Připraveni začít?</h3>
             <p style={{ fontSize: 14, color: '#9CA3AF', marginBottom: 24, lineHeight: 1.65 }}>
-              14 dní zdarma. Bez závazků — zrušit lze kdykoliv před první platbou.
+              399 Kč / měsíc. Platba kartou. Zrušit lze kdykoliv.
             </p>
             <button onClick={onReg}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 50, padding: '0 32px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#F97316 0%,#EA580C 100%)', color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer', boxShadow: '0 4px 16px rgba(249,115,22,.35)', transition: 'all .15s' }}
               onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg,#EA580C 0%,#C2410C 100%)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg,#F97316 0%,#EA580C 100%)'; e.currentTarget.style.transform = 'none'; }}>
-              Spustit 14 dní zdarma <IcArrow />
+              Aktivovat profil za 399 Kč <IcArrow />
             </button>
           </div>
         </div>

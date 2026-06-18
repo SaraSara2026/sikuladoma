@@ -76,12 +76,12 @@ export default function RegForm({ plan, onClose, onRegistered }) {
           </div>
           <h2 style={{ fontSize: 22, fontWeight: 700, color: T.ink, marginBottom: 10 }}>Účet vytvořen 🎉</h2>
           <p style={{ color: T.ink3, fontSize: 14, lineHeight: 1.7, marginBottom: 16 }}>
-            Vítej v ŠikulaDoma, <strong>{form.name}</strong>. Aktivuj svůj profil a získej 14 dní zdarma.
+            Vítej v ŠikulaDoma, <strong>{form.name}</strong>. Aktivuj profil a začni dostávat poptávky.
           </p>
           <div style={{ background: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: 10, padding: "14px 16px", marginBottom: 16, textAlign: "left" }}>
             <div style={{ fontWeight: 700, color: "#C2410C", fontSize: 13, marginBottom: 6 }}>⚡ Aktivuj profil šikuly</div>
             <div style={{ fontSize: 13, color: "#92400E", lineHeight: 1.5 }}>
-              Kartu zadáš při aktivaci. První platba 399 Kč se strhne až po skončení 14denní zkušební doby. Pokud tarif předtím zrušíš, neplatíš nic.
+              Platba 399 Kč / měsíc probíhá kartou přes Stripe. Po úspěšné platbě se profil aktivuje. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.
             </div>
           </div>
           <button onClick={() => {
@@ -89,7 +89,7 @@ export default function RegForm({ plan, onClose, onRegistered }) {
               .then(r => r.json()).then(d => { if (d.url) window.location.href = d.url; });
           }}
             style={{ width: "100%", height: 50, borderRadius: 12, border: "none", background: `linear-gradient(135deg,#F97316,#EA580C)`, color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 4px 16px rgba(249,115,22,.35)", marginBottom: 10 }}>
-            Spustit 14 dní zdarma <IcArrow />
+            Aktivovat profil za 399 Kč <IcArrow />
           </button>
           <button onClick={() => { if (registeredUser) onRegistered(registeredUser); onClose(); }}
             style={{ background: "none", border: "none", color: T.ink3, fontSize: 13, cursor: "pointer", fontFamily: "inherit", textDecoration: "underline" }}>
