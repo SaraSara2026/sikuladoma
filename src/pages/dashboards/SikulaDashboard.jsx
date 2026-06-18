@@ -207,152 +207,179 @@ function CalendarSection() {
 function VylepseniProfilu({ currentUser }) {
   const subStatus = currentUser?.subscription_status || 'inactive'
   const isActive = subStatus === 'active'
+  const currentPlan = currentUser?.plan || 'start'
   const renewalEnd = currentUser?.plan_expires_at
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' }) : null
+  const [billing, setBilling] = useState('monthly') // 'monthly' | 'yearly'
 
-  const [fakturovac, setFakturovac] = useState(false)
-  const [priorita, setPriorita] = useState(false)
+  const goCheckout = (plan) => {
+    fetch('/api/stripe?action=checkout', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan }),
+    }).then(r => r.json()).then(d => { if (d.url) window.location.href = d.url; })
+  }
 
-  const base = 399
-  const celkem = base + (fakturovac ? 100 : 0) + (priorita ? 99 : 0)
-
-  const CENY = [
-    ['Aktivní šikula', '399 Kč / měsíc'],
-    ['+ Jednoduchý fakturovač', '499 Kč / měsíc'],
-    ['+ Přednostní zobrazení', '498 Kč / měsíc'],
-    ['Fakturovač + přednostní zobrazení', '598 Kč / měsíc'],
+  const TARIFY = [
+    {
+      id: 'aktiv',
+      name: 'Aktivní šikula',
+      monthlyPrice: 399,
+      yearlyPrice: 4500,
+      yearlyOriginal: 4788,
+      color: '#F97316',
+      border: '#FED7AA',
+      bg: '#FFF7ED',
+      btnLabel: 'Aktivovat tarif',
+      features: [
+        'Aktivní profil šikuly',
+        'Zobrazení zákazníkům',
+        'Možnost reagovat na poptávky',
+        'Nové zakázky',
+        'Odeslané nabídky',
+        'Aktivní zakázky',
+        'Kalendář',
+        'Recenze',
+        'Žádná provize ze zakázky',
+      ],
+    },
+    {
+      id: 'aktiv-plus',
+      name: 'Aktivní šikula Plus',
+      monthlyPrice: 499,
+      yearlyPrice: 5500,
+      yearlyOriginal: 5988,
+      color: '#7C3AED',
+      border: '#C4B5FD',
+      bg: '#FAF5FF',
+      btnLabel: 'Aktivovat Plus',
+      badge: 'Více funkcí',
+      features: [
+        'Vše z tarifu Aktivní šikula',
+        'Jednoduchý fakturovač',
+        'Přehled zákazníků',
+        'Přehled faktur',
+        'Historie zakázek',
+        'Lepší přehled výdělků',
+      ],
+    },
   ]
 
-  const row = (label, val) => (
-    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#4B5563', padding: '6px 0', borderBottom: '1px solid #F3F4F6' }}>
-      <span>{label}</span><span style={{ fontWeight: 600 }}>{val}</span>
-    </div>
-  )
+  const price = (t) => billing === 'yearly' ? t.yearlyPrice : t.monthlyPrice
+  const unit = billing === 'yearly' ? '/ rok' : '/ měsíc'
 
   return (
     <div className="page-enter">
-      <div className="dash-title" style={{ marginBottom: 24 }}>Vylepšení profilu</div>
+      <div className="dash-title" style={{ marginBottom: 8 }}>Tarify</div>
 
-      {/* Aktuální tarif */}
-      <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 14, padding: '20px 22px', marginBottom: 20 }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>Váš aktivní tarif</div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          <div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#1A1F2E' }}>{isActive ? 'Aktivní šikula' : 'Základní (neaktivní)'}</div>
-            <div style={{ fontSize: 14, color: '#6B7280', marginTop: 4 }}>
-              {isActive
-                ? <><strong style={{ color: '#F97316' }}>{celkem} Kč / měsíc</strong>{(fakturovac || priorita) ? ' (vč. doplňků)' : ''}</>
-                : 'Pro přijímání poptávek aktivujte profil.'}
-            </div>
-            {renewalEnd && isActive && (
-              <div style={{ fontSize: 13, color: '#6B7280', marginTop: 6 }}>
-                Obnoví se: {fmtDate(renewalEnd)}
-              </div>
-            )}
-          </div>
-          {isActive
-            ? <span style={{ fontSize: 12, fontWeight: 700, background: '#F0FDF4', color: '#16A34A', border: '1px solid #BBF7D0', borderRadius: 999, padding: '4px 12px' }}>✓ Aktivní</span>
-            : <span style={{ fontSize: 12, fontWeight: 700, background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', borderRadius: 999, padding: '4px 12px' }}>Neaktivní</span>
-          }
-        </div>
-        {isActive && (
-          <div style={{ marginTop: 14, padding: '10px 14px', background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 9, fontSize: 13, color: '#6B7280', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-            <span>Tarif se obnovuje měsíčně. Zrušit lze kdykoliv v profilu.</span>
-            <button onClick={() => {
-              fetch('/api/stripe?action=portal', { credentials: 'include' })
-                .then(r => r.json()).then(d => { if (d.url) window.location.href = d.url; });
-            }} style={{ background: 'none', border: 'none', color: '#DC2626', fontSize: 13, fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', padding: 0, whiteSpace: 'nowrap' }}>
-              Zrušit tarif
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Doplňkové funkce */}
-      {!isActive && (
-        <div style={{ padding: '16px 18px', background: '#FFF7ED', border: '1.5px solid #FED7AA', borderRadius: 12, marginBottom: 20 }}>
-          <div style={{ fontWeight: 700, color: '#C2410C', fontSize: 14, marginBottom: 6 }}>Profil není aktivní</div>
-          <div style={{ fontSize: 13, color: '#92400E', lineHeight: 1.6, marginBottom: 12 }}>
-            Aktivujte profil za 399 Kč / měsíc. Platba probíhá kartou přes Stripe. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit v profilu.
-          </div>
+      {/* Aktuální stav */}
+      {isActive && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, padding: '12px 16px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, marginBottom: 20 }}>
+          <span style={{ fontSize: 13, color: '#166534' }}>
+            ✓ Váš tarif je aktivní{renewalEnd ? ` — obnoví se ${fmtDate(renewalEnd)}` : ''}
+          </span>
           <button onClick={() => {
-            fetch('/api/stripe?action=checkout', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan: 'aktiv' }) })
+            fetch('/api/stripe?action=portal', { credentials: 'include' })
               .then(r => r.json()).then(d => { if (d.url) window.location.href = d.url; });
-          }}
-            style={{ height: 44, padding: '0 24px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#F97316,#EA580C)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
-            Aktivovat profil za 399 Kč
+          }} style={{ background: 'none', border: 'none', color: '#DC2626', fontSize: 13, fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+            Spravovat / zrušit
           </button>
-          <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 10 }}>
-            Doplňkové funkce jsou dostupné až po aktivaci tarifu.
-          </div>
         </div>
       )}
 
-      <div style={{ fontSize: 15, fontWeight: 700, color: '#1A1F2E', marginBottom: 14 }}>Doplňkové funkce</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-
-        {/* Fakturovač */}
-        <div style={{ background: '#fff', border: `1.5px solid ${fakturovac ? '#3B82F6' : '#E5E7EB'}`, borderRadius: 14, padding: '18px 20px', opacity: isActive ? 1 : .5 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                <span style={{ fontSize: 15, fontWeight: 700, color: '#1A1F2E' }}>Jednoduchý fakturovač</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#3B82F6', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 999, padding: '2px 10px' }}>+100 Kč / měsíc</span>
-              </div>
-              <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6, margin: 0 }}>
-                Chcete mít zákazníky, zakázky a jednoduché faktury na jednom místě? Přidejte si fakturovač k aktivnímu profilu.
-                {fakturovac && <><br /><strong style={{ color: '#3B82F6' }}>Aktivní šikula + fakturovač = 499 Kč / měsíc</strong></>}
-              </p>
-            </div>
-            <button disabled={!isActive} onClick={() => setFakturovac(v => !v)}
-              style={{ height: 38, padding: '0 16px', borderRadius: 9, border: `1.5px solid ${fakturovac ? '#3B82F6' : '#E5E7EB'}`, background: fakturovac ? '#3B82F6' : '#F9FAFB', color: fakturovac ? '#fff' : '#4B5563', fontWeight: 600, fontSize: 13, cursor: isActive ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', flexShrink: 0, transition: 'all .14s' }}>
-              {fakturovac ? '✓ Aktivní' : 'Přidat fakturovač'}
+      {/* Přepínač Měsíčně / Ročně */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
+        <div style={{ display: 'flex', background: '#F3F4F6', borderRadius: 10, padding: 4, gap: 2 }}>
+          {[['monthly','Měsíčně'],['yearly','Ročně']].map(([k,l]) => (
+            <button key={k} onClick={() => setBilling(k)}
+              style={{ height: 36, padding: '0 20px', borderRadius: 8, border: 'none', fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all .14s', fontFamily: 'inherit',
+                background: billing === k ? '#fff' : 'transparent',
+                color: billing === k ? '#1A1F2E' : '#6B7280',
+                boxShadow: billing === k ? '0 1px 4px rgba(0,0,0,.1)' : 'none',
+              }}>
+              {l}{k === 'yearly' && <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 700, color: '#16A34A', background: '#F0FDF4', padding: '1px 6px', borderRadius: 999 }}>Ušetřete</span>}
             </button>
-          </div>
+          ))}
         </div>
+      </div>
 
-        {/* Přednostní zobrazení */}
-        <div style={{ background: '#fff', border: `1.5px solid ${priorita ? '#A855F7' : '#E5E7EB'}`, borderRadius: 14, padding: '18px 20px', opacity: isActive ? 1 : .5 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                <span style={{ fontSize: 15, fontWeight: 700, color: '#1A1F2E' }}>Přednostní zobrazení</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#A855F7', background: '#FAF5FF', border: '1px solid #E9D5FF', borderRadius: 999, padding: '2px 10px' }}>+99 Kč / měsíc</span>
+      {/* Tarifní boxy */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, marginBottom: 28 }}>
+        {TARIFY.map(t => {
+          const isCurrentPlan = currentPlan === t.id && isActive
+          return (
+            <div key={t.id} style={{ background: '#fff', border: `2px solid ${isCurrentPlan ? t.color : t.border}`, borderRadius: 16, padding: '24px 22px', position: 'relative' }}>
+              {t.badge && !isCurrentPlan && (
+                <div style={{ position: 'absolute', top: -12, right: 16, background: t.color, color: '#fff', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999 }}>{t.badge}</div>
+              )}
+              {isCurrentPlan && (
+                <div style={{ position: 'absolute', top: -12, right: 16, background: '#16A34A', color: '#fff', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999 }}>✓ Aktivní</div>
+              )}
+
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#1A1F2E', marginBottom: 8 }}>{t.name}</div>
+
+              <div style={{ marginBottom: 4 }}>
+                <span style={{ fontSize: 32, fontWeight: 800, color: t.color }}>{price(t).toLocaleString('cs-CZ')}</span>
+                <span style={{ fontSize: 14, color: '#9CA3AF', marginLeft: 4 }}>Kč {unit}</span>
               </div>
-              <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6, margin: 0 }}>
-                Chcete být tento měsíc více vidět? Zapněte si přednostní zobrazení profilu. Profil se bude zobrazovat přednostněji ve výsledcích podle služby a lokality.
-              </p>
-              {priorita && (
-                <div style={{ marginTop: 10, padding: '8px 12px', background: '#FAF5FF', border: '1px solid #E9D5FF', borderRadius: 8, fontSize: 13 }}>
-                  <div style={{ fontWeight: 600, color: '#7C3AED', marginBottom: 6 }}>
-                    Přednostní zobrazení je aktivní do: {fmtDate(aktivniDo.toISOString())}
-                  </div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <button style={{ height: 30, padding: '0 12px', borderRadius: 7, border: '1px solid #E9D5FF', background: '#EDE9FE', color: '#7C3AED', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>
-                      Prodloužit o měsíc
-                    </button>
-                    <button onClick={() => setPriorita(false)} style={{ height: 30, padding: '0 12px', borderRadius: 7, border: '1px solid #FECACA', background: '#FEF2F2', color: '#DC2626', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>
-                      Vypnout automatické prodloužení
-                    </button>
-                  </div>
+
+              {billing === 'yearly' && (
+                <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 12 }}>
+                  <s style={{ color: '#9CA3AF' }}>{t.yearlyOriginal.toLocaleString('cs-CZ')} Kč</s>
+                  <span style={{ color: '#16A34A', fontWeight: 600, marginLeft: 6 }}>Ušetříte {(t.yearlyOriginal - t.yearlyPrice).toLocaleString('cs-CZ')} Kč</span>
+                </div>
+              )}
+
+              <ul style={{ listStyle: 'none', padding: 0, margin: '16px 0 20px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+                {t.features.map(f => (
+                  <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: '#374151' }}>
+                    <svg style={{ flexShrink: 0, marginTop: 2 }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+
+              {!isCurrentPlan ? (
+                <button onClick={() => goCheckout(t.id)}
+                  style={{ width: '100%', height: 44, borderRadius: 10, border: 'none', background: `linear-gradient(135deg,${t.color},${t.id === 'aktiv' ? '#EA580C' : '#6D28D9'})`, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                  {t.btnLabel}
+                </button>
+              ) : (
+                <div style={{ height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F0FDF4', borderRadius: 10, fontSize: 14, fontWeight: 600, color: '#16A34A' }}>
+                  ✓ Váš aktuální tarif
                 </div>
               )}
             </div>
-            {!priorita && (
-              <button disabled={!isActive} onClick={() => setPriorita(true)}
-                style={{ height: 38, padding: '0 16px', borderRadius: 9, border: '1.5px solid #E9D5FF', background: '#FAF5FF', color: '#A855F7', fontWeight: 600, fontSize: 13, cursor: isActive ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', flexShrink: 0, transition: 'all .14s' }}>
-                Zapnout přednostní zobrazení
-              </button>
-            )}
-          </div>
-        </div>
+          )
+        })}
       </div>
 
-      {/* Přehled cen */}
-      <div style={{ marginTop: 20, background: '#F9FAFB', borderRadius: 12, padding: '14px 18px', border: '1px solid #E5E7EB' }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 10 }}>Přehled cen</div>
-        {CENY.map(([l, p]) => row(l, p))}
+      {/* Topování — samostatný doplněk */}
+      <div style={{ background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 14, padding: '20px 22px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+              <span style={{ fontSize: 15, fontWeight: 700, color: '#1A1F2E' }}>Topování profilu</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#D97706', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 999, padding: '2px 10px' }}>99 Kč / 30 dní</span>
+            </div>
+            <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6, margin: 0 }}>
+              Chcete být tento měsíc víc vidět? Zapněte si zvýraznění profilu na 30 dní. Zvýšíte šanci, že vás zákazník uvidí dříve ve výsledcích podle služby a lokality.
+            </p>
+          </div>
+          <button disabled={!isActive}
+            onClick={() => goCheckout('topovani')}
+            style={{ height: 40, padding: '0 18px', borderRadius: 9, border: '1.5px solid #FDE68A', background: '#FFFBEB', color: '#D97706', fontWeight: 700, fontSize: 13, cursor: isActive ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', flexShrink: 0, opacity: isActive ? 1 : .5 }}>
+            Zvýraznit profil za 99 Kč
+          </button>
+        </div>
+        {!isActive && (
+          <div style={{ marginTop: 10, fontSize: 12, color: '#9CA3AF' }}>Topování je dostupné po aktivaci tarifu.</div>
+        )}
       </div>
+
+      <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 16, lineHeight: 1.6 }}>
+        Platba probíhá kartou přes Stripe. Tarif se obnovuje automaticky a lze ho kdykoliv zrušit. Zaplaceno = aktivní profil. Nezaplaceno nebo zrušeno = neaktivní.
+      </p>
     </div>
   )
 }
