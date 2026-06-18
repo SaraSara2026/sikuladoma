@@ -38,8 +38,7 @@ export default function RegForm({ plan, onClose, onRegistered }) {
         role:     "sikula",
         city:     [form.street, form.psc, form.city].filter(Boolean).join(", ") || form.city,
       });
-      // Po registraci vždy přesměruj na Stripe Checkout pro aktivaci tarifu (14 dní zdarma).
-      // Karta se zadá hned, první platba 399 Kč se strhne až po 14 dnech.
+      // Po registraci přesměruj na Stripe Checkout — platba 399 Kč hned, profil se aktivuje po úspěšné platbě.
       try {
         const res = await fetch('/api/stripe?action=checkout', {
           method: 'POST',
@@ -147,8 +146,8 @@ export default function RegForm({ plan, onClose, onRegistered }) {
                 })}
               </div>
               <div style={{ padding: "16px 13px", borderRadius: 12, border: `2px solid ${T.orange}`, background: "linear-gradient(135deg,#FFF7ED,#FFEDD5)", textAlign: "center", boxShadow: "0 2px 12px rgba(249,115,22,.15)" }}>
-                <div style={{ fontWeight: 800, fontSize: 15, color: T.orangeDk, marginBottom: 4 }}>Aktivní šikula — 14 dní zdarma</div>
-                <div style={{ fontSize: 13, color: T.ink3 }}>399 Kč / měsíc · první platba až po skončení zkušebního měsíce</div>
+                <div style={{ fontWeight: 800, fontSize: 15, color: T.orangeDk, marginBottom: 4 }}>Aktivní šikula — 399 Kč / měsíc</div>
+                <div style={{ fontSize: 13, color: T.ink3 }}>Platba probíhá kartou přes Stripe. Po úspěšné platbě se profil aktivuje.</div>
               </div>
             </div>
           )}
@@ -178,7 +177,7 @@ export default function RegForm({ plan, onClose, onRegistered }) {
               submitRegistration();
             }
           }}>
-            {step === 0 ? <>Pokračovat <IcArrow /></> : (busy ? <><span style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid rgba(255,255,255,.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginRight: 8 }} /> Vytvářím účet…</> : "Vytvořit profil")}
+            {step === 0 ? <>Pokračovat <IcArrow /></> : (busy ? <><span style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid rgba(255,255,255,.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginRight: 8 }} /> Zpracovávám…</> : <>Pokračovat k platbě <IcArrow /></>)}
           </BtnBlue>
         </div>
       </div>

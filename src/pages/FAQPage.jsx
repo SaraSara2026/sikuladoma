@@ -35,11 +35,11 @@ const FAQ_CUSTOMERS = [
 const FAQ_SIKULOVE = [
   {
     q: 'Kolik mě stojí registrace jako šikula?',
-    a: 'Tarif <strong>Start je zdarma navždy</strong> — 5 reakcí na poptávky měsíčně. Placené tarify Plus (299 Kč/měs), Profi (599 Kč/měs) a Top (1299 Kč/měs) přidávají více reakcí, lepší pozici a ověřený štítek.',
+    a: 'Aktivní šikula stojí <strong>399 Kč / měsíc</strong>. Platba probíhá kartou přes Stripe. Po úspěšné platbě se profil aktivuje a můžete přijímat poptávky. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.',
   },
   {
     q: 'Jak funguje 5 reakcí měsíčně v tarifu Start?',
-    a: 'Každá nabídka, kterou pošleš na poptávku, spotřebuje jednu reakci. Limit se obnoví prvního dne nového měsíce. Pokud chceš víc, upgraduj na Plus (30/měs) nebo Profi/Top (neomezeno).',
+    a: 'S tarifem Aktivní šikula (399 Kč/měs) můžete reagovat na poptávky bez omezení. Tarif se obnovuje každý měsíc a zrušit ho lze kdykoliv přímo v profilu.',
   },
   {
     q: 'Můžu kdykoliv změnit nebo zrušit tarif?',

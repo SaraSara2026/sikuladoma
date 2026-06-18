@@ -20,7 +20,7 @@ const VYHODY = [
 
 const STEPS = [
   { n: 1, Icon: IcUser,    bg: '#FFF7ED', color: '#F97316', title: 'Zaregistrujete se jako šikula',          desc: 'Vyplníte základní údaje, lokalitu a služby, které nabízíte.' },
-  { n: 2, Icon: IcTag,     bg: '#EFF6FF', color: '#3B82F6', title: 'Spustíte zkušební období zdarma',         desc: 'Zadáte platební kartu — první platba 399 Kč se strhne až po skončení prvního měsíce.' },
+  { n: 2, Icon: IcTag,     bg: '#EFF6FF', color: '#3B82F6', title: 'Aktivujete profil za 399 Kč',              desc: 'Zaplatíte kartou přes Stripe. Po úspěšné platbě se profil okamžitě aktivuje.' },
   { n: 3, Icon: IcBell,    bg: '#F0FDF4', color: '#22C55E', title: 'Dostáváte poptávky z okolí',             desc: 'Když zákazník ve vaší lokalitě zadá poptávku, dostanete upozornění.' },
   { n: 4, Icon: IcCheck,   bg: '#FAF5FF', color: '#A855F7', title: 'Reagujete jen na zakázky, které chcete', desc: 'Vy sami si vyberete, na co odpovíte. Žádné povinné zakázky, žádný tlak.' },
   { n: 5, Icon: IcUsers,   bg: '#F0F9FF', color: '#0EA5E9', title: 'Domluvíte se přímo se zákazníkem',      desc: 'Cenu, termín i podrobnosti práce si domluvíte přímo mezi sebou.' },
@@ -125,7 +125,7 @@ export default function ProSikulyPage({ onBack, onReg }) {
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: '#3B82F6', marginBottom: 10 }}>JAK TO FUNGUJE</div>
             <h2 style={{ fontSize: 'clamp(22px,3vw,30px)', fontWeight: 700, color: '#1A1F2E', letterSpacing: '-.02em' }}>
-              Zaregistrujete se, spustíte zkušební období a reagujete jen na zakázky, které vám dávají smysl.
+              Zaregistrujete se, aktivujete profil a reagujete jen na zakázky, které vám dávají smysl.
             </h2>
           </div>
 
