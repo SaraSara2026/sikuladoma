@@ -38,31 +38,27 @@ export default function RegForm({ plan, onClose, onRegistered }) {
         role:     "sikula",
         city:     [form.street, form.psc, form.city].filter(Boolean).join(", ") || form.city,
       });
-      // Pokud zvolen placený tarif → přesměruj na Stripe Checkout.
-      // Backend stále uloží uživatele s plan='start'; Stripe webhook po platbě upraví na zvolený plán.
-      if (form.plan && form.plan !== 'start') {
-        try {
-          const res = await fetch('/api/stripe?action=checkout', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ plan: form.plan }),
-          });
-          const data = await res.json();
-          if (res.ok && data.url) {
-            window.location.href = data.url;
-            return;
-          }
-          // Stripe selhal — pokračujeme jako start, řekneme uživateli ať platí později.
-          console.warn('Stripe checkout selhal:', data.error);
-        } catch (stripeErr) {
-          console.warn('Stripe checkout error:', stripeErr);
+      // Po registraci vždy přesměruj na Stripe Checkout pro aktivaci tarifu (14 dní zdarma).
+      // Karta se zadá hned, první platba 399 Kč se strhne až po 14 dnech.
+      try {
+        const res = await fetch('/api/stripe?action=checkout', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan: 'aktiv' }),
+        });
+        const data = await res.json();
+        if (res.ok && data.url) {
+          window.location.href = data.url;
+          return;
         }
+        // Stripe selhal → ukáže success s výzvou aktivovat tarif ručně
+        console.warn('Stripe checkout selhal:', data.error);
+      } catch (stripeErr) {
+        console.warn('Stripe checkout error:', stripeErr);
       }
-      // Free tarif nebo Stripe selhání → ukáže success screen.
-      // Pozn.: onRegistered NEZAVOLÁME hned — nejdřív musíme uživateli ukázat success obrazovku.
-      // onRegistered (která změní page na dashboard) se zavolá až po kliknutí "Přejít do profilu".
-      setRegisteredUser({ ...user, services: form.services, plan: form.plan, ico: form.ico });
+      // Fallback pokud Stripe není nakonfigurován
+      setRegisteredUser({ ...user, services: form.services, plan: 'start', ico: form.ico });
       setStep(2);
     } catch (e) {
       setErr(e.message || "Registrace selhala.");
@@ -78,19 +74,26 @@ export default function RegForm({ plan, onClose, onRegistered }) {
           <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#F0FDF4", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px", color: "#16A34A" }}>
             <IcCheckCircle />
           </div>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: T.ink, marginBottom: 10 }}>Profil vytvořen 🎉</h2>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: T.ink, marginBottom: 10 }}>Účet vytvořen 🎉</h2>
           <p style={{ color: T.ink3, fontSize: 14, lineHeight: 1.7, marginBottom: 16 }}>
-            Vítej v ŠikulaDoma, <strong>{form.name}</strong>.
+            Vítej v ŠikulaDoma, <strong>{form.name}</strong>. Aktivuj svůj profil a získej 14 dní zdarma.
           </p>
-          <div style={{ background: "#FEF3C7", border: "1px solid #FCD34D", borderRadius: 10, padding: "14px 16px", marginBottom: 24, textAlign: "left" }}>
-            <div style={{ fontWeight: 700, color: "#92400E", fontSize: 13, marginBottom: 6 }}>✉️ Ověř svůj e-mail</div>
-            <div style={{ fontSize: 13, color: "#78350F", lineHeight: 1.5 }}>
-              Poslali jsme ti ověřovací odkaz na <strong>{form.email}</strong>. Bez ověření nemůžeš posílat nabídky ani zprávy.
+          <div style={{ background: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: 10, padding: "14px 16px", marginBottom: 16, textAlign: "left" }}>
+            <div style={{ fontWeight: 700, color: "#C2410C", fontSize: 13, marginBottom: 6 }}>⚡ Aktivuj profil šikuly</div>
+            <div style={{ fontSize: 13, color: "#92400E", lineHeight: 1.5 }}>
+              Kartu zadáš při aktivaci. První platba 399 Kč se strhne až po skončení 14denní zkušební doby. Pokud tarif předtím zrušíš, neplatíš nic.
             </div>
           </div>
+          <button onClick={() => {
+            fetch('/api/stripe?action=checkout', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan: 'aktiv' }) })
+              .then(r => r.json()).then(d => { if (d.url) window.location.href = d.url; });
+          }}
+            style={{ width: "100%", height: 50, borderRadius: 12, border: "none", background: `linear-gradient(135deg,#F97316,#EA580C)`, color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 4px 16px rgba(249,115,22,.35)", marginBottom: 10 }}>
+            Spustit 14 dní zdarma <IcArrow />
+          </button>
           <button onClick={() => { if (registeredUser) onRegistered(registeredUser); onClose(); }}
-            style={{ height: 46, padding: "0 28px", borderRadius: 10, border: "none", background: T.orange, color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8 }}>
-            Přejít do profilu šikuly <IcArrow />
+            style={{ background: "none", border: "none", color: T.ink3, fontSize: 13, cursor: "pointer", fontFamily: "inherit", textDecoration: "underline" }}>
+            Přejít do profilu bez aktivace
           </button>
         </div>
       </div>

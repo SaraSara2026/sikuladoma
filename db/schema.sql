@@ -203,6 +203,8 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_expires_at        TIMESTAMPTZ;
 -- ============================================================
 ALTER TABLE users ADD COLUMN IF NOT EXISTS hourly_rate INTEGER;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS platce_dph BOOLEAN DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_status TEXT DEFAULT 'inactive';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ;
 
 -- ============================================================
 -- EMAIL VERIFIKACE + RESET HESLA

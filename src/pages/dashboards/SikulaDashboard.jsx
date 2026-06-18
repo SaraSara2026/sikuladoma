@@ -205,9 +205,9 @@ function CalendarSection() {
 }
 
 function VylepseniProfilu({ currentUser }) {
-  const plan = currentUser?.plan || 'start'
-  const isActive = plan !== 'start'
-  const trialEnd = currentUser?.plan_expires_at
+  const subStatus = currentUser?.subscription_status || 'inactive'
+  const isActive = subStatus === 'trial_active' || subStatus === 'paid_active'
+  const trialEnd = currentUser?.trial_ends_at || currentUser?.plan_expires_at
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' }) : null
 
   const [fakturovac, setFakturovac] = useState(false)
@@ -270,8 +270,21 @@ function VylepseniProfilu({ currentUser }) {
 
       {/* Doplňkové funkce */}
       {!isActive && (
-        <div style={{ padding: '12px 16px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, fontSize: 13, color: '#B91C1C', marginBottom: 16 }}>
-          Doplňkové funkce jsou dostupné až po aktivaci základního tarifu 399 Kč / měsíc.
+        <div style={{ padding: '16px 18px', background: '#FFF7ED', border: '1.5px solid #FED7AA', borderRadius: 12, marginBottom: 20 }}>
+          <div style={{ fontWeight: 700, color: '#C2410C', fontSize: 14, marginBottom: 6 }}>Profil není aktivní</div>
+          <div style={{ fontSize: 13, color: '#92400E', lineHeight: 1.6, marginBottom: 12 }}>
+            Aktivujte tarif Aktivní šikula za 399 Kč / měsíc. Kartu zadáte při aktivaci, první platba se strhne až po 14 dnech. Pokud tarif předtím zrušíte, neplatíte nic.
+          </div>
+          <button onClick={() => {
+            fetch('/api/stripe?action=checkout', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan: 'aktiv' }) })
+              .then(r => r.json()).then(d => { if (d.url) window.location.href = d.url; });
+          }}
+            style={{ height: 44, padding: '0 24px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#F97316,#EA580C)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+            Spustit 14 dní zdarma
+          </button>
+          <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 10 }}>
+            Doplňkové funkce jsou dostupné až po aktivaci základního tarifu.
+          </div>
         </div>
       )}
 
@@ -453,9 +466,11 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
   const initials = (currentUser?.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
   const avatar = currentUser?.avatar || initials
 
-  // Zamčenost dle tarifu
-  const isActivePlan = currentUser?.plan && currentUser.plan !== 'start'
-  const hasFakturovac = isActivePlan
+  // Zamčenost dle subscription_status
+  const subStatus = currentUser?.subscription_status || 'inactive'
+  const isActivePlan = subStatus === 'trial_active' || subStatus === 'paid_active'
+  const isTrialCancelled = subStatus === 'trial_cancelled' || subStatus === 'inactive'
+  const hasFakturovac = isActivePlan  // TODO: oddělit přes DB pole has_fakturovac
   const activeItem = menuItems.find(m => m.id === activePage)
   const lockedType = activeItem?.lock === 'plan' && !isActivePlan ? 'plan'
                    : activeItem?.lock === 'fakturovac' && !hasFakturovac ? 'fakturovac'
@@ -519,6 +534,19 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                 : 'Platba byla zrušena. Váš tarif nebyl změněn.'}
             </span>
             <button onClick={() => setStripeMsg(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '0 4px', color: 'inherit' }}>×</button>
+          </div>
+        )}
+
+        {/* Banner pro zrušený trial / neaktivní profil */}
+        {isTrialCancelled && activePage !== 'membership' && activePage !== 'profile' && (
+          <div style={{ margin: '0 0 20px', padding: '14px 20px', borderRadius: 12, background: '#FEF2F2', border: '1px solid #FECACA', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 13, color: '#B91C1C' }}>
+              Zrušili jste obnovu tarifu. Váš profil zůstává uložený, ale není aktivní, nezobrazuje se zákazníkům a nové poptávky vám nebudou chodit.
+            </span>
+            <button onClick={() => setActivePage('membership')}
+              style={{ height: 36, padding: '0 16px', borderRadius: 9, border: 'none', background: '#F97316', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              Znovu aktivovat tarif
+            </button>
           </div>
         )}
 
