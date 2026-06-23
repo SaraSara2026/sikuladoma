@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { CATEGORIES, DEMO_INVOICES, INVOICE_STATUS_MAP } from '../../data'
+import { CATEGORIES } from '../../data'
 import Icon from '../../components/Icon'
 import InvoicePage from '../InvoicePage'
 import PricingPage from '../PricingPage'
@@ -108,42 +108,44 @@ function useMyOffers() {
   return { offers, loading, error, reload: () => setBump(x => x + 1) }
 }
 
+// lock: 'plan' = vyžaduje alespoň Aktivní šikula (399 Kč)
+// lock: 'plus'  = vyžaduje Aktivní šikula Plus (499 Kč)
 const menuItems = [
   { id: 'profile',      icon: '👤', label: 'Profil šikuly' },
   { id: 'overview',     icon: '📊', label: 'Přehled' },
   { id: 'new-jobs',     icon: '🔔', label: 'Nové zakázky',      lock: 'plan' },
   { id: 'offers-sent',  icon: '📤', label: 'Odeslané nabídky',  lock: 'plan' },
   { id: 'active',       icon: '⚡', label: 'Aktivní zakázky',   lock: 'plan' },
-  { id: 'calendar',     icon: '📅', label: 'Kalendář',          lock: 'plan' },
-  { id: 'earnings',     icon: '💰', label: 'Výdělky',           lock: 'plan' },
-  { id: 'invoices',     icon: '🧾', label: 'Faktury',           lock: 'fakturovac' },
+  { id: 'calendar',     icon: '📅', label: 'Kalendář',          lock: 'plus' },
+  { id: 'earnings',     icon: '💰', label: 'Výdělky',           lock: 'plus' },
+  { id: 'invoices',     icon: '🧾', label: 'Faktury',           lock: 'plus' },
   { id: 'reviews',      icon: '⭐', label: 'Recenze',           lock: 'plan' },
-  { id: 'history',      icon: '📁', label: 'Historie',          lock: 'plan' },
-  { id: 'membership',   icon: '👑', label: 'Členství' },
+  { id: 'history',      icon: '📁', label: 'Historie',          lock: 'plus' },
+  { id: 'membership',   icon: '👑', label: 'Aktivace tarifu' },
 ]
 
 // Obrazovka pro zamčenou funkci
 function LockedScreen({ type, onActivate }) {
-  const isFak = type === 'fakturovac'
+  const isPlus = type === 'plus'
   return (
     <div className="page-enter" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
       <div style={{ maxWidth: 420, textAlign: 'center', padding: '40px 24px' }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>{isFak ? '🧾' : '🔒'}</div>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>{isPlus ? '⭐' : '🔒'}</div>
         <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1A1F2E', marginBottom: 12 }}>
-          {isFak ? 'Fakturovač není aktivní' : 'Tato funkce je dostupná po aktivaci profilu'}
+          {isPlus ? 'Tato funkce je součástí tarifu Plus' : 'Tato funkce je dostupná po aktivaci profilu'}
         </h2>
         <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.7, marginBottom: 24 }}>
-          {isFak
-            ? 'Přidejte fakturovač za +100 Kč / měsíc a mějte zákazníky, zakázky i faktury na jednom místě.'
+          {isPlus
+            ? 'Kalendář, fakturovač, přehled zákazníků, faktury, historie a přehled příjmů jsou součástí tarifu Aktivní šikula Plus za 499 Kč / měsíc.'
             : 'Tato funkce je dostupná po aktivaci profilu. Aktivujte tarif Aktivní šikula za 399 Kč / měsíc.'}
         </p>
         <button onClick={onActivate}
           style={{ height: 48, padding: '0 28px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#F97316,#EA580C)', color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 16px rgba(249,115,22,.35)', marginBottom: 14 }}>
-          {isFak ? 'Přidat fakturovač' : 'Aktivovat profil za 399 Kč'}
+          {isPlus ? 'Aktivovat Plus za 499 Kč' : 'Aktivovat profil za 399 Kč'}
         </button>
         <p style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.6 }}>
-          {isFak
-            ? 'Fakturovač se přidá k vašemu aktivnímu tarifu.'
+          {isPlus
+            ? 'Platba probíhá kartou přes Stripe. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.'
             : 'Platba probíhá kartou přes Stripe. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.'}
         </p>
       </div>
@@ -500,14 +502,15 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
   const initials = (currentUser?.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
   const avatar = currentUser?.avatar || initials
 
-  // Zamčenost dle subscription_status
+  // Zamčenost dle tarifu
   const subStatus = currentUser?.subscription_status || 'inactive'
+  const currentPlanId = currentUser?.plan || 'start'
   const isActivePlan = subStatus === 'active'
   const isInactive = !isActivePlan
-  const hasFakturovac = isActivePlan  // TODO: oddělit přes DB pole has_fakturovac
+  const hasPlusPlan = isActivePlan && currentPlanId === 'aktiv-plus'
   const activeItem = menuItems.find(m => m.id === activePage)
   const lockedType = activeItem?.lock === 'plan' && !isActivePlan ? 'plan'
-                   : activeItem?.lock === 'fakturovac' && !hasFakturovac ? 'fakturovac'
+                   : activeItem?.lock === 'plus' && !hasPlusPlan ? 'plus'
                    : null
 
   return (
@@ -522,12 +525,10 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
           </div>
         </div>
         {menuItems.map(m => {
-          const isActivePlan = currentUser?.plan && currentUser.plan !== 'start'
-          const hasFakturovac = isActivePlan // TODO: rozšířit o DB pole has_fakturovac
           const locked = m.lock === 'plan' ? !isActivePlan
-                       : m.lock === 'fakturovac' ? !hasFakturovac
+                       : m.lock === 'plus' ? !hasPlusPlan
                        : false
-          const menuLabel = m.id === 'membership' && !isActivePlan ? 'Aktivace tarifu' : m.label
+          const menuLabel = m.label
           return (
             <button key={m.id}
               className={`dash-nav-item ${activePage === m.id ? 'active' : ''}`}
@@ -790,27 +791,15 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
           <div className="page-enter">
             <div className="dash-title" style={{ marginBottom: 24 }}>Výdělky</div>
             <div className="stats-grid" style={{ marginBottom: 24 }}>
-              <div className="stat-card"><div className="stat-val">18 400 Kč</div><div className="stat-label">Tento měsíc</div></div>
-              <div className="stat-card"><div className="stat-val">142 600 Kč</div><div className="stat-label">Celkem</div></div>
-              <div className="stat-card"><div className="stat-val">1 635 Kč</div><div className="stat-label">Průměr zakázka</div></div>
-              <div className="stat-card"><div className="stat-val">87</div><div className="stat-label">Zakázek celkem</div></div>
+              <div className="stat-card"><div className="stat-val">0 Kč</div><div className="stat-label">Tento měsíc</div></div>
+              <div className="stat-card"><div className="stat-val">0 Kč</div><div className="stat-label">Celkem</div></div>
+              <div className="stat-card"><div className="stat-val">—</div><div className="stat-label">Průměr zakázka</div></div>
+              <div className="stat-card"><div className="stat-val">0</div><div className="stat-label">Zakázek celkem</div></div>
             </div>
-            <div className="table-wrap">
-              <div className="table-header"><span className="table-title">Historie plateb</span></div>
-              <table className="table">
-                <thead><tr><th>Zakázka</th><th>Zákazník</th><th>Částka</th><th>Datum</th><th>Stav</th></tr></thead>
-                <tbody>
-                  {DEMO_INVOICES.map(inv => (
-                    <tr key={inv.id}>
-                      <td><strong>{inv.title}</strong></td>
-                      <td>{inv.customer}</td>
-                      <td><strong>{inv.amount.toLocaleString()} Kč</strong></td>
-                      <td>{inv.created}</td>
-                      <td><span className={`badge ${INVOICE_STATUS_MAP[inv.status]?.color}`}>{INVOICE_STATUS_MAP[inv.status]?.label}</span></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="empty-state" style={{ padding: 40 }}>
+              <div className="empty-icon">💰</div>
+              <h3>Zatím žádné příjmy</h3>
+              <p>Příjmy ze zakázek se zobrazí zde po dokončení první zakázky.</p>
             </div>
           </div>
         )}
