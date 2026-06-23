@@ -250,7 +250,6 @@ function VylepseniProfilu({ currentUser }) {
       color: '#7C3AED',
       border: '#C4B5FD',
       badge: 'Více funkcí',
-      note: 'Plus tarif zpřístupní také fakturaci, historii a přehled příjmů.',
       features: [
         'Vše z tarifu Aktivní šikula',
         'Přehled zakázek na jednom místě',
