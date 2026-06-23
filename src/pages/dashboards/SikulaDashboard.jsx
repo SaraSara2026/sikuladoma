@@ -229,17 +229,16 @@ function VylepseniProfilu({ currentUser }) {
       yearlyOriginal: 4788,
       color: '#F97316',
       border: '#FED7AA',
-      bg: '#FFF7ED',
-      btnLabel: 'Aktivovat tarif',
       features: [
-        'Aktivní profil šikuly',
-        'Zobrazení zákazníkům',
-        'Možnost reagovat na poptávky',
+        'Profil šikuly',
+        'Přehled',
         'Nové zakázky',
         'Odeslané nabídky',
         'Aktivní zakázky',
         'Kalendář',
         'Recenze',
+        'Zobrazení zákazníkům',
+        'Možnost reagovat na poptávky',
         'Žádná provize ze zakázky',
       ],
     },
@@ -251,8 +250,6 @@ function VylepseniProfilu({ currentUser }) {
       yearlyOriginal: 5988,
       color: '#7C3AED',
       border: '#C4B5FD',
-      bg: '#FAF5FF',
-      btnLabel: 'Aktivovat Plus',
       badge: 'Více funkcí',
       features: [
         'Vše z tarifu Aktivní šikula',
@@ -261,16 +258,22 @@ function VylepseniProfilu({ currentUser }) {
         'Přehled faktur',
         'Historie zakázek',
         'Lepší přehled výdělků',
+        'Odemčení sekcí Faktury, Výdělky a Historie',
       ],
     },
   ]
 
   const price = (t) => billing === 'yearly' ? t.yearlyPrice : t.monthlyPrice
   const unit = billing === 'yearly' ? '/ rok' : '/ měsíc'
+  const btnLabel = (t) => {
+    const p = price(t).toLocaleString('cs-CZ')
+    if (t.id === 'aktiv')      return billing === 'yearly' ? `Aktivovat ročně za ${p} Kč` : `Aktivovat za ${p} Kč`
+    return billing === 'yearly' ? `Aktivovat Plus ročně za ${p} Kč` : `Aktivovat Plus za ${p} Kč`
+  }
 
   return (
     <div className="page-enter">
-      <div className="dash-title" style={{ marginBottom: 8 }}>Tarify</div>
+      <div className="dash-title" style={{ marginBottom: 8 }}>Aktivace tarifu</div>
 
       {/* Aktuální stav */}
       {isActive && (
@@ -341,8 +344,8 @@ function VylepseniProfilu({ currentUser }) {
 
               {!isCurrentPlan ? (
                 <button onClick={() => goCheckout(t.id)}
-                  style={{ width: '100%', height: 44, borderRadius: 10, border: 'none', background: `linear-gradient(135deg,${t.color},${t.id === 'aktiv' ? '#EA580C' : '#6D28D9'})`, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
-                  {t.btnLabel}
+                  style={{ width: '100%', height: 44, borderRadius: 10, border: 'none', background: `linear-gradient(135deg,${t.color},${t.id === 'aktiv' ? '#EA580C' : '#6D28D9'})`, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                  {btnLabel(t)}
                 </button>
               ) : (
                 <div style={{ height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F0FDF4', borderRadius: 10, fontSize: 14, fontWeight: 600, color: '#16A34A' }}>
@@ -365,16 +368,16 @@ function VylepseniProfilu({ currentUser }) {
             <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6, margin: 0 }}>
               Chcete být tento měsíc víc vidět? Zapněte si zvýraznění profilu na 30 dní. Zvýšíte šanci, že vás zákazník uvidí dříve ve výsledcích podle služby a lokality.
             </p>
+            <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 6, marginBottom: 0 }}>
+              Topování je dostupné pouze pro aktivní zaplacený profil.
+            </p>
           </div>
           <button disabled={!isActive}
             onClick={() => goCheckout('topovani')}
-            style={{ height: 40, padding: '0 18px', borderRadius: 9, border: '1.5px solid #FDE68A', background: '#FFFBEB', color: '#D97706', fontWeight: 700, fontSize: 13, cursor: isActive ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', flexShrink: 0, opacity: isActive ? 1 : .5 }}>
+            style={{ height: 40, padding: '0 18px', borderRadius: 9, border: '1.5px solid #FDE68A', background: isActive ? '#FFFBEB' : '#F9FAFB', color: isActive ? '#D97706' : '#9CA3AF', fontWeight: 700, fontSize: 13, cursor: isActive ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', flexShrink: 0 }}>
             Zvýraznit profil za 99 Kč
           </button>
         </div>
-        {!isActive && (
-          <div style={{ marginTop: 10, fontSize: 12, color: '#9CA3AF' }}>Topování je dostupné po aktivaci tarifu.</div>
-        )}
       </div>
 
       <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 16, lineHeight: 1.6 }}>
