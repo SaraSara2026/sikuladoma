@@ -381,9 +381,9 @@ export default function App() {
       </div>
 
       {/* HOW IT WORKS */}
-      <section id="how" style={{ padding: "clamp(48px, 8vw, 80px) clamp(16px, 4vw, 24px)", background: "#F8FAFC" }}>
+      <section id="how" style={{ padding: "clamp(32px, 5vw, 56px) clamp(16px, 4vw, 24px)", background: "#F8FAFC" }}>
         <div style={{ maxWidth: 1060, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 48 }}>
+          <div style={{ textAlign: "center", marginBottom: 32 }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: T.blue, marginBottom: 10 }}>JAK TO FUNGUJE</div>
             <h2 style={{ fontSize: "clamp(22px, 4vw, 28px)", fontWeight: 700, color: T.ink, letterSpacing: "-.03em", marginBottom: 10 }}>Jak to funguje</h2>
             <p style={{ fontSize: "clamp(13px, 2vw, 15px)", color: T.ink3, maxWidth: 500, margin: "0 auto", lineHeight: 1.65 }}>
@@ -413,9 +413,9 @@ export default function App() {
       </section>
 
       {/* SERVICES */}
-      <section id="services" style={{ padding: "clamp(48px, 8vw, 80px) clamp(16px, 4vw, 24px)", background: "#fff" }}>
+      <section id="services" style={{ padding: "clamp(32px, 5vw, 56px) clamp(16px, 4vw, 24px)", background: "#fff" }}>
         <div style={{ maxWidth: 1060, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 44 }}>
+          <div style={{ textAlign: "center", marginBottom: 28 }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: T.blue, marginBottom: 10 }}>SLUŽBY</div>
             <h2 style={{ fontSize: "clamp(22px, 4vw, 28px)", fontWeight: 700, color: T.ink, letterSpacing: "-.03em", marginBottom: 8 }}>Co potřebujete vyřešit?</h2>
             <p style={{ fontSize: "clamp(13px, 2vw, 15px)", color: T.ink3 }}>Vyberte kategorii a rovnou zadejte poptávku – bez registrace.</p>
