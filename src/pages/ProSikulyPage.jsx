@@ -114,7 +114,7 @@ export default function ProSikulyPage({ onBack, onReg }) {
           </div>
 
           <p style={{ fontSize: 13, color: '#9CA3AF', marginTop: 20, lineHeight: 1.6 }}>
-            Chcete mít v profilu víc možností? Tarif Plus vám přidá fakturovač a další praktické funkce. Přednostní zobrazení lze zapnout samostatně na 30 dní.
+            Chcete mít v profilu víc možností? Tarif Aktivní šikula Plus (499 Kč) přidá fakturovač, kalendář a přehled příjmů. Přednostní zobrazení lze zapnout samostatně na 30 dní.
           </p>
         </div>
       </section>

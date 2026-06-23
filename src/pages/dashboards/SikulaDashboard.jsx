@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { CATEGORIES } from '../../data'
 import Icon from '../../components/Icon'
 import InvoicePage from '../InvoicePage'
-import PricingPage from '../PricingPage'
 import ChatPage from '../ChatPage'
 import { ordersApi, offersApi, reviewsApi, usersApi } from '../../lib/api'
 import VerificationBanner from '../../components/VerificationBanner'
@@ -12,12 +11,17 @@ import { SERVICES } from '../../lib/categories'
 // Mapování id kategorie → emoji ikona (pro hezké zobrazení v dashboardu).
 const CAT_ICON = Object.fromEntries(CATEGORIES.map(c => [c.id, c.icon]))
 
-const PLAN_LABELS = { start: 'Start', plus: 'Plus', profi: 'Profi', top: 'Top Šikula' }
+const PLAN_LABELS = {
+  start: 'Start', plus: 'Plus', profi: 'Profi', top: 'Top Šikula',
+  'aktiv': 'Aktivní šikula', 'aktiv-plus': 'Aktivní šikula Plus',
+}
 const PLAN_COLORS = {
   start: 'var(--text3)',
   plus:  'var(--blue, #2563eb)',
   profi: 'var(--purple, #7c3aed)',
   top:   'var(--orange, #F07800)',
+  'aktiv':      'var(--orange, #F07800)',
+  'aktiv-plus': 'var(--purple, #7c3aed)',
 }
 
 function PlanBadge({ plan, expiresAt }) {
@@ -628,8 +632,8 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                 <div className="stat-label">Odeslané nabídky</div>
               </div>
             </div>
-            {/* Upgrade banner — jen pro Start tarif */}
-            {(!currentUser?.plan || currentUser.plan === 'start') && (
+            {/* Upgrade banner — pro Aktivní šikula (399 Kč), nabízí Plus (499 Kč) */}
+            {isActivePlan && currentPlanId === 'aktiv' && (
               <div style={{
                 marginBottom: 20,
                 padding: '16px 20px',
@@ -639,8 +643,8 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap',
               }}>
                 <div>
-                  <div style={{ fontWeight: 700, marginBottom: 4 }}>⚡ Získejte více zakázek</div>
-                  <div style={{ fontSize: 13, color: 'var(--text2)' }}>S tariferem Plus nebo Profi získáte přednostní zobrazení a více reakcí.</div>
+                  <div style={{ fontWeight: 700, marginBottom: 4 }}>⭐ Aktivní šikula Plus</div>
+                  <div style={{ fontSize: 13, color: 'var(--text2)' }}>S tariferem Aktivní šikula Plus (499 Kč) získáte kalendář, fakturovač a přehled příjmů.</div>
                 </div>
                 <button className="btn btn-primary btn-sm" onClick={() => setActivePage('membership')}>
                   Zobrazit tarify →
@@ -716,7 +720,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
           </div>
         )}
 
-        {activePage === 'active' && (
+        {!lockedType && activePage === 'active' && (
           <div className="page-enter">
             <div className="dash-title" style={{ marginBottom: 24 }}>Aktivní zakázky</div>
             {acceptedJobs.length === 0 && (
@@ -749,7 +753,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
           </div>
         )}
 
-        {activePage === 'offers-sent' && (
+        {!lockedType && activePage === 'offers-sent' && (
           <div className="page-enter">
             <div className="dash-title" style={{ marginBottom: 24 }}>Odeslané nabídky</div>
             {myOffers.length === 0 && (
@@ -782,12 +786,12 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
           </div>
         )}
 
-        {activePage === 'invoices' && <InvoicePage />}
-        {activePage === 'calendar' && <CalendarSection />}
+        {!lockedType && activePage === 'invoices' && <InvoicePage />}
+        {!lockedType && activePage === 'calendar' && <CalendarSection />}
         {activePage === 'membership' && <VylepseniProfilu currentUser={currentUser} />}
         {activePage === 'messages' && <ChatPage />}
 
-        {activePage === 'earnings' && (
+        {!lockedType && activePage === 'earnings' && (
           <div className="page-enter">
             <div className="dash-title" style={{ marginBottom: 24 }}>Výdělky</div>
             <div className="stats-grid" style={{ marginBottom: 24 }}>
@@ -804,7 +808,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
           </div>
         )}
 
-        {activePage === 'reviews' && (
+        {!lockedType && activePage === 'reviews' && (
           <div className="page-enter">
             <div className="dash-title" style={{ marginBottom: 8 }}>Moje recenze</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
@@ -961,7 +965,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             <p>Bude napojena v dalším kroku.</p>
           </div>
         )}
-        {activePage === 'history' && (
+        {!lockedType && activePage === 'history' && (
           <div className="page-enter">
             <div className="dash-title" style={{ marginBottom: 24 }}>Historie</div>
             <div className="empty-state" style={{ padding: 40 }}>

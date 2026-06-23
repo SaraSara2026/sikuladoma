@@ -20,7 +20,7 @@ const FAQ_CUSTOMERS = [
   },
   {
     q: 'Jak vím, že je šikula ověřený a důvěryhodný?',
-    a: 'U každého profilu vidíš zelený štítek "Ověřený", recenze od minulých zákazníků (hvězdičky 1-5), kolik zakázek už dokončil a u placených tarifů (Profi, Top) jsme navíc ručně prověřili IČO a totožnost.',
+    a: 'U každého profilu vidíš zelený štítek "Ověřený", recenze od minulých zákazníků (hvězdičky 1-5) a kolik zakázek už dokončil. U ověřených šikulů jsme navíc prověřili IČO a totožnost.',
   },
   {
     q: 'Co když s prací nejsem spokojený?',

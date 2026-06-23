@@ -70,7 +70,11 @@ export default function SikulaProfilePage({ id, onBack, onOrder }) {
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
                 {user.verified && <span style={{ background: '#F0FDF4', color: '#16A34A', padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>✓ Ověřený šikula</span>}
-                {user.plan && <span style={{ background: '#EFF6FF', color: '#1D4ED8', padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>👑 {user.plan}</span>}
+                {user.plan && user.plan !== 'start' && (
+                  <span style={{ background: '#EFF6FF', color: '#1D4ED8', padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>
+                    👑 {{ 'aktiv': 'Aktivní šikula', 'aktiv-plus': 'Aktivní šikula Plus', profi: 'Profi', top: 'Top Šikula', plus: 'Plus' }[user.plan] || user.plan}
+                  </span>
+                )}
                 {summary?.total > 0 && (
                   <span style={{ background: '#FFF7ED', color: '#C2410C', padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>
                     ⭐ {summary.avg_stars} ({summary.total} recenzí)

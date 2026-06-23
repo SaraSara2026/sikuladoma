@@ -8,10 +8,12 @@ import { usersApi } from '../lib/api';
 import { BtnPrimary } from '../ui/Button';
 
 const PLAN_BADGE = {
-  top:   { label: '👑 Top',   bg: '#FEF3C7', fg: '#92400E' },
-  profi: { label: '⭐ Profi', bg: '#FAF5FF', fg: '#7C3AED' },
-  plus:  { label: 'Plus',     bg: '#EFF6FF', fg: '#2563EB' },
-  start: { label: 'Start',    bg: '#F3F4F6', fg: '#6B7280' },
+  'aktiv':      { label: 'Aktivní šikula',      bg: '#FFF7ED', fg: '#C2410C' },
+  'aktiv-plus': { label: 'Aktivní šikula Plus',  bg: '#FAF5FF', fg: '#7C3AED' },
+  top:          { label: '👑 Top',               bg: '#FEF3C7', fg: '#92400E' },
+  profi:        { label: '⭐ Profi',             bg: '#FAF5FF', fg: '#7C3AED' },
+  plus:         { label: 'Plus',                 bg: '#EFF6FF', fg: '#2563EB' },
+  start:        { label: 'Start',               bg: '#F3F4F6', fg: '#6B7280' },
 };
 
 export default function SikuloveListPage({ onBack, onProfile, onReg, onOrder }) {
