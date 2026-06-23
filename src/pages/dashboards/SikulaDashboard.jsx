@@ -231,15 +231,14 @@ function VylepseniProfilu({ currentUser }) {
       border: '#FED7AA',
       features: [
         'Profil šikuly',
-        'Přehled',
         'Nové zakázky',
         'Odeslané nabídky',
         'Aktivní zakázky',
-        'Kalendář',
         'Recenze',
         'Zobrazení zákazníkům',
         'Možnost reagovat na poptávky',
         'Žádná provize ze zakázky',
+        'Zákazník platí přímo šikulovi',
       ],
     },
     {
@@ -251,14 +250,17 @@ function VylepseniProfilu({ currentUser }) {
       color: '#7C3AED',
       border: '#C4B5FD',
       badge: 'Více funkcí',
+      note: 'Plus tarif zpřístupní také fakturaci, historii a přehled příjmů.',
       features: [
         'Vše z tarifu Aktivní šikula',
+        'Přehled zakázek na jednom místě',
+        'Kalendář zakázek',
         'Jednoduchý fakturovač',
         'Přehled zákazníků',
-        'Přehled faktur',
+        'Přehled vystavených faktur',
         'Historie zakázek',
-        'Lepší přehled výdělků',
-        'Odemčení sekcí Faktury, Výdělky a Historie',
+        'Evidence příjmů ze zakázek',
+        'Vhodné pro šikuly, kteří chtějí mít zakázky, zákazníky a faktury přehledně pohromadě',
       ],
     },
   ]
@@ -333,7 +335,7 @@ function VylepseniProfilu({ currentUser }) {
                 </div>
               )}
 
-              <ul style={{ listStyle: 'none', padding: 0, margin: '16px 0 20px', display: 'flex', flexDirection: 'column', gap: 7, flex: 1 }}>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '16px 0 12px', display: 'flex', flexDirection: 'column', gap: 7, flex: 1 }}>
                 {t.features.map(f => (
                   <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: '#374151' }}>
                     <svg style={{ flexShrink: 0, marginTop: 2 }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -341,6 +343,7 @@ function VylepseniProfilu({ currentUser }) {
                   </li>
                 ))}
               </ul>
+              {t.note && <p style={{ fontSize: 12, color: '#6B7280', fontStyle: 'italic', margin: '0 0 16px', lineHeight: 1.5 }}>{t.note}</p>}
 
               <div style={{ marginTop: 'auto' }}>
                 {!isCurrentPlan ? (
