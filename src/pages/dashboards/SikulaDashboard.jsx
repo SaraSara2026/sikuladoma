@@ -134,13 +134,13 @@ function LockedScreen({ type, onActivate }) {
   return (
     <div className="page-enter" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
       <div style={{ maxWidth: 420, textAlign: 'center', padding: '40px 24px' }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>{isPlus ? '⭐' : '🔒'}</div>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
         <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1A1F2E', marginBottom: 12 }}>
-          {isPlus ? 'Tato funkce je součástí tarifu Plus' : 'Tato funkce je dostupná po aktivaci profilu'}
+          {isPlus ? 'Tato funkce je součástí tarifu Aktivní šikula Plus' : 'Tato funkce je dostupná po aktivaci profilu'}
         </h2>
         <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.7, marginBottom: 24 }}>
           {isPlus
-            ? 'Kalendář, fakturovač, přehled zákazníků, faktury, historie a přehled příjmů jsou součástí tarifu Aktivní šikula Plus za 499 Kč / měsíc.'
+            ? 'Tato funkce je dostupná v tarifu Aktivní šikula Plus za 499 Kč / měsíc.'
             : 'Tato funkce je dostupná po aktivaci profilu. Aktivujte tarif Aktivní šikula za 399 Kč / měsíc.'}
         </p>
         <button onClick={onActivate}
