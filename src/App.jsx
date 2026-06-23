@@ -456,7 +456,7 @@ export default function App() {
       </section>
 
       {/* TRUST */}
-      <div style={{ background: "#F8FAFC", borderTop: "1px solid #E5E7EB", borderBottom: "1px solid #E5E7EB", padding: "22px 24px" }}>
+      <div style={{ background: "#F8FAFC", borderTop: "1px solid #E5E7EB", borderBottom: "1px solid #E5E7EB", padding: "14px 24px" }}>
         <div style={{ maxWidth: 960, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 24 }}>
           {[
             { emoji: "🔍", title: "Ověření šikulové",       desc: "Profily i recenze jsou reálné.",      color: "#3B82F6", bg: "#EFF6FF" },
