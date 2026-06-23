@@ -307,11 +307,11 @@ function VylepseniProfilu({ currentUser }) {
       </div>
 
       {/* Tarifní boxy */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, marginBottom: 28 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, marginBottom: 28, alignItems: 'stretch' }}>
         {TARIFY.map(t => {
           const isCurrentPlan = currentPlan === t.id && isActive
           return (
-            <div key={t.id} style={{ background: '#fff', border: `2px solid ${isCurrentPlan ? t.color : t.border}`, borderRadius: 16, padding: '24px 22px', position: 'relative' }}>
+            <div key={t.id} style={{ background: '#fff', border: `2px solid ${isCurrentPlan ? t.color : t.border}`, borderRadius: 16, padding: '24px 22px', position: 'relative', display: 'flex', flexDirection: 'column' }}>
               {t.badge && !isCurrentPlan && (
                 <div style={{ position: 'absolute', top: -12, right: 16, background: t.color, color: '#fff', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999 }}>{t.badge}</div>
               )}
@@ -333,7 +333,7 @@ function VylepseniProfilu({ currentUser }) {
                 </div>
               )}
 
-              <ul style={{ listStyle: 'none', padding: 0, margin: '16px 0 20px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+              <ul style={{ listStyle: 'none', padding: 0, margin: '16px 0 20px', display: 'flex', flexDirection: 'column', gap: 7, flex: 1 }}>
                 {t.features.map(f => (
                   <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: '#374151' }}>
                     <svg style={{ flexShrink: 0, marginTop: 2 }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -342,16 +342,18 @@ function VylepseniProfilu({ currentUser }) {
                 ))}
               </ul>
 
-              {!isCurrentPlan ? (
-                <button onClick={() => goCheckout(t.id)}
-                  style={{ width: '100%', height: 44, borderRadius: 10, border: 'none', background: `linear-gradient(135deg,${t.color},${t.id === 'aktiv' ? '#EA580C' : '#6D28D9'})`, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-                  {btnLabel(t)}
-                </button>
-              ) : (
-                <div style={{ height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F0FDF4', borderRadius: 10, fontSize: 14, fontWeight: 600, color: '#16A34A' }}>
-                  ✓ Váš aktuální tarif
-                </div>
-              )}
+              <div style={{ marginTop: 'auto' }}>
+                {!isCurrentPlan ? (
+                  <button onClick={() => goCheckout(t.id)}
+                    style={{ width: '100%', height: 44, borderRadius: 10, border: 'none', background: `linear-gradient(135deg,${t.color},${t.id === 'aktiv' ? '#EA580C' : '#6D28D9'})`, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                    {btnLabel(t)}
+                  </button>
+                ) : (
+                  <div style={{ height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F0FDF4', borderRadius: 10, fontSize: 14, fontWeight: 600, color: '#16A34A' }}>
+                    ✓ Váš aktuální tarif
+                  </div>
+                )}
+              </div>
             </div>
           )
         })}
