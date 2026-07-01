@@ -53,21 +53,22 @@ function relativni(iso) {
 }
 
 // Hook pro načtení otevřených poptávek (refetch každých 30 s).
-function useOpenOrders() {
+function useOpenOrders(city) {
   const [orders, setOrders]   = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState(null)
 
   useEffect(() => {
     let alive = true
-    const load = () => ordersApi.list()
+    const params = city ? { city } : {}
+    const load = () => ordersApi.list(params)
       .then(({ orders }) => { if (alive) { setOrders(orders); setError(null) } })
       .catch(e => { if (alive) setError(e.message) })
       .finally(() => { if (alive) setLoading(false) })
     load()
     const id = setInterval(load, 30000)
     return () => { alive = false; clearInterval(id) }
-  }, [])
+  }, [city])
 
   return { orders, loading, error }
 }
@@ -457,7 +458,8 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
     ...p,
     services: p.services.includes(id) ? p.services.filter(s => s !== id) : [...p.services, id],
   }))
-  const { orders, loading: ordersLoading, error: ordersError } = useOpenOrders()
+  const sikulaCity = currentUser?.city?.split(',')[0]?.trim() || ''
+  const { orders, loading: ordersLoading, error: ordersError } = useOpenOrders(sikulaCity)
   const { offers: myOffers, reload: reloadMyOffers } = useMyOffers()
   const { reviews: myReviews, summary: reviewsSummary, loading: reviewsLoading } = useMyReviews(currentUser?.id)
 
@@ -646,33 +648,49 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             <div className="table-wrap">
               <div className="table-header">
                 <span className="table-title">Nové zakázky v okolí</span>
-                <button className="btn btn-ghost btn-sm" onClick={() => setActivePage('new-jobs')}>Zobrazit vše →</button>
+                {!isInactive && <button className="btn btn-ghost btn-sm" onClick={() => setActivePage('new-jobs')}>Zobrazit vše →</button>}
               </div>
-              {ordersLoading && <div style={{ padding: 16, color: 'var(--text3)', fontSize: 14 }}>Načítám…</div>}
-              {ordersError && !ordersLoading && (
-                <div style={{ padding: 16, color: 'var(--red, #B91C1C)', fontSize: 13 }}>Nepodařilo se načíst zakázky: {ordersError}</div>
-              )}
-              {!ordersLoading && !ordersError && orders.length === 0 && (
-                <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)' }}>
-                  <div style={{ fontSize: 28, marginBottom: 8 }}>🕊️</div>
-                  Zatím žádné nové poptávky. Zkontroluju to znovu za 30 s.
-                </div>
-              )}
-              {!ordersLoading && !ordersError && orders.slice(0, 3).map(o => (
-                <div key={o.id} className="order-card" style={{ margin: 0, borderRadius: 0, border: 'none', borderBottom: '1px solid var(--border)' }}>
-                  <div className="order-cat-icon">{CAT_ICON[o.category] || '🔧'}</div>
-                  <div className="order-info">
-                    <div className="order-title">{o.title}</div>
-                    <div className="order-meta">
-                      <span><Icon name="map" size={13} /> {o.city}</span>
-                      {o.budget && <span><Icon name="wallet" size={13} /> {o.budget}</span>}
-                      <span><Icon name="clock" size={13} /> {relativni(o.created_at)}</span>
-                      {o.urgent && <span style={{ color: 'var(--red)' }}>🚨 Urgentní</span>}
-                    </div>
+              {isInactive ? (
+                <div style={{ padding: '32px 24px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 32, marginBottom: 12 }}>🔒</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: '#1A1F2E', marginBottom: 8 }}>Aktivujte profil a začněte přijímat poptávky</div>
+                  <div style={{ fontSize: 13, color: '#6B7280', marginBottom: 20, lineHeight: 1.6 }}>
+                    S tarifem Aktivní šikula za 399 Kč / měsíc se zobrazíte zákazníkům ve vaší lokalitě a budete moci reagovat na poptávky.
                   </div>
-                  <button className="btn btn-primary btn-sm" onClick={() => onNav('send-offer', o)}>Nabídnout se</button>
+                  <button onClick={() => setActivePage('membership')}
+                    style={{ height: 44, padding: '0 24px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#F97316,#EA580C)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    Aktivovat profil za 399 Kč
+                  </button>
                 </div>
-              ))}
+              ) : (
+                <>
+                  {ordersLoading && <div style={{ padding: 16, color: 'var(--text3)', fontSize: 14 }}>Načítám…</div>}
+                  {ordersError && !ordersLoading && (
+                    <div style={{ padding: 16, color: 'var(--red, #B91C1C)', fontSize: 13 }}>Nepodařilo se načíst zakázky: {ordersError}</div>
+                  )}
+                  {!ordersLoading && !ordersError && orders.length === 0 && (
+                    <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)' }}>
+                      <div style={{ fontSize: 28, marginBottom: 8 }}>🕊️</div>
+                      Zatím žádné nové poptávky ve vaší lokalitě. Zkontroluju to znovu za 30 s.
+                    </div>
+                  )}
+                  {!ordersLoading && !ordersError && orders.slice(0, 3).map(o => (
+                    <div key={o.id} className="order-card" style={{ margin: 0, borderRadius: 0, border: 'none', borderBottom: '1px solid var(--border)' }}>
+                      <div className="order-cat-icon">{CAT_ICON[o.category] || '🔧'}</div>
+                      <div className="order-info">
+                        <div className="order-title">{o.title}</div>
+                        <div className="order-meta">
+                          <span><Icon name="map" size={13} /> {o.city}</span>
+                          {o.budget && <span><Icon name="wallet" size={13} /> {o.budget}</span>}
+                          <span><Icon name="clock" size={13} /> {relativni(o.created_at)}</span>
+                          {o.urgent && <span style={{ color: 'var(--red)' }}>🚨 Urgentní</span>}
+                        </div>
+                      </div>
+                      <button className="btn btn-primary btn-sm" onClick={() => onNav('send-offer', o)}>Nabídnout se</button>
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
           </div>
         )}

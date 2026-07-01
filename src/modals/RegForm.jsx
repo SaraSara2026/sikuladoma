@@ -82,13 +82,32 @@ export default function RegForm({ plan, onClose, onRegistered }) {
               Platba 399 Kč / měsíc probíhá kartou přes Stripe. Po úspěšné platbě se profil aktivuje. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.
             </div>
           </div>
-          <button onClick={() => {
-            fetch('/api/stripe?action=checkout', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan: 'aktiv' }) })
-              .then(r => r.json()).then(d => { if (d.url) window.location.href = d.url; });
-          }}
-            style={{ width: "100%", height: 50, borderRadius: 12, border: "none", background: `linear-gradient(135deg,#F97316,#EA580C)`, color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 4px 16px rgba(249,115,22,.35)", marginBottom: 10 }}>
-            Aktivovat profil za 399 Kč <IcArrow />
+          <button onClick={async () => {
+            setBusy(true);
+            setErr(null);
+            try {
+              const r = await fetch('/api/stripe?action=checkout', {
+                method: 'POST', credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ plan: 'aktiv' }),
+              });
+              const d = await r.json();
+              if (d.url) { window.location.href = d.url; return; }
+              setErr(d.error || 'Nepodařilo se otevřít platební bránu. Zkuste to znovu nebo nás kontaktujte na info@sikuladoma.cz.');
+            } catch {
+              setErr('Nepodařilo se připojit k serveru. Zkontrolujte připojení a zkuste znovu.');
+            } finally {
+              setBusy(false);
+            }
+          }} disabled={busy}
+            style={{ width: "100%", height: 50, borderRadius: 12, border: "none", background: busy ? "#CBD5E1" : `linear-gradient(135deg,#F97316,#EA580C)`, color: "#fff", fontWeight: 700, fontSize: 15, cursor: busy ? "wait" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: busy ? "none" : "0 4px 16px rgba(249,115,22,.35)", marginBottom: 10 }}>
+            {busy ? "Připravuji platbu…" : <><span>Aktivovat profil za 399 Kč</span> <IcArrow /></>}
           </button>
+          {err && (
+            <div style={{ marginBottom: 10, padding: "10px 14px", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, fontSize: 12, color: "#B91C1C", lineHeight: 1.5 }}>
+              {err}
+            </div>
+          )}
           <button onClick={() => { if (registeredUser) onRegistered(registeredUser); onClose(); }}
             style={{ background: "none", border: "none", color: T.ink3, fontSize: 13, cursor: "pointer", fontFamily: "inherit", textDecoration: "underline" }}>
             Přejít do profilu bez aktivace
