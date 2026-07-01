@@ -152,7 +152,15 @@ export default function App() {
 
   const openOrder = (svc = null, opts = {}) => setOrderForm({ service: svc, ...opts });
   const openReg   = (plan = null) => setRegForm({ plan });
-  const scrollTo  = id => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+  const scrollTo  = id => {
+    if (page !== "home") {
+      setPage("home");
+      window.scrollTo(0, 0);
+      setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }), 120);
+    } else {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   return (
     <>
