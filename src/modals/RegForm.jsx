@@ -6,7 +6,6 @@ import { T, S, inp, lbl, hint } from "../ui/theme";
 import { IconBtn, BtnGhost, BtnBlue } from "../ui/Button";
 import { IcX, IcArrow, IcCheckCircle } from "../ui/icons/UIIcons";
 import { SERVICES } from "../lib/categories";
-import { PLANS } from "../lib/plans";
 import { apiRegister } from "../lib/auth.js";
 import PasswordField from "../components/PasswordField";
 

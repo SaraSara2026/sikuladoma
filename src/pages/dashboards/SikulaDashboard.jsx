@@ -193,18 +193,9 @@ function CalendarSection() {
       </div>
       <div style={{ marginTop: 20 }}>
         <h3 style={{ marginBottom: 12 }}>Nadcházející zakázky</h3>
-        {[{ date: '15.4.', time: '10:00', title: 'Montáž skříně', customer: 'Jana N.' }, { date: '18.4.', time: '14:00', title: 'Čištění sedačky', customer: 'Petra M.' }].map((e, i) => (
-          <div key={i} className="card card-pad" style={{ marginBottom: 10, display: 'flex', gap: 16, alignItems: 'center' }}>
-            <div style={{ textAlign: 'center', background: 'var(--brand)', color: 'var(--accent)', padding: '8px 12px', borderRadius: 10, fontFamily: 'Syne', fontWeight: 800, minWidth: 54 }}>
-              <div style={{ fontSize: 18 }}>{e.date.split('.')[0]}</div>
-              <div style={{ fontSize: 11, opacity: 0.6 }}>dubna</div>
-            </div>
-            <div>
-              <div style={{ fontWeight: 700 }}>{e.title}</div>
-              <div style={{ fontSize: 13, color: 'var(--text2)' }}>{e.customer} · {e.time}</div>
-            </div>
-          </div>
-        ))}
+        <div style={{ padding: '20px 16px', background: '#F8FAFC', border: '1px solid #E5E7EB', borderRadius: 12, textAlign: 'center', color: '#94A3B8', fontSize: 13 }}>
+          Zatím nemáte naplánované žádné zakázky.
+        </div>
       </div>
     </div>
   )

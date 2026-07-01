@@ -1,4 +1,4 @@
-export default function Footer({ onOrder, onReg, onKontakt, onHow, onSikuly, onPodminkySikuly, onPodporaSikuly, onOchrana, onPodminkyPouziti, onGDPR, onCookies, onFAQ, onSikulove }) {
+export default function Footer({ onOrder, onReg, onKontakt, onHow, onSikuly, onPodminkySikuly, onPodporaSikuly, onOchrana, onPodminkyPouziti, onCookies, onFAQ, onSikulove }) {
   const link = "#334155"
   const hover = "#0B66D8"
 
@@ -50,10 +50,9 @@ export default function Footer({ onOrder, onReg, onKontakt, onHow, onSikuly, onP
           <div>
             <h4 style={{ color: "#0F172A", fontSize: 10, fontWeight: 700, marginBottom: 8, letterSpacing: ".08em", textTransform: "uppercase" }}>Právní</h4>
             {[
-              { label: "Ochrana soukromí", onClick: onOchrana },
-              { label: "Podmínky použití", onClick: onPodminkyPouziti },
-              { label: "GDPR",             onClick: onGDPR },
-              { label: "Cookies",          onClick: onCookies },
+              { label: "Ochrana osobních údajů", onClick: onOchrana },
+              { label: "Obchodní podmínky",       onClick: onPodminkyPouziti },
+              { label: "Cookies",                 onClick: onCookies },
             ].map(({ label, onClick }) => (
               <div key={label}
                 style={{ fontSize: 12, marginBottom: 3, cursor: onClick ? "pointer" : "default", transition: "color .12s", color: link, lineHeight: 1.5 }}

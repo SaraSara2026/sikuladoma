@@ -16,11 +16,11 @@ const FAQ_CUSTOMERS = [
   },
   {
     q: 'Jak rychle se mi šikulové ozvou?',
-    a: 'Průměrná první reakce je <strong>do 2 hodin</strong>. U urgentních poptávek (do 48 hodin) to bývá ještě rychleji — šikulové mají notifikace v aplikaci.',
+    a: 'Šikulové se zpravidla ozývají brzy. U poptávek označených jako urgentní mají šikulové okamžitou notifikaci, což zkracuje dobu reakce.',
   },
   {
     q: 'Jak vím, že je šikula ověřený a důvěryhodný?',
-    a: 'U každého profilu vidíš zelený štítek "Ověřený", recenze od minulých zákazníků (hvězdičky 1-5) a kolik zakázek už dokončil. U ověřených šikulů jsme navíc prověřili IČO a totožnost.',
+    a: 'U každého profilu vidíš zelený štítek "Ověřený", recenze od minulých zákazníků (hvězdičky 1–5) a kolik zakázek už dokončil. Ověřený profil znamená, že šikula prošel ověřením e-mailu. Další údaje, například IČO, mohou být doplněny v profilu.',
   },
   {
     q: 'Co když s prací nejsem spokojený?',
@@ -38,8 +38,8 @@ const FAQ_SIKULOVE = [
     a: 'Aktivní šikula stojí <strong>399 Kč / měsíc</strong>. Platba probíhá kartou přes Stripe. Po úspěšné platbě se profil aktivuje a můžete přijímat poptávky. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.',
   },
   {
-    q: 'Jak funguje 5 reakcí měsíčně v tarifu Start?',
-    a: 'S tarifem Aktivní šikula (399 Kč/měs) můžete reagovat na poptávky bez omezení. Tarif se obnovuje každý měsíc a zrušit ho lze kdykoliv přímo v profilu.',
+    q: 'Mohu jako šikula reagovat na poptávky bez omezení?',
+    a: 'Ano. S tarifem <strong>Aktivní šikula (399 Kč / měsíc)</strong> reagujete na poptávky bez omezení počtu. Tarif se obnovuje každý měsíc a zrušit ho lze kdykoliv přímo v dashboardu.',
   },
   {
     q: 'Můžu kdykoliv změnit nebo zrušit tarif?',
@@ -51,7 +51,7 @@ const FAQ_SIKULOVE = [
   },
   {
     q: 'Musím odvádět z výdělků daně?',
-    a: 'Ano, jako samostatně výdělečně činná osoba (OSVČ) odvádíš daně sama. Pomůže ti naše <strong>fakturační modul</strong> (Plus a vyšší) — vystavíš fakturu, stáhneš PDF, pošleš zákazníkovi.',
+    a: 'Ano, jako samostatně výdělečně činná osoba (OSVČ) odvádíš daně sama. Pomůže ti <strong>fakturovač</strong>, který je součástí tarifu <strong>Aktivní šikula Plus za 499 Kč / měsíc</strong> — vystavíš fakturu, stáhneš PDF, pošleš zákazníkovi.',
   },
   {
     q: 'Co když mi zákazník nezaplatí?',

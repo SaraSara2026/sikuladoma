@@ -1,6 +1,3 @@
-// Login modal — e-mail + heslo. Bez magic-link, bez OAuth.
-// Po úspěšném loginu volá onDemoLogin(user) (zachovaný název kvůli App.jsx state).
-
 import { useState } from "react";
 import { T, S, inp, lbl } from "../ui/theme";
 import { IconBtn } from "../ui/Button";
@@ -8,7 +5,7 @@ import { IcX, IcArrow } from "../ui/icons/UIIcons";
 import { apiLogin } from "../lib/auth.js";
 import PasswordField from "../components/PasswordField";
 
-export default function LoginModal({ onClose, onReg, onOrder, onFaktury, onDemoLogin, onGetDemo, onForgot }) {
+export default function LoginModal({ onClose, onReg, onOrder, onFaktury, onDemoLogin, onForgot }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -25,22 +22,6 @@ export default function LoginModal({ onClose, onReg, onOrder, onFaktury, onDemoL
       onClose();
     } catch (e) {
       setErr(e.message || "Přihlášení selhalo.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const loginAsDemoSikula = async () => {
-    setEmail("pavel@example.com");
-    setPassword("demo1234");
-    setErr(null);
-    setBusy(true);
-    try {
-      const { user } = await apiLogin({ email: "pavel@example.com", password: "demo1234" });
-      onDemoLogin(user);
-      onClose();
-    } catch (e) {
-      setErr(e.message || "Demo přihlášení selhalo. Spusť `npm run db:seed`?");
     } finally {
       setBusy(false);
     }

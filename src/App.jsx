@@ -48,7 +48,6 @@ const PAGE_META = {
   sikulove:          { title: 'Šikulové v ČR',          description: 'Procházej ověřené šikuly podle kategorie a oblasti. Recenze, plán, kontakt.' },
   kontakt:           { title: 'Kontakt',                description: 'Napiš nám — odpovídáme do 24 hodin. ŠikulaDoma, Stavira s.r.o.' },
   sikuly:            { title: 'Chci vydělávat jako šikula', description: 'Registruj se zdarma a začni dostávat poptávky z okolí.' },
-  'pro-sikuly':      { title: 'Pro šikuly',             description: 'Vše co potřebuješ jako šikula — tarify, jak to funguje, často kladené dotazy.' },
   faktury:           { title: 'Fakturace',              description: 'Vytvoř fakturu do 60 sekund — splňuje právní požadavky ČR.', noindex: true },
   dashboard:         { title: 'Můj dashboard',          description: null, noindex: true },
   chat:              { title: 'Zprávy',                 description: null, noindex: true },
@@ -66,19 +65,6 @@ const PAGE_META = {
   faq:                  { title: 'Často kladené dotazy', description: 'Odpovědi na nejčastější otázky pro zákazníky i šikuly.' },
 };
 
-// Demo šikula pro testovací login bez DB záznamu (zachováno z původního App.jsx).
-const DEMO_SIKULA = {
-  name: "Pavel Šikovný",
-  email: "demo@sikuladoma.cz",
-  phone: "+420 777 123 456",
-  ico: "12345678",
-  street: "Hlavní 42",
-  city: "Praha 6",
-  psc: "160 00",
-  bio: "Zkušený řemeslník se zaměřením na montáže, drobné opravy a domácí práce. Působím v Praze a okolí.",
-  services: ["domacnost", "opravy", "nabytek"],
-  plan: "profi",
-};
 
 export default function App() {
   // Detekce ?page= z URL při startu (pro email linky verify-email + reset-password)
@@ -206,7 +192,6 @@ export default function App() {
         onLogout={logoutSikula}
         onOchrana={() => { setPage("ochrana-soukromi"); window.scrollTo(0,0); }}
         onPodminkyPouziti={() => { setPage("podminky-pouziti"); window.scrollTo(0,0); }}
-        onGDPR={() => { setPage("gdpr"); window.scrollTo(0,0); }}
         onCookies={() => { setPage("cookies"); window.scrollTo(0,0); }}
         onCookiesPage={() => { setPage("cookies"); window.scrollTo(0,0); }}
         onHow={() => { setPage("home"); window.scrollTo(0,0); setTimeout(() => document.getElementById("how")?.scrollIntoView({ behavior: "smooth" }), 100); }}
@@ -283,8 +268,6 @@ export default function App() {
             <InvoicePage />
           </div>
         </div>
-      ) : page === "pro-sikuly" ? (
-        <ProSikulyPage onBack={() => { setPage("home"); window.scrollTo(0,0); }} onReg={openReg} />
       ) : (<>
 
       {/* HERO */}
@@ -306,7 +289,7 @@ export default function App() {
           </h1>
 
           <p style={{ fontSize: "clamp(14px, 2vw, 17px)", color: T.ink3, lineHeight: 1.7, maxWidth: 640, margin: "0 auto 28px", letterSpacing: "-.01em" }}>
-            Vyberte službu, napište pár detailů a šikulové z okolí vám pošlou nabídky.
+            Vyberte službu, napište pár detailů a šikulové z okolí vám mohou poslat nabídky.
           </p>
 
           <div style={{ display: "flex", maxWidth: 640, margin: "0 auto 16px", background: "#fff", borderRadius: 14, border: `1.5px solid ${T.border}`, boxShadow: "0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06)", overflow: "hidden" }}>
@@ -353,7 +336,7 @@ export default function App() {
 
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 4, flexWrap: "wrap", rowGap: 8 }}>
             {[
-              { Icon: IcShield, text: "Ověření šikulové",       iconColor: "#059669" },
+              { Icon: IcShield, text: "Ověřené profily",         iconColor: "#059669" },
               { Icon: IcStar,   text: "Poptávka zdarma",         iconColor: T.orange },
               { Icon: IcCheck,  text: "Zákazník nic neplatí",   iconColor: "#059669" },
               { Icon: IcGlobe,  text: "Platíte přímo šikulovi", iconColor: T.blue },
@@ -404,7 +387,7 @@ export default function App() {
               { n: 2, title: "Vyberete konkrétní službu", desc: "Například u kategorie Domácnost zvolíte žehlení, úklid, mytí oken nebo jinou službu.", bg: "#EFF6FF", color: "#3B82F6" },
               { n: 3, title: "Upřesníte požadavek",      desc: "Můžete dopsat vlastní poznámku. Například kolik prádla chcete vyžehlit. Není to ale povinné.", bg: "#F0FDF4", color: "#22C55E" },
               { n: 4, title: "Zadáte místo a čas",       desc: "Vyplníte adresu nebo oblast, kde se má služba provést, a zvolíte, jak rychle ji potřebujete.", bg: "#FAF5FF", color: "#A855F7" },
-              { n: 5, title: "Odešlete poptávku",        desc: "Šikulové z okolí se vám ozvou s nabídkou. Vyberete podle ceny, termínu a recenzí.", bg: "#F0F9FF", color: "#0EA5E9" },
+              { n: 5, title: "Odešlete poptávku",        desc: "Šikulové z okolí se vám mohou ozvat s nabídkou. Vyberete podle ceny, termínu a recenzí.", bg: "#F0F9FF", color: "#0EA5E9" },
             ].map(step => (
               <div key={step.n} style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: 16, padding: "24px 22px", boxShadow: "0 1px 3px rgba(0,0,0,.04)", transition: "all .18s", cursor: "default" }}
                 onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,.09)"; }}
@@ -467,9 +450,9 @@ export default function App() {
       <div style={{ background: "#F8FAFC", borderTop: "1px solid #E5E7EB", borderBottom: "1px solid #E5E7EB", padding: "14px 24px" }}>
         <div style={{ maxWidth: 960, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 24 }}>
           {[
-            { emoji: "🔍", title: "Ověření šikulové",       desc: "Profily i recenze jsou reálné.",      color: "#3B82F6", bg: "#EFF6FF" },
+            { emoji: "🔍", title: "Ověřené profily",         desc: "Profily šikulů jsou ověřeny e-mailem.", color: "#3B82F6", bg: "#EFF6FF" },
             { emoji: "💬", title: "Poptávka zdarma",         desc: "Zákazník za poptávku neplatí nic.",   color: "#22C55E", bg: "#F0FDF4" },
-            { emoji: "⚡", title: "Reakce do 48 hodin",     desc: "Urgentní požadavky zobrazíme šikulům přednostně.", color: "#F97316", bg: "#FFF7ED" },
+            { emoji: "⚡", title: "Reakce do 48 hodin",     desc: "Poptávku šikulům zobrazíme co nejdříve. U běžných požadavků cílíme na rychlou reakci.", color: "#F97316", bg: "#FFF7ED" },
             { emoji: "🤝", title: "Platíte přímo šikulovi", desc: "Žádná provize, žádný prostředník.",   color: "#A855F7", bg: "#FAF5FF" },
           ].map(({ emoji, title, desc, color, bg }) => (
             <div key={title} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
@@ -490,7 +473,7 @@ export default function App() {
 
       {orderForm !== null && <OrderForm initialService={orderForm.service} initialCategory={orderForm.category} initialCity={orderForm.city} onClose={() => setOrderForm(null)} onHome={() => { setPage("home"); window.history.replaceState({}, '', '/'); window.scrollTo(0, 0); }} />}
       {regForm   !== null && <RegForm   plan={regForm.plan} onClose={() => setRegForm(null)} onRegistered={loginSikula} />}
-      {loginModal && <LoginModal onClose={() => setLoginModal(false)} onReg={openReg} onOrder={openOrder} onFaktury={() => { setLoginModal(false); setPage("faktury"); window.scrollTo(0,0); }} onDemoLogin={loginSikula} onGetDemo={() => DEMO_SIKULA} onForgot={() => { setLoginModal(false); setPage("forgot-password"); window.scrollTo(0,0); }} />}
+      {loginModal && <LoginModal onClose={() => setLoginModal(false)} onReg={openReg} onOrder={openOrder} onFaktury={() => { setLoginModal(false); setPage("faktury"); window.scrollTo(0,0); }} onDemoLogin={loginSikula} onForgot={() => { setLoginModal(false); setPage("forgot-password"); window.scrollTo(0,0); }} />}
 
     </>
   );
