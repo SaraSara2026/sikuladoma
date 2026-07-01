@@ -188,7 +188,7 @@ export default function App() {
         onReg={() => openReg()}
         onKontakt={() => { setPage("kontakt"); window.scrollTo(0,0); }}
         onSikuly={() => { setPage("sikuly"); window.scrollTo(0,0); }}
-        onSikulove={() => { setPage("pro-sikuly"); window.scrollTo(0,0); }}
+        onSikulove={() => { setPage("sikulove"); window.scrollTo(0,0); }}
         onFAQ={() => { setPage("faq"); window.scrollTo(0,0); }}
         onPodminkySikuly={() => { setPage("podminky-sikuly"); window.scrollTo(0,0); }}
         onPodporaSikuly={() => { setPage("podpora-sikuly"); window.scrollTo(0,0); }}
