@@ -63,7 +63,7 @@ export default function ProSikulyPage({ onBack, onReg }) {
           </h1>
 
           <p style={{ fontSize: 16, color: '#6B7280', lineHeight: 1.7, marginBottom: 28, maxWidth: 580, margin: '0 auto 28px' }}>
-            Založte si profil, ukažte své práce a získávejte poptávky od lidí, kteří hledají pomoc doma, na zahradě nebo kolem domu.
+            Založte si profil, zobrazujte se zákazníkům ve své lokalitě a reagujte jen na poptávky, které vám dávají smysl.
           </p>
 
           {/* Chips */}
@@ -157,6 +157,11 @@ export default function ProSikulyPage({ onBack, onReg }) {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* INFO: hodnocení */}
+          <div style={{ margin: '40px 0 0', padding: '20px 24px', background: '#FFFBEB', border: '1.5px solid #FDE68A', borderRadius: 14, fontSize: 14, color: '#78350F', lineHeight: 1.7 }}>
+            <strong>Hodnocení a recenze.</strong> Zákazníci vás mohou hodnotit hvězdičkami i slovní recenzí. Čím lepší hodnocení získáte, tím větší důvěru si u nových zákazníků budujete.
           </div>
 
           {/* CTA dole */}
