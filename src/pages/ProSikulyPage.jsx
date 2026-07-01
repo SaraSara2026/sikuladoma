@@ -76,6 +76,16 @@ export default function ProSikulyPage({ onBack, onReg }) {
             ))}
           </div>
 
+          {/* ── INFO BLOK ── */}
+          <div style={{ maxWidth: 580, margin: '0 auto 36px', background: '#F0F9FF', border: '1.5px solid #BAE6FD', borderRadius: 16, padding: '24px 28px', textAlign: 'left' }}>
+            <p style={{ fontSize: 15, color: '#0C4A6E', lineHeight: 1.75, margin: '0 0 14px' }}>
+              ŠikulaDoma funguje jednoduše. Aktivujete si profil, zobrazujete se zákazníkům ve své lokalitě a můžete reagovat na poptávky. Za zakázky neplatíte žádnou provizi. Cenu, termín i rozsah práce si domlouváte přímo se zákazníkem a zákazník platí přímo vám.
+            </p>
+            <p style={{ fontSize: 15, color: '#0C4A6E', lineHeight: 1.75, margin: 0 }}>
+              Platíte pouze zvolený tarif. Žádné kredity za odpovědi, žádné procento ze zakázky a žádné skryté poplatky. Přednostní zobrazení je volitelné a můžete si ho zapnout samostatně na 30 dní.
+            </p>
+          </div>
+
           {/* ── CENOVÁ KARTA ── */}
           <div style={{ maxWidth: 440, margin: '0 auto', background: '#fff', borderRadius: 20, border: '2px solid #FED7AA', boxShadow: '0 8px 32px rgba(249,115,22,.12)', padding: '36px 32px 28px', textAlign: 'left' }}>
             <div style={{ marginBottom: 16 }}>

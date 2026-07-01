@@ -12,7 +12,7 @@ export default function Layout({ children, T, BtnPrimary, onHome, onScrollTo, on
         onScrollTo={onScrollTo}
         onOrder={onOrder}
         onLogin={onLogin}
-        onSikulove={onSikulove}
+        onSikuly={onSikuly}
         sikulaUser={sikulaUser}
         onDashboard={onDashboard}
         onProfil={onProfil}
