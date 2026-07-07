@@ -10,12 +10,13 @@ const IcReceipt = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="no
 
 const VYHODY = [
   'Aktivní profil šikuly',
+  'Zobrazení zákazníkům ve vaší lokalitě',
   'Možnost reagovat na poptávky',
-  'Zobrazení v katalogu služeb',
-  'Recenze a hodnocení od zákazníků',
-  'Upozornění na nové poptávky',
+  'Vy sami si vybíráte zakázky',
+  'Žádné kredity za odpovědi',
   'Žádná provize ze zakázky',
-  'Zákazník platí přímo šikulovi',
+  'Zákazník platí přímo vám',
+  'Recenze a hodnocení od zákazníků',
 ]
 
 const STEPS = [
@@ -76,14 +77,22 @@ export default function ProSikulyPage({ onBack, onReg }) {
             ))}
           </div>
 
-          {/* ── INFO BLOK ── */}
-          <div style={{ maxWidth: 580, margin: '0 auto 36px', background: '#F0F9FF', border: '1.5px solid #BAE6FD', borderRadius: 16, padding: '24px 28px', textAlign: 'left' }}>
-            <p style={{ fontSize: 15, color: '#0C4A6E', lineHeight: 1.75, margin: '0 0 14px' }}>
-              ŠikulaDoma funguje jednoduše. Aktivujete si profil, zobrazujete se zákazníkům ve své lokalitě a můžete reagovat na poptávky. Za zakázky neplatíte žádnou provizi. Cenu, termín i rozsah práce si domlouváte přímo se zákazníkem a zákazník platí přímo vám.
-            </p>
-            <p style={{ fontSize: 15, color: '#0C4A6E', lineHeight: 1.75, margin: 0 }}>
-              Platíte pouze zvolený tarif. Žádné kredity za odpovědi, žádné procento ze zakázky a žádné skryté poplatky. Přednostní zobrazení je volitelné a můžete si ho zapnout samostatně na 30 dní.
-            </p>
+          {/* ── VÝHODY BLOK ── */}
+          <div style={{ maxWidth: 580, margin: '0 auto 36px', textAlign: 'left' }}>
+            <h2 style={{ fontSize: 'clamp(20px,3vw,26px)', fontWeight: 800, color: '#1A1F2E', letterSpacing: '-.02em', lineHeight: 1.25, marginBottom: 20 }}>
+              Jedna platba. Žádné provize. Zakázky si vybíráte sami.
+            </h2>
+            <div style={{ background: '#F0F9FF', border: '1.5px solid #BAE6FD', borderRadius: 16, padding: '24px 28px' }}>
+              <p style={{ fontSize: 15, color: '#0C4A6E', lineHeight: 1.75, margin: '0 0 14px' }}>
+                Pro vás samé výhody. Jedna jasná platba, žádné provize a žádné kredity za odpovědi. Profil si aktivujete jednou a pak už se můžete zobrazovat zákazníkům ve své lokalitě.
+              </p>
+              <p style={{ fontSize: 15, color: '#0C4A6E', lineHeight: 1.75, margin: '0 0 14px' }}>
+                Když přijde poptávka, která vám dává smysl, jednoduše se ozvete. Vy sami si vybíráte, na co odpovíte, kdy máte čas a jestli je pro vás zakázka zajímavá.
+              </p>
+              <p style={{ fontSize: 15, color: '#0C4A6E', lineHeight: 1.75, margin: 0 }}>
+                Cenu, termín i rozsah práce si domlouváte přímo se zákazníkem. Co si domluvíte, je vaše. ŠikulaDoma si nebere procenta ze zakázky.
+              </p>
+            </div>
           </div>
 
           {/* ── CENOVÁ KARTA ── */}
@@ -126,24 +135,6 @@ export default function ProSikulyPage({ onBack, onReg }) {
           <p style={{ fontSize: 13, color: '#9CA3AF', marginTop: 20, lineHeight: 1.6 }}>
             Chcete mít v profilu víc možností? Tarif Aktivní šikula Plus za 499 Kč přidá fakturovač a další užitečné funkce. Přednostní zobrazení si můžete zapnout samostatně na 30 dní.
           </p>
-        </div>
-      </section>
-
-      {/* ── CO Z TOHO MÁTE JAKO ŠIKULA ── */}
-      <section style={{ padding: '64px 24px', background: '#fff' }}>
-        <div style={{ maxWidth: 760, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 24 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: '#F97316', marginBottom: 10 }}>PROČ PLATIT TARIF</div>
-            <h2 style={{ fontSize: 'clamp(22px,3vw,30px)', fontWeight: 700, color: '#1A1F2E', letterSpacing: '-.02em' }}>Co z toho máte jako šikula?</h2>
-          </div>
-          <div style={{ background: '#FFF7ED', borderRadius: 16, border: '1.5px solid #FED7AA', padding: 'clamp(24px, 4vw, 36px)' }}>
-            <p style={{ fontSize: 'clamp(14px,2vw,16px)', color: '#44403C', lineHeight: 1.8, marginBottom: 16 }}>
-              Získáte prostor, kde vás mohou najít lidé z vašeho okolí. Aktivujete si profil, zobrazujete se zákazníkům ve své lokalitě a můžete reagovat jen na poptávky, které vám dávají smysl.
-            </p>
-            <p style={{ fontSize: 'clamp(14px,2vw,16px)', color: '#44403C', lineHeight: 1.8, margin: 0 }}>
-              Neplatíte žádné kredity za odpovědi ani provizi ze zakázky. Cenu, termín i rozsah práce si domlouváte přímo se zákazníkem a zákazník platí přímo vám. Platíte pouze zvolený tarif.
-            </p>
-          </div>
         </div>
       </section>
 
