@@ -129,6 +129,24 @@ export default function ProSikulyPage({ onBack, onReg }) {
         </div>
       </section>
 
+      {/* ── CO Z TOHO MÁTE JAKO ŠIKULA ── */}
+      <section style={{ padding: '64px 24px', background: '#fff' }}>
+        <div style={{ maxWidth: 760, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 24 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: '#F97316', marginBottom: 10 }}>PROČ PLATIT TARIF</div>
+            <h2 style={{ fontSize: 'clamp(22px,3vw,30px)', fontWeight: 700, color: '#1A1F2E', letterSpacing: '-.02em' }}>Co z toho máte jako šikula?</h2>
+          </div>
+          <div style={{ background: '#FFF7ED', borderRadius: 16, border: '1.5px solid #FED7AA', padding: 'clamp(24px, 4vw, 36px)' }}>
+            <p style={{ fontSize: 'clamp(14px,2vw,16px)', color: '#44403C', lineHeight: 1.8, marginBottom: 16 }}>
+              Získáte prostor, kde vás mohou najít lidé z vašeho okolí. Aktivujete si profil, zobrazujete se zákazníkům ve své lokalitě a můžete reagovat jen na poptávky, které vám dávají smysl.
+            </p>
+            <p style={{ fontSize: 'clamp(14px,2vw,16px)', color: '#44403C', lineHeight: 1.8, margin: 0 }}>
+              Neplatíte žádné kredity za odpovědi ani provizi ze zakázky. Cenu, termín i rozsah práce si domlouváte přímo se zákazníkem a zákazník platí přímo vám. Platíte pouze zvolený tarif.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* ── JAK TO FUNGUJE ── */}
       <section style={{ padding: '72px 24px 80px', background: '#F9FAFB' }}>
         <div style={{ maxWidth: 860, margin: '0 auto' }}>
