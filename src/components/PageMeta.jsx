@@ -5,7 +5,7 @@
 import { useEffect } from 'react';
 
 const DEFAULT_TITLE = 'ŠikulaDoma — najdeme šikulu na cokoliv';
-const DEFAULT_DESC  = 'Marketplace šikulů v ČR. Vyber službu, napiš detaily a šikulové z okolí ti mohou poslat nabídky zdarma.';
+const DEFAULT_DESC  = 'Marketplace šikulů v ČR. Vyberte službu, napište detaily a šikulové z okolí vám mohou poslat nabídky zdarma.';
 
 export default function PageMeta({ title, description, noindex }) {
   useEffect(() => {

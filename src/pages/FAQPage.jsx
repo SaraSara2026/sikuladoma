@@ -8,27 +8,27 @@ import PageMeta from '../components/PageMeta';
 const FAQ_CUSTOMERS = [
   {
     q: 'Kolik mě stojí zadání poptávky?',
-    a: 'Pro zákazníky je ŠikulaDoma <strong>úplně zdarma</strong>. Zadáš poptávku, šikulové z okolí ti pošlou nabídky a ty si vybereš. Platíš až za samotnou práci přímo šikulovi, ne nám.',
+    a: 'Pro zákazníky je ŠikulaDoma <strong>úplně zdarma</strong>. Zadáte poptávku, šikulové z okolí vám mohou poslat nabídky a vy si vyberete. Platíte až za samotnou práci přímo šikulovi, ne nám.',
   },
   {
     q: 'Musím se registrovat abych zadala poptávku?',
-    a: 'Ne, registrace není nutná. Stačí vyplnit e-mail a telefon ve formuláři. Pokud se ale zaregistruješ, uvidíš všechny své poptávky a chat s šikuly na jednom místě.',
+    a: 'Ne, registrace není nutná. Stačí vyplnit e-mail a telefon ve formuláři. Pokud se ale zaregistrujete, uvidíte všechny své poptávky a chat s šikuly na jednom místě.',
   },
   {
-    q: 'Jak rychle se mi šikulové ozvou?',
+    q: 'Jak rychle se vám šikulové ozvou?',
     a: 'Šikulové se zpravidla ozývají brzy. U poptávek označených jako urgentní mají šikulové okamžitou notifikaci, což zkracuje dobu reakce.',
   },
   {
     q: 'Jak vím, že je šikula ověřený a důvěryhodný?',
-    a: 'U každého profilu vidíš zelený štítek "Ověřený", recenze od minulých zákazníků (hvězdičky 1–5) a kolik zakázek už dokončil. Ověřený profil znamená, že šikula prošel ověřením e-mailu. Další údaje, například IČO, mohou být doplněny v profilu.',
+    a: 'U každého profilu vidíte zelený štítek "Ověřený", recenze od minulých zákazníků (hvězdičky 1–5) a kolik zakázek už dokončil. Ověřený profil znamená, že šikula prošel ověřením e-mailu. Další údaje, například IČO, mohou být doplněny v profilu.',
   },
   {
     q: 'Co když s prací nejsem spokojený?',
-    a: 'Domlouvej se vždy přes náš chat — ten slouží jako důkaz dohody. Pokud nastane spor, kontaktuj nás na <a href="mailto:info@sikuladoma.cz" style="color:#F97316">info@sikuladoma.cz</a> a pomůžeme vyřešit. Můžeš také dát šikulovi nízké hodnocení, které ostatní zákazníky varuje.',
+    a: 'Domluvte se vždy přes náš chat — ten slouží jako důkaz dohody. Pokud nastane spor, kontaktujte nás na <a href="mailto:info@sikuladoma.cz" style="color:#F97316">info@sikuladoma.cz</a> a pomůžeme vyřešit. Můžete také dát šikulovi nízké hodnocení, které ostatní zákazníky varuje.',
   },
   {
     q: 'Platím šikulovi předem?',
-    a: 'Doporučujeme platit <strong>až po dokončení práce</strong>. U větších zakázek si můžete domluvit zálohu, ale o tom rozhoduješ ty. ŠikulaDoma platby nezprostředkovává — peníze jdou přímo šikulovi (hotově, na účet, podle dohody).',
+    a: 'Doporučujeme platit <strong>až po dokončení práce</strong>. U větších zakázek si můžete domluvit zálohu, ale rozhodnutí je na vás. ŠikulaDoma platby nezprostředkovává — peníze jdou přímo šikulovi (hotově, na účet, podle dohody).',
   },
 ];
 
@@ -43,19 +43,19 @@ const FAQ_SIKULOVE = [
   },
   {
     q: 'Můžu kdykoliv změnit nebo zrušit tarif?',
-    a: 'Ano. V dashboardu → Členství můžeš kdykoliv upgradovat nebo přes Stripe portál zrušit. Zrušení se aktivuje po skončení aktuálního období — do té doby máš výhody zaplaceného tarifu.',
+    a: 'Ano. V dashboardu → Členství můžete kdykoliv upgradovat nebo přes Stripe portál zrušit. Zrušení se aktivuje po skončení aktuálního období — do té doby máte výhody zaplaceného tarifu.',
   },
   {
     q: 'Jak získám hodnocení a recenze?',
-    a: 'Po každé dokončené zakázce dostane zákazník výzvu k hodnocení. Hvězdičky 1-5 + komentář + možnost doporučit. Recenze se zobrazí na tvém veřejném profilu a počítají se do tvého ratingu.',
+    a: 'Po každé dokončené zakázce dostane zákazník výzvu k hodnocení. Hvězdičky 1-5 + komentář + možnost doporučit. Recenze se zobrazí na vašem veřejném profilu a počítají se do vašeho hodnocení.',
   },
   {
     q: 'Musím odvádět z výdělků daně?',
-    a: 'Ano, jako samostatně výdělečně činná osoba (OSVČ) odvádíš daně sama. Pomůže ti <strong>fakturovač</strong>, který je součástí tarifu <strong>Aktivní šikula Plus za 499 Kč / měsíc</strong> — vystavíš fakturu, stáhneš PDF, pošleš zákazníkovi.',
+    a: 'Ano, jako samostatně výdělečně činná osoba (OSVČ) odvádíte daně sami. Pomůže vám <strong>fakturovač</strong>, který je součástí tarifu <strong>Aktivní šikula Plus za 499 Kč / měsíc</strong> — vystavíte fakturu, stáhnete PDF, pošlete zákazníkovi.',
   },
   {
     q: 'Co když mi zákazník nezaplatí?',
-    a: 'Vždy si dohodu dokumentuj v chatu. Pokud nezaplatí, máš důkaz. Kontaktuj nás, pomůžeme s mediací. V krajním případě se obrať na advokáta — ŠikulaDoma platby nezprostředkovává, ale dohoda v chatu je platná.',
+    a: 'Vždy si dohodu dokumentujte v chatu. Pokud zákazník nezaplatí, máte důkaz. Kontaktujte nás, pomůžeme s mediací. V krajním případě se obraťte na advokáta — ŠikulaDoma platby nezprostředkovává, ale dohoda v chatu je platná.',
   },
 ];
 
@@ -78,16 +78,16 @@ export default function FAQPage({ onBack, onReg, onOrder }) {
               Často kladené dotazy
             </h1>
             <p style={{ fontSize: 15, color: T.ink3, lineHeight: 1.6 }}>
-              Najdi rychle odpověď na to, co tě zajímá. Pokud něco chybí, napiš nám na <a href="mailto:info@sikuladoma.cz" style={{ color: T.orange, fontWeight: 600 }}>info@sikuladoma.cz</a>.
+              Najděte rychle odpověď na to, co vás zajímá. Pokud něco chybí, napište nám na <a href="mailto:info@sikuladoma.cz" style={{ color: T.orange, fontWeight: 600 }}>info@sikuladoma.cz</a>.
             </p>
           </div>
         </div>
 
         {/* Sekce zákazníci */}
-        <Section title="Pro zákazníky" subtitle="Chceš poptávat službu" items={FAQ_CUSTOMERS} cta={{ label: 'Zadat poptávku zdarma', onClick: onOrder, color: T.orange }} />
+        <Section title="Pro zákazníky" subtitle="Chcete poptávat službu" items={FAQ_CUSTOMERS} cta={{ label: 'Zadat poptávku zdarma', onClick: onOrder, color: T.orange }} />
 
         {/* Sekce šikulové */}
-        <Section title="Pro šikuly" subtitle="Chceš nabízet své služby" items={FAQ_SIKULOVE} cta={{ label: 'Registrovat se jako šikula', onClick: onReg, color: '#2563EB' }} />
+        <Section title="Pro šikuly" subtitle="Chcete nabízet své služby" items={FAQ_SIKULOVE} cta={{ label: 'Registrovat se jako šikula', onClick: onReg, color: '#2563EB' }} />
 
         <div style={{ height: 60 }} />
       </div>

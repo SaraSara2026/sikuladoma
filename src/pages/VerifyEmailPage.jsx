@@ -48,7 +48,7 @@ export default function VerifyEmailPage({ onBack, onLogin }) {
             </div>
             <h1 style={{ fontSize: 22, fontWeight: 700, color: T.ink, marginBottom: 8 }}>E-mail ověřen!</h1>
             <p style={{ fontSize: 14, color: T.ink3, marginBottom: 24, lineHeight: 1.6 }}>
-              Teď můžeš naplno používat ŠikulaDoma — posílat poptávky, nabídky i zprávy.
+              Teď můžete naplno používat ŠikulaDoma — posílat poptávky, nabídky i zprávy.
             </p>
             <button onClick={onLogin} style={primaryBtn}>Pokračovat</button>
           </>

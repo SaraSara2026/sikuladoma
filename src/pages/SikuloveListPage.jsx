@@ -55,10 +55,10 @@ export default function SikuloveListPage({ onBack, onProfile, onReg, onOrder }) 
             </button>
           )}
           <h1 style={{ fontSize: 'clamp(24px, 4vw, 32px)', fontWeight: 800, color: T.ink, letterSpacing: '-.03em', marginBottom: 8 }}>
-            Šikulové, kterým můžeš věřit
+            Šikulové, kterým můžete věřit
           </h1>
           <p style={{ fontSize: 15, color: T.ink3, marginBottom: 24, maxWidth: 620, lineHeight: 1.6 }}>
-            Procházej ověřené šikuly podle kategorie a oblasti — uvidíš jejich recenze, hodnocení a co nabízejí. Zaujal tě někdo? <strong>Zadej poptávku</strong> a šikulové z okolí (včetně toho vybraného) ti pošlou nabídky.
+            Procházejte ověřené šikuly podle kategorie a oblasti — uvidíte jejich recenze, hodnocení a co nabízejí. Zaujal vás někdo? <strong>Zadejte poptávku</strong> a šikulové z okolí (včetně toho vybraného) vám pošlou nabídky.
           </p>
 
           {/* FILTERS */}
@@ -104,13 +104,13 @@ export default function SikuloveListPage({ onBack, onProfile, onReg, onOrder }) 
             <div style={{ marginTop: 18, padding: '16px 20px', background: 'linear-gradient(135deg, #FFF7ED 0%, #FEF3C7 100%)', border: '1px solid #FDBA74', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: 200 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#9A3412', marginBottom: 2 }}>
-                  Nechceš si vybírat? Pošli poptávku všem najednou.
+                  Nechcete si vybírat? Pošlete poptávku všem najednou.
                 </div>
                 <div style={{ fontSize: 13, color: '#7C2D12', lineHeight: 1.5 }}>
                   {filters.category && <>Kategorie: <strong>{CATEGORIES.find(c => c.id === filters.category)?.label}</strong></>}
                   {filters.category && filters.city && ' · '}
                   {filters.city && <>Místo: <strong>{filters.city}</strong></>}
-                  {' '} — šikulové z okolí ti pošlou nabídky do 48 hodin.
+                  {' '} — šikulové z okolí vám pošlou nabídky.
                 </div>
               </div>
               <BtnPrimary size="md" onClick={() => onOrder({ category: filters.category, city: filters.city })}>
@@ -129,7 +129,7 @@ export default function SikuloveListPage({ onBack, onProfile, onReg, onOrder }) 
           <div style={{ textAlign: 'center', padding: 60, color: T.ink3 }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>🔍</div>
             <div style={{ fontSize: 16, fontWeight: 600, color: T.ink, marginBottom: 6 }}>Žádní šikulové se neshodují</div>
-            <div style={{ fontSize: 13 }}>Zkus změnit filtry nebo zadej rovnou poptávku — šikulové se ti ozvou sami.</div>
+            <div style={{ fontSize: 13 }}>Zkuste změnit filtry nebo zadejte rovnou poptávku — šikulové se vám ozvou sami.</div>
           </div>
         ) : (
           <>

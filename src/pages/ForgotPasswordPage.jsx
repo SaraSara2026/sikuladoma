@@ -15,7 +15,7 @@ export default function ForgotPasswordPage({ onBack }) {
     e?.preventDefault();
     setErr(null);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
-      setErr('Zadej platnou e-mailovou adresu.');
+      setErr('Zadejte platnou e-mailovou adresu.');
       return;
     }
     setBusy(true);
@@ -23,7 +23,7 @@ export default function ForgotPasswordPage({ onBack }) {
       await apiForgotPassword(email);
       setDone(true);
     } catch (e) {
-      setErr(e.message || 'Něco se pokazilo. Zkus to znovu.');
+      setErr(e.message || 'Něco se pokazilo. Zkuste to znovu.');
     } finally {
       setBusy(false);
     }
@@ -37,14 +37,14 @@ export default function ForgotPasswordPage({ onBack }) {
         {done ? (
           <>
             <p style={{ fontSize: 14, color: T.ink3, marginBottom: 24, lineHeight: 1.6 }}>
-              Pokud je e-mail registrovaný, poslali jsme ti odkaz pro reset hesla. Zkontroluj si schránku (i spam).
+              Pokud je e-mail registrovaný, poslali jsme vám odkaz pro reset hesla. Zkontrolujte schránku (i spam).
             </p>
             <button onClick={onBack} style={primaryBtn}>Zpět na úvod</button>
           </>
         ) : (
           <form onSubmit={submit}>
             <p style={{ fontSize: 14, color: T.ink3, marginBottom: 20, lineHeight: 1.6 }}>
-              Zadej e-mail, který jsi použil(a) při registraci. Pošleme ti odkaz na reset hesla.
+              Zadejte e-mail, který jste použili při registraci. Pošleme vám odkaz na reset hesla.
             </p>
 
             <div style={{ marginBottom: 16 }}>

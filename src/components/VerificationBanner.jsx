@@ -16,7 +16,7 @@ export default function VerificationBanner({ user }) {
     try {
       await apiResendVerification();
       setState('sent');
-      setMsg('Ověřovací e-mail jsme poslali znovu. Zkontroluj si schránku.');
+      setMsg('Ověřovací e-mail jsme poslali znovu. Zkontrolujte schránku.');
     } catch (err) {
       setState('error');
       setMsg(err.message || 'Něco se pokazilo.');
@@ -38,10 +38,10 @@ export default function VerificationBanner({ user }) {
       <div style={{ flexShrink: 0, fontSize: 22 }}>✉️</div>
       <div style={{ flex: 1, minWidth: 240 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: '#92400E', marginBottom: 2 }}>
-          Ověř svůj e-mail
+          Ověřte svůj e-mail
         </div>
         <div style={{ fontSize: 13, color: '#78350F', lineHeight: 1.5 }}>
-          Poslali jsme ti ověřovací odkaz na <strong>{user.email}</strong>. Bez ověření nemůžeš posílat poptávky, nabídky ani zprávy.
+          Poslali jsme vám ověřovací odkaz na <strong>{user.email}</strong>. Bez ověření nelze posílat poptávky, nabídky ani zprávy.
         </div>
         {msg && (
           <div style={{ marginTop: 8, fontSize: 12, color: state === 'error' ? '#B91C1C' : '#166534' }}>
