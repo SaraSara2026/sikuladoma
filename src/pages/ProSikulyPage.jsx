@@ -77,62 +77,64 @@ export default function ProSikulyPage({ onBack, onReg }) {
             ))}
           </div>
 
-          {/* ── VÝHODY BLOK ── */}
-          <div style={{ maxWidth: 580, margin: '0 auto 36px', textAlign: 'left' }}>
-            <h2 style={{ fontSize: 'clamp(20px,3vw,26px)', fontWeight: 800, color: '#1A1F2E', letterSpacing: '-.02em', lineHeight: 1.25, marginBottom: 20 }}>
-              Jedna platba. Žádné provize. Zakázky si vybíráte sami.
-            </h2>
-            <div style={{ background: '#F0F9FF', border: '1.5px solid #BAE6FD', borderRadius: 16, padding: '24px 28px' }}>
-              <p style={{ fontSize: 15, color: '#0C4A6E', lineHeight: 1.75, margin: '0 0 14px' }}>
+        </div>
+
+        {/* ── DVA SLOUPCE: PROČ SE VYPLATÍ + TARIF ── */}
+        <div style={{ maxWidth: 1040, margin: '36px auto 0' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'stretch' }}>
+
+            {/* Levý sloupec: proč se vyplatí */}
+            <div style={{ flex: '1 1 320px', minWidth: 0, background: '#fff', borderRadius: 20, border: '1.5px solid #FED7AA', boxShadow: '0 4px 20px rgba(249,115,22,.07)', padding: '36px 32px', textAlign: 'left' }}>
+              <h2 style={{ fontSize: 'clamp(20px,2.5vw,24px)', fontWeight: 800, color: '#1A1F2E', letterSpacing: '-.02em', lineHeight: 1.3, marginBottom: 24 }}>
+                Proč se vám ŠikulaDoma vyplatí?
+              </h2>
+              <p style={{ fontSize: 15, color: '#374151', lineHeight: 1.8, marginBottom: 16 }}>
                 Pro vás samé výhody. Jedna jasná platba, žádné provize a žádné kredity za odpovědi. Profil si aktivujete jednou a pak už se můžete zobrazovat zákazníkům ve své lokalitě.
               </p>
-              <p style={{ fontSize: 15, color: '#0C4A6E', lineHeight: 1.75, margin: '0 0 14px' }}>
+              <p style={{ fontSize: 15, color: '#374151', lineHeight: 1.8, marginBottom: 16 }}>
                 Když přijde poptávka, která vám dává smysl, jednoduše se ozvete. Vy sami si vybíráte, na co odpovíte, kdy máte čas a jestli je pro vás zakázka zajímavá.
               </p>
-              <p style={{ fontSize: 15, color: '#0C4A6E', lineHeight: 1.75, margin: 0 }}>
+              <p style={{ fontSize: 15, color: '#374151', lineHeight: 1.8, margin: 0 }}>
                 Cenu, termín i rozsah práce si domlouváte přímo se zákazníkem. Co si domluvíte, je vaše. ŠikulaDoma si nebere procenta ze zakázky.
               </p>
             </div>
-          </div>
 
-          {/* ── CENOVÁ KARTA ── */}
-          <div style={{ maxWidth: 440, margin: '0 auto', background: '#fff', borderRadius: 20, border: '2px solid #FED7AA', boxShadow: '0 8px 32px rgba(249,115,22,.12)', padding: '36px 32px 28px', textAlign: 'left' }}>
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 18, fontWeight: 800, color: '#1A1F2E', marginBottom: 4 }}>Aktivní šikula</div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                <span style={{ fontSize: 36, fontWeight: 800, color: '#F97316' }}>399</span>
-                <span style={{ fontSize: 15, color: '#9CA3AF', fontWeight: 500 }}>Kč / měsíc</span>
+            {/* Pravý sloupec: tarifní karta */}
+            <div style={{ flex: '1 1 320px', minWidth: 0, background: '#fff', borderRadius: 20, border: '2px solid #FED7AA', boxShadow: '0 8px 32px rgba(249,115,22,.12)', padding: '36px 32px 28px', textAlign: 'left' }}>
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 18, fontWeight: 800, color: '#1A1F2E', marginBottom: 4 }}>Aktivní šikula</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                  <span style={{ fontSize: 36, fontWeight: 800, color: '#F97316' }}>399</span>
+                  <span style={{ fontSize: 15, color: '#9CA3AF', fontWeight: 500 }}>Kč / měsíc</span>
+                </div>
               </div>
+
+              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+                {VYHODY.map(v => (
+                  <li key={v} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: '#374151' }}>
+                    <span style={{ width: 20, height: 20, borderRadius: '50%', background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    </span>
+                    {v}
+                  </li>
+                ))}
+              </ul>
+
+              <button onClick={onReg}
+                style={{ width: '100%', height: 50, borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#F97316 0%,#EA580C 100%)', color: '#fff', fontWeight: 700, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 16px rgba(249,115,22,.35)', transition: 'all .15s' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg,#EA580C 0%,#C2410C 100%)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg,#F97316 0%,#EA580C 100%)'; e.currentTarget.style.transform = 'none'; }}>
+                Aktivovat profil za 399 Kč <IcArrow />
+              </button>
+
+              <p style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.6, marginTop: 12, textAlign: 'center' }}>
+                Platba probíhá kartou přes Stripe. Po úspěšné platbě se profil aktivuje. Tarif se obnovuje měsíčně a můžete ho kdykoliv zrušit v profilu.
+              </p>
             </div>
 
-            <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.65, marginBottom: 20 }}>
-              Aktivujte si profil šikuly, zobrazujte se zákazníkům ve své lokalitě a reagujte na poptávky. Bez provize ze zakázky. Co si domluvíte se zákazníkem, je vaše.
-            </p>
-
-            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: 9 }}>
-              {VYHODY.map(v => (
-                <li key={v} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: '#374151' }}>
-                  <span style={{ width: 20, height: 20, borderRadius: '50%', background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  </span>
-                  {v}
-                </li>
-              ))}
-            </ul>
-
-            <button onClick={onReg}
-              style={{ width: '100%', height: 50, borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#F97316 0%,#EA580C 100%)', color: '#fff', fontWeight: 700, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 16px rgba(249,115,22,.35)', transition: 'all .15s' }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg,#EA580C 0%,#C2410C 100%)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg,#F97316 0%,#EA580C 100%)'; e.currentTarget.style.transform = 'none'; }}>
-              Aktivovat profil za 399 Kč <IcArrow />
-            </button>
-
-            <p style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.6, marginTop: 12, textAlign: 'center' }}>
-              Platba probíhá kartou přes Stripe. Po úspěšné platbě se profil aktivuje. Tarif se obnovuje měsíčně a můžete ho kdykoliv zrušit v profilu.
-            </p>
           </div>
 
-          <p style={{ fontSize: 13, color: '#9CA3AF', marginTop: 20, lineHeight: 1.6 }}>
+          <p style={{ fontSize: 13, color: '#9CA3AF', marginTop: 20, lineHeight: 1.6, textAlign: 'center' }}>
             Chcete mít v profilu víc možností? Tarif Aktivní šikula Plus za 499 Kč přidá fakturovač a další užitečné funkce. Přednostní zobrazení si můžete zapnout samostatně na 30 dní.
           </p>
         </div>
