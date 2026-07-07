@@ -451,14 +451,14 @@ export default function App() {
         <div style={{ maxWidth: 760, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 24 }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: T.blue, marginBottom: 10 }}>PRO ZÁKAZNÍKY</div>
-            <h2 style={{ fontSize: "clamp(22px, 4vw, 28px)", fontWeight: 700, color: T.ink, letterSpacing: "-.03em" }}>Co z toho máte jako zákazník?</h2>
+            <h2 style={{ fontSize: "clamp(22px, 4vw, 28px)", fontWeight: 700, color: T.ink, letterSpacing: "-.03em" }}>Proč zadat poptávku přes ŠikulaDoma?</h2>
           </div>
           <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #E5E7EB", padding: "clamp(24px, 4vw, 36px)", boxShadow: "0 1px 4px rgba(0,0,0,.05)" }}>
             <p style={{ fontSize: "clamp(14px, 2vw, 16px)", color: T.ink3, lineHeight: 1.8, marginBottom: 16 }}>
-              Nemusíte obvolávat známé, hledat řemeslníky po skupinách ani zkoušet, kdo má zrovna čas. Zadáte, co potřebujete vyřešit, vyberete místo a šikulové z okolí vám mohou poslat nabídku.
+              Nemusíte obvolávat známé ani hledat pomoc po skupinách. Zadáte, co potřebujete vyřešit, vyberete místo a šikulové z okolí vám mohou poslat nabídku.
             </p>
             <p style={{ fontSize: "clamp(14px, 2vw, 16px)", color: T.ink3, lineHeight: 1.8, margin: 0 }}>
-              Vy si pak vyberete podle ceny, termínu, hodnocení a domluvy. Za zadání poptávky nic neplatíte a domluva probíhá přímo mezi vámi a vybraným šikulou.
+              Vy si pak vyberete podle ceny, termínu, hodnocení a domluvy. Za zadání poptávky nic neplatíte. Platíte až vybranému šikulovi přímo.
             </p>
           </div>
         </div>
