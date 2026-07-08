@@ -12,13 +12,18 @@
 //   STRIPE_PRICE_PROFI      — Price ID pro plán Profi (recurring monthly)
 //   STRIPE_PRICE_TOP        — Price ID pro plán Přednostní zobrazení 99 Kč (recurring monthly)
 
-import Stripe from 'stripe';
 import { sql } from './_db.js';
 import { requireUser } from './_auth.js';
 
-function getStripe() {
+let _StripeClass = null;
+
+async function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY není nastaven.');
-  return new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-11-20.acacia' });
+  if (!_StripeClass) {
+    const mod = await import('stripe');
+    _StripeClass = mod.default;
+  }
+  return new _StripeClass(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-11-20.acacia' });
 }
 
 const PRICE_IDS = {
@@ -91,7 +96,7 @@ async function handleCheckout(req, res, me) {
     return res.status(503).json({ error: `${ENV_NAMES[plan] || 'STRIPE_PRICE_?'} není nastaven v env.` });
   }
 
-  const stripe = getStripe();
+  const stripe = await getStripe();
   const origin = req.headers.origin || req.headers.referer?.replace(/\/$/, '') || 'https://sikuladoma.vercel.app';
 
   const [user] = await sql`SELECT stripe_customer_id FROM users WHERE id = ${me.id}`;
@@ -123,7 +128,7 @@ async function handlePortal(req, res, me) {
     return res.status(400).json({ error: 'Nemáte aktivní Stripe předplatné.' });
   }
 
-  const stripe = getStripe();
+  const stripe = await getStripe();
   const origin = req.headers.origin || 'https://sikuladoma.cz';
 
   const session = await stripe.billingPortal.sessions.create({
@@ -136,7 +141,7 @@ async function handlePortal(req, res, me) {
 
 // ── POST /api/stripe?action=webhook ───────────────────────────────────────────
 async function handleWebhook(req, res) {
-  const stripe = getStripe();
+  const stripe = await getStripe();
   const sig = req.headers['stripe-signature'];
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -191,7 +196,8 @@ async function processEvent(event) {
       let expiresAt = null;
       if (subscriptionId) {
         try {
-          const sub = await getStripe().subscriptions.retrieve(subscriptionId);
+          const stripeClient = await getStripe();
+          const sub = await stripeClient.subscriptions.retrieve(subscriptionId);
           if (sub.current_period_end) {
             expiresAt = new Date(sub.current_period_end * 1000).toISOString();
           }
