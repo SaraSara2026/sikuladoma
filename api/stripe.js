@@ -1,30 +1,70 @@
 // Stripe — platební subscripce pro tarifní plány šikulů.
+// Volá Stripe REST API přímo přes fetch — bez npm 'stripe' balíčku.
 //
 // POST /api/stripe?action=checkout  → vytvoří Stripe Checkout session (subscripce)
 // GET  /api/stripe?action=portal    → vytvoří Customer Portal session (správa/zrušení)
 // POST /api/stripe?action=webhook   → Stripe webhook handler (podpis přes STRIPE_WEBHOOK_SECRET)
-//
-// Potřebné env vars (Vercel + .env.local):
-//   STRIPE_SECRET_KEY       — tajný klíč z Stripe Dashboard
-//   STRIPE_WEBHOOK_SECRET   — z `stripe listen` nebo Stripe Dashboard → Webhooks
-//   STRIPE_PRICE_AKTIV      — Price ID pro plán Aktivní šikula 399 Kč (recurring monthly)
-//   STRIPE_PRICE_PLUS       — Price ID pro plán Aktivní šikula Plus 499 Kč (recurring monthly)
-//   STRIPE_PRICE_PROFI      — Price ID pro plán Profi (recurring monthly)
-//   STRIPE_PRICE_TOP        — Price ID pro plán Přednostní zobrazení 99 Kč (recurring monthly)
 
+import crypto from 'crypto';
 import { sql } from './_db.js';
 import { requireUser } from './_auth.js';
 
-let _StripeClass = null;
+// ── Stripe REST helpers ────────────────────────────────────────────────────────
 
-async function getStripe() {
-  if (!process.env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY není nastaven.');
-  if (!_StripeClass) {
-    const mod = await import('stripe');
-    _StripeClass = mod.default;
+function flattenParams(obj, prefix = '') {
+  const out = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v === null || v === undefined) continue;
+    const key = prefix ? `${prefix}[${k}]` : k;
+    if (Array.isArray(v)) {
+      v.forEach((item, i) => {
+        if (typeof item === 'object' && item !== null) {
+          Object.assign(out, flattenParams(item, `${key}[${i}]`));
+        } else {
+          out[`${key}[${i}]`] = String(item);
+        }
+      });
+    } else if (typeof v === 'object') {
+      Object.assign(out, flattenParams(v, key));
+    } else {
+      out[key] = String(v);
+    }
   }
-  return new _StripeClass(process.env.STRIPE_SECRET_KEY, { apiVersion: '2024-11-20.acacia' });
+  return out;
 }
+
+async function stripeRequest(method, path, data) {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) throw new Error('STRIPE_SECRET_KEY není nastaven.');
+  const opts = {
+    method,
+    headers: {
+      Authorization: `Bearer ${key}`,
+      'Stripe-Version': '2024-11-20.acacia',
+    },
+  };
+  if (data) {
+    opts.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+    opts.body = new URLSearchParams(flattenParams(data)).toString();
+  }
+  const res = await fetch(`https://api.stripe.com/v1${path}`, opts);
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error?.message || `Stripe HTTP ${res.status}`);
+  return json;
+}
+
+// ── Webhook signature verification (HMAC-SHA256) ──────────────────────────────
+
+function constructStripeEvent(rawBody, sig, secret) {
+  const parts = Object.fromEntries(sig.split(',').map(s => s.split('=')));
+  const expected = crypto.createHmac('sha256', secret)
+    .update(`${parts.t}.${rawBody}`)
+    .digest('hex');
+  if (expected !== parts.v1) throw new Error('Webhook signature mismatch');
+  return JSON.parse(rawBody);
+}
+
+// ── Plan konfigurace ───────────────────────────────────────────────────────────
 
 const PRICE_IDS = {
   aktiv:        () => process.env.STRIPE_PRICE_AKTIV,
@@ -50,7 +90,8 @@ const PLAN_NAMES = {
   top:          'Přednostní zobrazení',
 };
 
-// Přečte raw tělo z Node.js streamu (potřeba pro Stripe webhook signature)
+// ── Raw body ze streamu (pro webhook) ─────────────────────────────────────────
+
 function getRawBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -60,16 +101,16 @@ function getRawBody(req) {
   });
 }
 
+// ── Hlavní handler ─────────────────────────────────────────────────────────────
+
 export default async function handler(req, res) {
   const action = req.query?.action;
 
   try {
-    // ── Webhook (public, verifikuje Stripe podpis) ──────────────────────────
     if (action === 'webhook' && req.method === 'POST') {
       return handleWebhook(req, res);
     }
 
-    // ── Všechny ostatní akce vyžadují přihlášeného šikulu ───────────────────
     const me = await requireUser(req, res);
     if (!me) return;
     if (me.role !== 'sikula') return res.status(403).json({ error: 'Pouze šikulové mohou upgradovat.' });
@@ -86,6 +127,7 @@ export default async function handler(req, res) {
 }
 
 // ── POST /api/stripe?action=checkout ──────────────────────────────────────────
+
 async function handleCheckout(req, res, me) {
   const { plan = 'aktiv' } = req.body ?? {};
   if (!PLAN_NAMES[plan]) {
@@ -96,42 +138,40 @@ async function handleCheckout(req, res, me) {
     return res.status(503).json({ error: `${ENV_NAMES[plan] || 'STRIPE_PRICE_?'} není nastaven v env.` });
   }
 
-  const stripe = await getStripe();
   const origin = req.headers.origin || req.headers.referer?.replace(/\/$/, '') || 'https://sikuladoma.vercel.app';
-
   const [user] = await sql`SELECT stripe_customer_id FROM users WHERE id = ${me.id}`;
-  const existingCustomer = user?.stripe_customer_id || undefined;
 
-  const session = await stripe.checkout.sessions.create({
+  const sessionData = {
     mode: 'subscription',
-    ...(existingCustomer
-      ? { customer: existingCustomer }
-      : { customer_email: me.email }),
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${origin}/?stripe=success&plan=${plan}&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url:  `${origin}/?stripe=cancel`,
+    cancel_url: `${origin}/?stripe=cancel`,
     metadata: { user_id: String(me.id), plan },
-    subscription_data: {
-      metadata: { user_id: String(me.id), plan },
-    },
+    subscription_data: { metadata: { user_id: String(me.id), plan } },
     payment_method_types: ['card'],
     locale: 'cs',
-  });
+  };
 
+  if (user?.stripe_customer_id) {
+    sessionData.customer = user.stripe_customer_id;
+  } else {
+    sessionData.customer_email = me.email;
+  }
+
+  const session = await stripeRequest('POST', '/checkout/sessions', sessionData);
   return res.status(200).json({ url: session.url });
 }
 
 // ── GET /api/stripe?action=portal ─────────────────────────────────────────────
+
 async function handlePortal(req, res, me) {
   const [user] = await sql`SELECT stripe_customer_id FROM users WHERE id = ${me.id}`;
   if (!user?.stripe_customer_id) {
     return res.status(400).json({ error: 'Nemáte aktivní Stripe předplatné.' });
   }
 
-  const stripe = await getStripe();
   const origin = req.headers.origin || 'https://sikuladoma.cz';
-
-  const session = await stripe.billingPortal.sessions.create({
+  const session = await stripeRequest('POST', '/billing_portal/sessions', {
     customer: user.stripe_customer_id,
     return_url: `${origin}/dashboard`,
   });
@@ -140,29 +180,27 @@ async function handlePortal(req, res, me) {
 }
 
 // ── POST /api/stripe?action=webhook ───────────────────────────────────────────
+
 async function handleWebhook(req, res) {
-  const stripe = await getStripe();
   const sig = req.headers['stripe-signature'];
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   let event;
   try {
-    // Zkusíme číst raw body ze streamu; jinak fallback na JSON.stringify(req.body)
     let rawBody;
     try {
       rawBody = await getRawBody(req);
       if (!rawBody || rawBody.length === 0) throw new Error('empty stream');
     } catch {
-      // Fallback: Vercel již spotřeboval stream — použijeme req.body
       rawBody = Buffer.from(JSON.stringify(req.body));
     }
 
+    const rawStr = rawBody.toString('utf8');
     if (webhookSecret && sig) {
-      event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
+      event = constructStripeEvent(rawStr, sig, webhookSecret);
     } else {
-      // Bez webhook secret (dev/testovací mód) — přijmeme bez verifikace
-      event = typeof req.body === 'object' ? req.body : JSON.parse(rawBody.toString());
-      console.warn('[stripe/webhook] ⚠️  Webhook secret není nastaven — podpis se neverifikuje!');
+      event = typeof req.body === 'object' ? req.body : JSON.parse(rawStr);
+      console.warn('[stripe/webhook] Webhook secret není nastaven — podpis se neverifikuje!');
     }
   } catch (err) {
     console.error('[stripe/webhook] Signature verification failed:', err.message);
@@ -180,6 +218,7 @@ async function handleWebhook(req, res) {
 }
 
 // ── Zpracování Stripe eventů ───────────────────────────────────────────────────
+
 async function processEvent(event) {
   switch (event.type) {
 
@@ -196,12 +235,13 @@ async function processEvent(event) {
       let expiresAt = null;
       if (subscriptionId) {
         try {
-          const stripeClient = await getStripe();
-          const sub = await stripeClient.subscriptions.retrieve(subscriptionId);
+          const sub = await stripeRequest('GET', `/subscriptions/${subscriptionId}`);
           if (sub.current_period_end) {
             expiresAt = new Date(sub.current_period_end * 1000).toISOString();
           }
-        } catch {}
+        } catch (e) {
+          console.warn('[stripe/webhook] Could not retrieve subscription:', e.message);
+        }
       }
 
       await sql`
@@ -214,7 +254,7 @@ async function processEvent(event) {
             updated_at             = NOW()
         WHERE id = ${userId}
       `;
-      console.log(`[stripe] ✅ User ${userId} aktivován: ${plan}`);
+      console.log(`[stripe] User ${userId} aktivován: ${plan}`);
       break;
     }
 
@@ -242,7 +282,7 @@ async function processEvent(event) {
             updated_at             = NOW()
         WHERE id = ${userId}
       `;
-      console.log(`[stripe] ✅ User ${userId} subscription updated: ${subStatus}`);
+      console.log(`[stripe] User ${userId} subscription updated: ${subStatus}`);
       break;
     }
 
@@ -260,23 +300,21 @@ async function processEvent(event) {
             updated_at             = NOW()
         WHERE id = ${userId}
       `;
-      console.log(`[stripe] ℹ️  User ${userId} zrušil předplatné → inactive`);
+      console.log(`[stripe] User ${userId} zrušil předplatné → inactive`);
       break;
     }
 
     case 'invoice.payment_failed': {
       const invoice = event.data.object;
-      // Najdeme uživatele přes customer ID
       const [user] = await sql`SELECT id FROM users WHERE stripe_customer_id = ${invoice.customer}`;
       if (user) {
         await sql`UPDATE users SET subscription_status = 'payment_failed', updated_at = NOW() WHERE id = ${user.id}`;
       }
-      console.warn(`[stripe] ⚠️  Payment failed pro customer ${invoice.customer}`);
+      console.warn(`[stripe] Payment failed pro customer ${invoice.customer}`);
       break;
     }
 
     default:
-      // Ostatní eventy ignorujeme
       break;
   }
 }
