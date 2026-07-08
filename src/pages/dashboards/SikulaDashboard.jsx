@@ -230,10 +230,34 @@ function VylepseniProfilu({ currentUser }) {
   const renewalEnd = currentUser?.plan_expires_at
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' }) : null
   const [billing, setBilling] = useState('monthly') // 'monthly' | 'yearly'
-  const [checkoutBusy, setCheckoutBusy] = useState(false)
+  const [busyPlan, setBusyPlan] = useState(null)   // null | 'aktiv' | 'aktiv-plus' | 'top'
+  const [errPlan, setErrPlan] = useState(null)
   const [checkoutErr, setCheckoutErr] = useState(null)
 
-  const goCheckout = (plan) => doCheckout(plan, setCheckoutBusy, setCheckoutErr)
+  const goCheckout = async (plan) => {
+    setBusyPlan(plan)
+    setErrPlan(null)
+    setCheckoutErr(null)
+    try {
+      const r = await fetch('/api/stripe?action=checkout', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan }),
+      })
+      const d = await r.json()
+      console.log('[stripe/checkout] status:', r.status, 'plan:', plan, 'response:', d)
+      if (d.url) { window.location.href = d.url; return }
+      console.error('[stripe/checkout] no URL returned:', d)
+      setErrPlan(plan)
+      setCheckoutErr(d.error || `Platbu se nepodařilo spustit (HTTP ${r.status}). Zkuste to prosím znovu nebo nás kontaktujte.`)
+    } catch (err) {
+      console.error('[stripe/checkout] fetch/parse error:', err)
+      setErrPlan(plan)
+      setCheckoutErr('Platbu se nepodařilo spustit. Zkuste to prosím znovu nebo nás kontaktujte.')
+    } finally {
+      setBusyPlan(null)
+    }
+  }
 
   const TARIFY = [
     {
@@ -306,12 +330,6 @@ function VylepseniProfilu({ currentUser }) {
         </div>
       )}
 
-      {checkoutErr && (
-        <div style={{ marginBottom: 16, padding: '10px 14px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, fontSize: 13, color: '#B91C1C' }}>
-          {checkoutErr}
-        </div>
-      )}
-
       {/* Přepínač Měsíčně / Ročně */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
         <div style={{ display: 'flex', background: '#F3F4F6', borderRadius: 10, padding: 4, gap: 2 }}>
@@ -367,11 +385,18 @@ function VylepseniProfilu({ currentUser }) {
 
               <div style={{ marginTop: 'auto' }}>
                 {!isCurrentPlan ? (
-                  <button onClick={() => goCheckout(t.id)}
-                    disabled={checkoutBusy}
-                    style={{ width: '100%', height: 44, borderRadius: 10, border: 'none', background: checkoutBusy ? '#9CA3AF' : `linear-gradient(135deg,${t.color},${t.id === 'aktiv' ? '#EA580C' : '#6D28D9'})`, color: '#fff', fontWeight: 700, fontSize: 13, cursor: checkoutBusy ? 'wait' : 'pointer', transition: 'background .2s' }}>
-                    {checkoutBusy ? 'Přesměrovávám na platbu…' : btnLabel(t)}
-                  </button>
+                  <>
+                    <button onClick={() => goCheckout(t.id)}
+                      disabled={busyPlan === t.id}
+                      style={{ width: '100%', height: 44, borderRadius: 10, border: 'none', background: busyPlan === t.id ? '#9CA3AF' : `linear-gradient(135deg,${t.color},${t.id === 'aktiv' ? '#EA580C' : '#6D28D9'})`, color: '#fff', fontWeight: 700, fontSize: 13, cursor: busyPlan === t.id ? 'wait' : 'pointer', transition: 'background .2s' }}>
+                      {busyPlan === t.id ? 'Přesměrovávám na platbu…' : btnLabel(t)}
+                    </button>
+                    {errPlan === t.id && checkoutErr && (
+                      <div style={{ marginTop: 8, padding: '6px 10px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, fontSize: 12, color: '#B91C1C' }}>
+                        {checkoutErr}
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div style={{ height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F0FDF4', borderRadius: 10, fontSize: 14, fontWeight: 600, color: '#16A34A' }}>
                     ✓ Váš aktuální tarif
@@ -398,11 +423,16 @@ function VylepseniProfilu({ currentUser }) {
               Topování je dostupné pouze pro aktivní zaplacený profil.
             </p>
           </div>
-          <button disabled={!isActive || checkoutBusy}
-            onClick={() => goCheckout('top')}
-            style={{ height: 40, padding: '0 18px', borderRadius: 9, border: '1.5px solid #FDE68A', background: isActive ? '#FFFBEB' : '#F9FAFB', color: isActive ? '#D97706' : '#9CA3AF', fontWeight: 700, fontSize: 13, cursor: (!isActive || checkoutBusy) ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
-            {checkoutBusy ? 'Přesměrovávám…' : 'Zvýraznit profil za 99 Kč'}
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+            <button disabled={!isActive || busyPlan === 'top'}
+              onClick={() => goCheckout('top')}
+              style={{ height: 40, padding: '0 18px', borderRadius: 9, border: '1.5px solid #FDE68A', background: isActive ? '#FFFBEB' : '#F9FAFB', color: isActive ? '#D97706' : '#9CA3AF', fontWeight: 700, fontSize: 13, cursor: (!isActive || busyPlan === 'top') ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
+              {busyPlan === 'top' ? 'Přesměrovávám…' : 'Zvýraznit profil za 99 Kč'}
+            </button>
+            {errPlan === 'top' && checkoutErr && (
+              <div style={{ fontSize: 12, color: '#B91C1C', textAlign: 'right' }}>{checkoutErr}</div>
+            )}
+          </div>
         </div>
       </div>
 
