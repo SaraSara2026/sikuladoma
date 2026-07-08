@@ -211,13 +211,17 @@ async function doCheckout(plan, setBusy, setErr) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ plan }),
     })
-    const d = await r.json()
-    if (d.url) { window.location.href = d.url; return }
-    console.error('[stripe/checkout] API error:', d.error)
-    setErr(d.error || 'Platbu se nepodařilo spustit. Zkuste to prosím znovu nebo nás kontaktujte.')
+    const text = await r.text()
+    let d = null
+    try { d = JSON.parse(text) } catch { /* non-JSON */ }
+    console.log('[stripe/checkout] HTTP', r.status, 'plan:', plan, 'raw:', text.slice(0, 500))
+    if (d?.url) { window.location.href = d.url; return }
+    const msg = d?.error || text.slice(0, 300) || `HTTP ${r.status}`
+    console.error('[stripe/checkout] failed:', msg)
+    setErr(`Chyba (${r.status}): ${msg}`)
   } catch (err) {
-    console.error('[stripe/checkout] fetch error:', err)
-    setErr('Platbu se nepodařilo spustit. Zkuste to prosím znovu nebo nás kontaktujte.')
+    console.error('[stripe/checkout] network error:', err)
+    setErr(`Síťová chyba: ${err.message || 'Nepodařilo se připojit k serveru.'}`)
   } finally {
     setBusy(false)
   }
@@ -244,16 +248,19 @@ function VylepseniProfilu({ currentUser }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan }),
       })
-      const d = await r.json()
-      console.log('[stripe/checkout] status:', r.status, 'plan:', plan, 'response:', d)
-      if (d.url) { window.location.href = d.url; return }
-      console.error('[stripe/checkout] no URL returned:', d)
+      const text = await r.text()
+      let d = null
+      try { d = JSON.parse(text) } catch { /* non-JSON */ }
+      console.log('[stripe/checkout] HTTP', r.status, 'plan:', plan, 'raw:', text.slice(0, 500))
+      if (d?.url) { window.location.href = d.url; return }
+      const msg = d?.error || text.slice(0, 300) || `HTTP ${r.status}`
+      console.error('[stripe/checkout] failed:', msg)
       setErrPlan(plan)
-      setCheckoutErr(d.error || `Platbu se nepodařilo spustit (HTTP ${r.status}). Zkuste to prosím znovu nebo nás kontaktujte.`)
+      setCheckoutErr(`Chyba (${r.status}): ${msg}`)
     } catch (err) {
-      console.error('[stripe/checkout] fetch/parse error:', err)
+      console.error('[stripe/checkout] network error:', err)
       setErrPlan(plan)
-      setCheckoutErr('Platbu se nepodařilo spustit. Zkuste to prosím znovu nebo nás kontaktujte.')
+      setCheckoutErr(`Síťová chyba: ${err.message || 'Nepodařilo se připojit k serveru.'}`)
     } finally {
       setBusyPlan(null)
     }
