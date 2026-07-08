@@ -7,9 +7,10 @@
 // Potřebné env vars (Vercel + .env.local):
 //   STRIPE_SECRET_KEY       — tajný klíč z Stripe Dashboard
 //   STRIPE_WEBHOOK_SECRET   — z `stripe listen` nebo Stripe Dashboard → Webhooks
-//   STRIPE_PRICE_PLUS       — Price ID pro plán Plus  (recurring monthly)
+//   STRIPE_PRICE_AKTIV      — Price ID pro plán Aktivní šikula 399 Kč (recurring monthly)
+//   STRIPE_PRICE_PLUS       — Price ID pro plán Aktivní šikula Plus 499 Kč (recurring monthly)
 //   STRIPE_PRICE_PROFI      — Price ID pro plán Profi (recurring monthly)
-//   STRIPE_PRICE_TOP        — Price ID pro plán Top   (recurring monthly)
+//   STRIPE_PRICE_TOP        — Price ID pro plán Přednostní zobrazení 99 Kč (recurring monthly)
 
 import Stripe from 'stripe';
 import { sql } from './_db.js';
@@ -21,13 +22,28 @@ function getStripe() {
 }
 
 const PRICE_IDS = {
-  aktiv: () => process.env.STRIPE_PRICE_AKTIV,
-  plus:  () => process.env.STRIPE_PRICE_PLUS,
-  profi: () => process.env.STRIPE_PRICE_PROFI,
-  top:   () => process.env.STRIPE_PRICE_TOP,
+  aktiv:        () => process.env.STRIPE_PRICE_AKTIV,
+  'aktiv-plus': () => process.env.STRIPE_PRICE_PLUS,
+  plus:         () => process.env.STRIPE_PRICE_PLUS,
+  profi:        () => process.env.STRIPE_PRICE_PROFI,
+  top:          () => process.env.STRIPE_PRICE_TOP,
 };
 
-const PLAN_NAMES = { aktiv: 'Aktivní šikula', plus: 'Plus', profi: 'Profi', top: 'Top Šikula' };
+const ENV_NAMES = {
+  aktiv:        'STRIPE_PRICE_AKTIV',
+  'aktiv-plus': 'STRIPE_PRICE_PLUS',
+  plus:         'STRIPE_PRICE_PLUS',
+  profi:        'STRIPE_PRICE_PROFI',
+  top:          'STRIPE_PRICE_TOP',
+};
+
+const PLAN_NAMES = {
+  aktiv:        'Aktivní šikula',
+  'aktiv-plus': 'Aktivní šikula Plus',
+  plus:         'Plus',
+  profi:        'Profi',
+  top:          'Přednostní zobrazení',
+};
 
 // Přečte raw tělo z Node.js streamu (potřeba pro Stripe webhook signature)
 function getRawBody(req) {
@@ -72,7 +88,7 @@ async function handleCheckout(req, res, me) {
   }
   const priceId = PRICE_IDS[plan]();
   if (!priceId) {
-    return res.status(503).json({ error: `STRIPE_PRICE_${plan.toUpperCase()} není nastaven v env.` });
+    return res.status(503).json({ error: `${ENV_NAMES[plan] || 'STRIPE_PRICE_?'} není nastaven v env.` });
   }
 
   const stripe = getStripe();

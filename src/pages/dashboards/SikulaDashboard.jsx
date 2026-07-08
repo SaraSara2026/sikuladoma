@@ -202,6 +202,27 @@ function CalendarSection() {
   )
 }
 
+async function doCheckout(plan, setBusy, setErr) {
+  setBusy(true)
+  setErr(null)
+  try {
+    const r = await fetch('/api/stripe?action=checkout', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan }),
+    })
+    const d = await r.json()
+    if (d.url) { window.location.href = d.url; return }
+    console.error('[stripe/checkout] API error:', d.error)
+    setErr(d.error || 'Platbu se nepodařilo spustit. Zkuste to prosím znovu nebo nás kontaktujte.')
+  } catch (err) {
+    console.error('[stripe/checkout] fetch error:', err)
+    setErr('Platbu se nepodařilo spustit. Zkuste to prosím znovu nebo nás kontaktujte.')
+  } finally {
+    setBusy(false)
+  }
+}
+
 function VylepseniProfilu({ currentUser }) {
   const subStatus = currentUser?.subscription_status || 'inactive'
   const isActive = subStatus === 'active'
@@ -209,14 +230,10 @@ function VylepseniProfilu({ currentUser }) {
   const renewalEnd = currentUser?.plan_expires_at
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' }) : null
   const [billing, setBilling] = useState('monthly') // 'monthly' | 'yearly'
+  const [checkoutBusy, setCheckoutBusy] = useState(false)
+  const [checkoutErr, setCheckoutErr] = useState(null)
 
-  const goCheckout = (plan) => {
-    fetch('/api/stripe?action=checkout', {
-      method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ plan }),
-    }).then(r => r.json()).then(d => { if (d.url) window.location.href = d.url; })
-  }
+  const goCheckout = (plan) => doCheckout(plan, setCheckoutBusy, setCheckoutErr)
 
   const TARIFY = [
     {
@@ -289,6 +306,12 @@ function VylepseniProfilu({ currentUser }) {
         </div>
       )}
 
+      {checkoutErr && (
+        <div style={{ marginBottom: 16, padding: '10px 14px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, fontSize: 13, color: '#B91C1C' }}>
+          {checkoutErr}
+        </div>
+      )}
+
       {/* Přepínač Měsíčně / Ročně */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
         <div style={{ display: 'flex', background: '#F3F4F6', borderRadius: 10, padding: 4, gap: 2 }}>
@@ -345,8 +368,9 @@ function VylepseniProfilu({ currentUser }) {
               <div style={{ marginTop: 'auto' }}>
                 {!isCurrentPlan ? (
                   <button onClick={() => goCheckout(t.id)}
-                    style={{ width: '100%', height: 44, borderRadius: 10, border: 'none', background: `linear-gradient(135deg,${t.color},${t.id === 'aktiv' ? '#EA580C' : '#6D28D9'})`, color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-                    {btnLabel(t)}
+                    disabled={checkoutBusy}
+                    style={{ width: '100%', height: 44, borderRadius: 10, border: 'none', background: checkoutBusy ? '#9CA3AF' : `linear-gradient(135deg,${t.color},${t.id === 'aktiv' ? '#EA580C' : '#6D28D9'})`, color: '#fff', fontWeight: 700, fontSize: 13, cursor: checkoutBusy ? 'wait' : 'pointer', transition: 'background .2s' }}>
+                    {checkoutBusy ? 'Přesměrovávám na platbu…' : btnLabel(t)}
                   </button>
                 ) : (
                   <div style={{ height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F0FDF4', borderRadius: 10, fontSize: 14, fontWeight: 600, color: '#16A34A' }}>
@@ -374,10 +398,10 @@ function VylepseniProfilu({ currentUser }) {
               Topování je dostupné pouze pro aktivní zaplacený profil.
             </p>
           </div>
-          <button disabled={!isActive}
-            onClick={() => goCheckout('topovani')}
-            style={{ height: 40, padding: '0 18px', borderRadius: 9, border: '1.5px solid #FDE68A', background: isActive ? '#FFFBEB' : '#F9FAFB', color: isActive ? '#D97706' : '#9CA3AF', fontWeight: 700, fontSize: 13, cursor: isActive ? 'pointer' : 'not-allowed', whiteSpace: 'nowrap', flexShrink: 0 }}>
-            Zvýraznit profil za 99 Kč
+          <button disabled={!isActive || checkoutBusy}
+            onClick={() => goCheckout('top')}
+            style={{ height: 40, padding: '0 18px', borderRadius: 9, border: '1.5px solid #FDE68A', background: isActive ? '#FFFBEB' : '#F9FAFB', color: isActive ? '#D97706' : '#9CA3AF', fontWeight: 700, fontSize: 13, cursor: (!isActive || checkoutBusy) ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}>
+            {checkoutBusy ? 'Přesměrovávám…' : 'Zvýraznit profil za 99 Kč'}
           </button>
         </div>
       </div>
@@ -393,6 +417,8 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
   const [activePage, setActivePage] = useState('overview')
   const [available, setAvailable] = useState(true)
   const [stripeMsg, setStripeMsg] = useState(null)   // { type: 'success'|'cancel', plan? }
+  const [ovBusy, setOvBusy] = useState(false)
+  const [ovErr, setOvErr] = useState(null)
 
   // Profil edit state
   const [profileForm, setProfileForm] = useState({
@@ -657,10 +683,16 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                   <div style={{ fontSize: 13, color: '#6B7280', marginBottom: 20, lineHeight: 1.6 }}>
                     S tarifem Aktivní šikula za 399 Kč / měsíc se zobrazíte zákazníkům ve vaší lokalitě a budete moci reagovat na poptávky.
                   </div>
-                  <button onClick={() => setActivePage('membership')}
-                    style={{ height: 44, padding: '0 24px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#F97316,#EA580C)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
-                    Aktivovat profil za 399 Kč
+                  <button onClick={() => doCheckout('aktiv', setOvBusy, setOvErr)}
+                    disabled={ovBusy}
+                    style={{ height: 44, padding: '0 24px', borderRadius: 10, border: 'none', background: ovBusy ? '#9CA3AF' : 'linear-gradient(135deg,#F97316,#EA580C)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: ovBusy ? 'wait' : 'pointer', fontFamily: 'inherit', transition: 'background .2s' }}>
+                    {ovBusy ? 'Přesměrovávám na platbu…' : 'Aktivovat profil za 399 Kč'}
                   </button>
+                  {ovErr && (
+                    <div style={{ marginTop: 12, padding: '8px 12px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, fontSize: 12, color: '#B91C1C' }}>
+                      {ovErr}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <>
