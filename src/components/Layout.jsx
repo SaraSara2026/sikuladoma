@@ -2,7 +2,7 @@ import Header from './Header'
 import CookieBanner from './CookieBanner.jsx'
 import Footer from './Footer'
 
-export default function Layout({ children, T, BtnPrimary, onHome, onScrollTo, onOrder, onLogin, onReg, onKontakt, onHow, onSikuly, onSikulove, onFAQ, onPodminkySikuly, onPodporaSikuly, onOchrana, onPodminkyPouziti, onCookies, onCookiesPage, sikulaUser, onDashboard, onProfil, onLogout }) {
+export default function Layout({ children, T, BtnPrimary, onHome, onScrollTo, onOrder, onLogin, onReg, onKontakt, onHow, onSikuly, onSikulove, onFAQ, onFAQSikuly, onPodminkySikuly, onPodporaSikuly, onOchrana, onPodminkyPouziti, onCookies, onCookiesPage, sikulaUser, onDashboard, onProfil, onLogout }) {
   return (
     <>
       <Header
@@ -27,6 +27,7 @@ export default function Layout({ children, T, BtnPrimary, onHome, onScrollTo, on
         onSikuly={onSikuly}
         onSikulove={onSikulove}
         onFAQ={onFAQ}
+        onFAQSikuly={onFAQSikuly}
         onPodminkySikuly={onPodminkySikuly}
         onPodporaSikuly={onPodporaSikuly}
         onOchrana={onOchrana}
