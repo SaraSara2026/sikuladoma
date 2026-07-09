@@ -477,10 +477,10 @@ export default function App() {
       <div style={{ background: "#F8FAFC", borderTop: "1px solid #E5E7EB", borderBottom: "1px solid #E5E7EB", padding: "14px 24px" }}>
         <div style={{ maxWidth: 960, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 24 }}>
           {[
-            { emoji: "🔍", title: "Ověřené profily",         desc: "Profily šikulů jsou ověřeny e-mailem.", color: "#3B82F6", bg: "#EFF6FF" },
-            { emoji: "💬", title: "Poptávka zdarma",         desc: "Zákazník za poptávku neplatí nic.",   color: "#22C55E", bg: "#F0FDF4" },
-            { emoji: "⚡", title: "Reakce do 48 hodin",     desc: "Poptávku šikulům zobrazíme co nejdříve. U běžných požadavků cílíme na rychlou reakci.", color: "#F97316", bg: "#FFF7ED" },
-            { emoji: "🤝", title: "Platíte přímo šikulovi", desc: "Žádná provize, žádný prostředník.",   color: "#A855F7", bg: "#FAF5FF" },
+            { emoji: "🔍", title: "Ověřené profily",         desc: "Profily jsou ověřené e-mailem.",        color: "#3B82F6", bg: "#EFF6FF" },
+            { emoji: "💬", title: "Poptávka zdarma",         desc: "Za zadání poptávky neplatíte.",         color: "#22C55E", bg: "#F0FDF4" },
+            { emoji: "⚡", title: "Reakce do 48 hodin",     desc: "Šikulům ji zobrazíme co nejdříve.",    color: "#F97316", bg: "#FFF7ED" },
+            { emoji: "🤝", title: "Platíte přímo šikulovi", desc: "Bez provize portálu ze zakázky.",       color: "#A855F7", bg: "#FAF5FF" },
           ].map(({ emoji, title, desc, color, bg }) => (
             <div key={title} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
               <div style={{ width: 40, height: 40, borderRadius: 12, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
