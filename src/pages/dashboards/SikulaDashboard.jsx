@@ -426,14 +426,11 @@ function VylepseniProfilu({ currentUser }) {
             <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6, margin: 0 }}>
               Chcete být tento měsíc víc vidět? Zapněte si zvýraznění profilu na 30 dní. Zvýšíte šanci, že vás zákazník uvidí dříve ve výsledcích podle služby a lokality.
             </p>
-            <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 6, marginBottom: 0 }}>
-              Topování je dostupné pouze pro aktivní zaplacený profil.
-            </p>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
-            <button disabled={!isActive || busyPlan === 'top'}
+            <button disabled={busyPlan === 'top'}
               onClick={() => goCheckout('top')}
-              style={{ height: 40, padding: '0 18px', borderRadius: 9, border: '1.5px solid #FDE68A', background: isActive ? '#FFFBEB' : '#F9FAFB', color: isActive ? '#D97706' : '#9CA3AF', fontWeight: 700, fontSize: 13, cursor: (!isActive || busyPlan === 'top') ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}>
+              style={{ height: 40, padding: '0 18px', borderRadius: 9, border: '1.5px solid #FDE68A', background: '#FFFBEB', color: '#D97706', fontWeight: 700, fontSize: 13, cursor: busyPlan === 'top' ? 'wait' : 'pointer', whiteSpace: 'nowrap' }}>
               {busyPlan === 'top' ? 'Přesměrovávám…' : 'Zvýraznit profil za 99 Kč'}
             </button>
             {errPlan === 'top' && checkoutErr && (
