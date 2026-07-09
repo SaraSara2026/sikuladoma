@@ -6,8 +6,6 @@
 // POST /api/stripe?action=webhook   → Stripe webhook handler (podpis přes STRIPE_WEBHOOK_SECRET)
 
 import crypto from 'crypto';
-import { sql } from './_db.js';
-import { requireUser } from './_auth.js';
 
 // ── Stripe REST helpers ────────────────────────────────────────────────────────
 
@@ -106,29 +104,42 @@ function getRawBody(req) {
 export default async function handler(req, res) {
   const action = req.query?.action;
 
+  // Dynamický import — pokud _db.js nebo _auth.js selžou při inicializaci,
+  // chyba je zachycena a vrácena jako JSON místo Vercel FUNCTION_INVOCATION_FAILED
+  let sql, requireUser;
+  try {
+    const db   = await import('./_db.js');
+    const auth = await import('./_auth.js');
+    sql         = db.sql;
+    requireUser = auth.requireUser;
+  } catch (err) {
+    console.error('[/api/stripe] module init failed:', err);
+    return res.status(500).json({ error: `Inicializace selhala: ${err.message}` });
+  }
+
   try {
     if (action === 'webhook' && req.method === 'POST') {
-      return handleWebhook(req, res);
+      return handleWebhook(req, res, sql);
     }
 
     const me = await requireUser(req, res);
     if (!me) return;
     if (me.role !== 'sikula') return res.status(403).json({ error: 'Pouze šikulové mohou upgradovat.' });
 
-    if (action === 'checkout' && req.method === 'POST') return handleCheckout(req, res, me);
-    if (action === 'portal'   && req.method === 'GET')  return handlePortal(req, res, me);
+    if (action === 'checkout' && req.method === 'POST') return handleCheckout(req, res, me, sql);
+    if (action === 'portal'   && req.method === 'GET')  return handlePortal(req, res, me, sql);
 
     res.setHeader('Allow', 'POST, GET');
     return res.status(404).json({ error: 'Neznámá akce.' });
   } catch (err) {
-    console.error('[/api/stripe]', err);
+    console.error('[/api/stripe]', action, err);
     return res.status(500).json({ error: err.message || 'Server error' });
   }
 }
 
 // ── POST /api/stripe?action=checkout ──────────────────────────────────────────
 
-async function handleCheckout(req, res, me) {
+async function handleCheckout(req, res, me, sql) {
   const { plan = 'aktiv' } = req.body ?? {};
   if (!PLAN_NAMES[plan]) {
     return res.status(400).json({ error: 'Neplatný plán.' });
@@ -164,7 +175,7 @@ async function handleCheckout(req, res, me) {
 
 // ── GET /api/stripe?action=portal ─────────────────────────────────────────────
 
-async function handlePortal(req, res, me) {
+async function handlePortal(req, res, me, sql) {
   const [user] = await sql`SELECT stripe_customer_id FROM users WHERE id = ${me.id}`;
   if (!user?.stripe_customer_id) {
     return res.status(400).json({ error: 'Nemáte aktivní Stripe předplatné.' });
@@ -181,7 +192,7 @@ async function handlePortal(req, res, me) {
 
 // ── POST /api/stripe?action=webhook ───────────────────────────────────────────
 
-async function handleWebhook(req, res) {
+async function handleWebhook(req, res, sql) {
   const sig = req.headers['stripe-signature'];
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -208,7 +219,7 @@ async function handleWebhook(req, res) {
   }
 
   try {
-    await processEvent(event);
+    await processEvent(event, sql);
   } catch (err) {
     console.error('[stripe/webhook] processEvent error:', err);
     return res.status(500).json({ error: 'Webhook processing failed' });
@@ -219,7 +230,7 @@ async function handleWebhook(req, res) {
 
 // ── Zpracování Stripe eventů ───────────────────────────────────────────────────
 
-async function processEvent(event) {
+async function processEvent(event, sql) {
   switch (event.type) {
 
     case 'checkout.session.completed': {
