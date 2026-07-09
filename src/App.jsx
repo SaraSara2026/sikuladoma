@@ -474,8 +474,8 @@ export default function App() {
       </section>
 
       {/* TRUST */}
-      <div style={{ background: "#F8FAFC", borderTop: "1px solid #E5E7EB", borderBottom: "1px solid #E5E7EB", padding: "14px 24px" }}>
-        <div style={{ maxWidth: 960, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 24 }}>
+      <div style={{ background: "#F8FAFC", borderTop: "1px solid #E5E7EB", borderBottom: "1px solid #E5E7EB", padding: "20px 24px" }}>
+        <div style={{ maxWidth: 960, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 24 }}>
           {[
             { emoji: "🔍", title: "Ověřené profily",         desc: "Profily jsou ověřené e-mailem.",        color: "#3B82F6", bg: "#EFF6FF" },
             { emoji: "💬", title: "Poptávka zdarma",         desc: "Za zadání poptávky neplatíte.",         color: "#22C55E", bg: "#F0FDF4" },
@@ -487,8 +487,8 @@ export default function App() {
                 {emoji}
               </div>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: T.ink, marginBottom: 2, letterSpacing: "-.01em" }}>{title}</div>
-                <div style={{ fontSize: 12, color: T.ink3, lineHeight: 1.5 }}>{desc}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: T.ink, marginBottom: 4, letterSpacing: "-.01em" }}>{title}</div>
+                <div style={{ fontSize: 12, color: T.ink3, lineHeight: 1.65 }}>{desc}</div>
               </div>
             </div>
           ))}
