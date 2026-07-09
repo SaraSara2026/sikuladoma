@@ -63,6 +63,7 @@ const PAGE_META = {
   'forgot-password':    { title: 'Zapomenuté heslo',    description: null, noindex: true },
   'reset-password':     { title: 'Reset hesla',         description: null, noindex: true },
   faq:                  { title: 'Často kladené dotazy', description: 'Odpovědi na nejčastější otázky pro zákazníky i šikuly.' },
+  'faq-sikuly':         { title: 'Časté dotazy pro šikuly', description: 'Odpovědi na nejčastější otázky o tarifech, platbách a recenzích pro šikuly.' },
 };
 
 
@@ -184,6 +185,7 @@ export default function App() {
         onSikuly={() => { setPage("sikuly"); window.scrollTo(0,0); }}
         onSikulove={() => { setPage("home"); window.scrollTo(0,0); }}
         onFAQ={() => { setPage("faq"); window.scrollTo(0,0); }}
+        onFAQSikuly={() => { setPage("faq-sikuly"); window.scrollTo(0,0); }}
         onPodminkySikuly={() => { setPage("podminky-sikuly"); window.scrollTo(0,0); }}
         onPodporaSikuly={() => { setPage("podpora-sikuly"); window.scrollTo(0,0); }}
         sikulaUser={sikulaUser}
@@ -233,6 +235,12 @@ export default function App() {
       ) : page === "faq" ? (
         <FAQPage
           section="customers"
+          onBack={() => { setPage("home"); window.scrollTo(0,0); }}
+          onOrder={() => openOrder()}
+          onReg={() => openReg()} />
+      ) : page === "faq-sikuly" ? (
+        <FAQPage
+          section="sikuly"
           onBack={() => { setPage("home"); window.scrollTo(0,0); }}
           onOrder={() => openOrder()}
           onReg={() => openReg()} />
