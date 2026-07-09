@@ -474,21 +474,21 @@ export default function App() {
       </section>
 
       {/* TRUST */}
-      <div style={{ background: "#F8FAFC", borderTop: "1px solid #E5E7EB", borderBottom: "1px solid #E5E7EB", padding: "20px 24px" }}>
-        <div style={{ maxWidth: 960, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 24 }}>
+      <div style={{ background: "#F8FAFC", borderTop: "1px solid #E5E7EB", borderBottom: "1px solid #E5E7EB", padding: "16px 24px" }}>
+        <div style={{ maxWidth: 960, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
           {[
             { emoji: "🔍", title: "Ověřené profily",         desc: "Profily jsou ověřené e-mailem.",        color: "#3B82F6", bg: "#EFF6FF" },
             { emoji: "💬", title: "Poptávka zdarma",         desc: "Za zadání poptávky neplatíte.",         color: "#22C55E", bg: "#F0FDF4" },
             { emoji: "⚡", title: "Reakce do 48 hodin",     desc: "Šikulům ji zobrazíme co nejdříve.",    color: "#F97316", bg: "#FFF7ED" },
             { emoji: "🤝", title: "Platíte přímo šikulovi", desc: "Bez provize portálu ze zakázky.",       color: "#A855F7", bg: "#FAF5FF" },
           ].map(({ emoji, title, desc, color, bg }) => (
-            <div key={title} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
+            <div key={title} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
                 {emoji}
               </div>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: T.ink, marginBottom: 4, letterSpacing: "-.01em" }}>{title}</div>
-                <div style={{ fontSize: 12, color: T.ink3, lineHeight: 1.65 }}>{desc}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, marginBottom: 2, letterSpacing: "-.01em", whiteSpace: "nowrap" }}>{title}</div>
+                <div style={{ fontSize: 12, color: T.ink3, whiteSpace: "nowrap" }}>{desc}</div>
               </div>
             </div>
           ))}
