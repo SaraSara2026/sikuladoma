@@ -59,7 +59,9 @@ const FAQ_SIKULOVE = [
   },
 ];
 
-export default function FAQPage({ onBack, onReg, onOrder }) {
+export default function FAQPage({ onBack, onReg, onOrder, section }) {
+  const showCustomers = !section || section === 'customers';
+  const showSikuly = !section || section === 'sikuly';
   return (
     <>
       <PageMeta title="Často kladené dotazy" description="Odpovědi na nejčastější otázky o ŠikulaDoma — pro zákazníky i šikuly." />
@@ -84,10 +86,10 @@ export default function FAQPage({ onBack, onReg, onOrder }) {
         </div>
 
         {/* Sekce zákazníci */}
-        <Section title="Pro zákazníky" subtitle="Chcete poptávat službu" items={FAQ_CUSTOMERS} cta={{ label: 'Zadat poptávku zdarma', onClick: onOrder, color: T.orange }} />
+        {showCustomers && <Section title="Pro zákazníky" subtitle="Chcete poptávat službu" items={FAQ_CUSTOMERS} cta={{ label: 'Zadat poptávku zdarma', onClick: onOrder, color: T.orange }} />}
 
         {/* Sekce šikulové */}
-        <Section title="Pro šikuly" subtitle="Chcete nabízet své služby" items={FAQ_SIKULOVE} cta={{ label: 'Registrovat se jako šikula', onClick: onReg, color: '#2563EB' }} />
+        {showSikuly && <Section title="Pro šikuly" subtitle="Chcete nabízet své služby" items={FAQ_SIKULOVE} cta={{ label: 'Registrovat se jako šikula', onClick: onReg, color: '#2563EB' }} />}
 
         <div style={{ height: 60 }} />
       </div>

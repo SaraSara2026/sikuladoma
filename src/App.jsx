@@ -232,6 +232,7 @@ export default function App() {
           onOrder={({ category, city }) => openOrder(null, { category, city })} />
       ) : page === "faq" ? (
         <FAQPage
+          section="customers"
           onBack={() => { setPage("home"); window.scrollTo(0,0); }}
           onOrder={() => openOrder()}
           onReg={() => openReg()} />

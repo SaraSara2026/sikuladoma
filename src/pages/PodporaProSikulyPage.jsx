@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 const IcBack     = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
 const IcArrow    = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
 const IcUser     = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -7,6 +9,33 @@ const IcReceipt  = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="n
 const IcStar     = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
 const IcMail     = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>
 
+const FAQ_SIKULOVE = [
+  {
+    q: 'Kolik mě stojí registrace jako šikula?',
+    a: 'Aktivní šikula stojí <strong>399 Kč / měsíc</strong>. Platba probíhá kartou přes Stripe. Po úspěšné platbě se profil aktivuje a můžete přijímat poptávky. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.',
+  },
+  {
+    q: 'Mohu jako šikula reagovat na poptávky bez omezení?',
+    a: 'Ano. S tarifem <strong>Aktivní šikula (399 Kč / měsíc)</strong> reagujete na poptávky bez omezení počtu. Tarif se obnovuje každý měsíc a zrušit ho lze kdykoliv přímo v dashboardu.',
+  },
+  {
+    q: 'Můžu kdykoliv změnit nebo zrušit tarif?',
+    a: 'Ano. V dashboardu → Členství můžete kdykoliv upgradovat nebo přes Stripe portál zrušit. Zrušení se aktivuje po skončení aktuálního období — do té doby máte výhody zaplaceného tarifu.',
+  },
+  {
+    q: 'Jak získám hodnocení a recenze?',
+    a: 'Po každé dokončené zakázce dostane zákazník výzvu k hodnocení. Hvězdičky 1-5 + komentář + možnost doporučit. Recenze se zobrazí na vašem veřejném profilu a počítají se do vašeho hodnocení.',
+  },
+  {
+    q: 'Musím odvádět z výdělků daně?',
+    a: 'Ano, jako samostatně výdělečně činná osoba (OSVČ) odvádíte daně sami. Pomůže vám <strong>fakturovač</strong>, který je součástí tarifu <strong>Aktivní šikula Plus za 499 Kč / měsíc</strong> — vystavíte fakturu, stáhnete PDF, pošlete zákazníkovi.',
+  },
+  {
+    q: 'Co když mi zákazník nezaplatí?',
+    a: 'Vždy si dohodu dokumentujte v chatu. Pokud zákazník nezaplatí, máte důkaz. Kontaktujte nás, pomůžeme s mediací. V krajním případě se obraťte na advokáta — ŠikulaDoma platby nezprostředkovává, ale dohoda v chatu je platná.',
+  },
+];
+
 const CARDS = [
   { Icon: IcUser,    bg: "#FFF7ED", color: "#F97316", title: "Registrace a profil",      desc: "Pomoc s vytvořením účtu, nastavením služeb a oblastí, kde chcete získávat zakázky." },
   { Icon: IcTag,     bg: "#EFF6FF", color: "#3B82F6", title: "Tarify a platby",           desc: "Dotazy k tarifům, změně tarifu nebo platbám za používání platformy." },
@@ -14,6 +43,30 @@ const CARDS = [
   { Icon: IcReceipt, bg: "#FDF4FF", color: "#A855F7", title: "Faktury",                   desc: "Podpora k fakturačnímu modulu dostupnému ve vybraných tarifech." },
   { Icon: IcStar,    bg: "#FFFBEB", color: "#D97706", title: "Hodnocení a recenze",       desc: "Dotazy k hodnocení, recenzím a profilu šikuly." },
 ]
+
+function AccordionItem({ q, a }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ background: "#fff", border: "1px solid #F3F4F6", borderRadius: 12, overflow: "hidden" }}>
+      <button onClick={() => setOpen(o => !o)}
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
+          width: "100%", padding: "18px 20px", background: "transparent", border: "none",
+          cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+          fontSize: 15, fontWeight: 600, color: "#1A1F2E",
+        }}>
+        <span>{q}</span>
+        <span style={{ flexShrink: 0, transition: "transform .2s", transform: open ? "rotate(180deg)" : "none", color: "#9CA3AF" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+      </button>
+      {open && (
+        <div style={{ padding: "0 20px 20px", fontSize: 14, color: "#6B7280", lineHeight: 1.7 }}
+          dangerouslySetInnerHTML={{ __html: a }} />
+      )}
+    </div>
+  );
+}
 
 export default function PodporaProSikulyPage({ onBack }) {
   return (
@@ -63,6 +116,16 @@ export default function PodporaProSikulyPage({ onBack }) {
                 <div style={{ fontSize: 13, color: "#9CA3AF", lineHeight: 1.6 }}>{c.desc}</div>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Časté dotazy */}
+        <div style={{ marginTop: 48 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: "#1A1F2E", letterSpacing: "-.015em", marginBottom: 20, textAlign: "center" }}>
+            Časté dotazy
+          </h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {FAQ_SIKULOVE.map((it, i) => <AccordionItem key={i} q={it.q} a={it.a} />)}
           </div>
         </div>
 
