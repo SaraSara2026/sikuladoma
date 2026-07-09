@@ -5,7 +5,7 @@
 // GET  /api/stripe?action=portal    → vytvoří Customer Portal session (správa/zrušení)
 // POST /api/stripe?action=webhook   → Stripe webhook handler (podpis přes STRIPE_WEBHOOK_SECRET)
 
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 
 // ── Stripe REST helpers ────────────────────────────────────────────────────────
 
