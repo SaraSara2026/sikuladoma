@@ -152,16 +152,22 @@ async function handleCheckout(req, res, me, sql) {
   const origin = req.headers.origin || req.headers.referer?.replace(/\/$/, '') || 'https://sikuladoma.vercel.app';
   const [user] = await sql`SELECT stripe_customer_id FROM users WHERE id = ${me.id}`;
 
+  // 'top' je jednorázová platba (99 Kč / 30 dní), ostatní jsou subscripce
+  const isSubscription = plan !== 'top';
+
   const sessionData = {
-    mode: 'subscription',
+    mode: isSubscription ? 'subscription' : 'payment',
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${origin}/?stripe=success&plan=${plan}&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/?stripe=cancel`,
     metadata: { user_id: String(me.id), plan },
-    subscription_data: { metadata: { user_id: String(me.id), plan } },
     payment_method_types: ['card'],
     locale: 'cs',
   };
+
+  if (isSubscription) {
+    sessionData.subscription_data = { metadata: { user_id: String(me.id), plan } };
+  }
 
   if (user?.stripe_customer_id) {
     sessionData.customer = user.stripe_customer_id;
@@ -235,7 +241,6 @@ async function processEvent(event, sql) {
 
     case 'checkout.session.completed': {
       const session = event.data.object;
-      if (session.mode !== 'subscription') break;
       const userId = Number(session.metadata?.user_id);
       const plan   = session.metadata?.plan || 'aktiv';
       if (!userId) break;
@@ -244,7 +249,11 @@ async function processEvent(event, sql) {
       const subscriptionId = session.subscription;
 
       let expiresAt = null;
-      if (subscriptionId) {
+
+      if (session.mode === 'payment' && plan === 'top') {
+        // Jednorázové topování — platné 30 dní od zaplacení
+        expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      } else if (subscriptionId) {
         try {
           const sub = await stripeRequest('GET', `/subscriptions/${subscriptionId}`);
           if (sub.current_period_end) {
