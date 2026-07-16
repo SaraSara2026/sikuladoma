@@ -28,7 +28,7 @@ const SECTIONS = [
   {
     n: "6", title: "Předávání údajů třetím stranám",
     intro: "Osobní údaje mohou být zpřístupněny pouze:",
-    items: ["Poskytovatelům technických služeb nezbytných pro provoz platformy.", "Účetním nebo právním službám.", "Orgánům veřejné moci, pokud to vyžaduje právní předpis."],
+    items: ["Poskytovatelům technických služeb nezbytných pro provoz platformy.", "Platebnímu zpracovateli Stripe za účelem zpracování plateb tarifů a vystavení dokladů o zaplacení.", "Účetním nebo právním službám.", "Orgánům veřejné moci, pokud to vyžaduje právní předpis."],
     note: "Osobní údaje neprodáváme třetím stranám.",
   },
   {

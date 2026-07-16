@@ -29,19 +29,23 @@ const SECTIONS = [
     text: "Provozovatel se snaží zajistit dostupnost platformy, negarantuje však nepřetržitý a bezchybný provoz.",
   },
   {
-    n: "7", title: "Ochrana osobních údajů",
+    n: "7", title: "Platby a fakturace",
+    text: "Platby tarifů probíhají kartou prostřednictvím platební brány Stripe. Doklad o zaplacení (faktura/účtenka) je uživateli po úspěšné platbě automaticky vygenerován a zaslán e-mailem prostřednictvím Stripe jménem provozovatele.",
+  },
+  {
+    n: "8", title: "Ochrana osobních údajů",
     text: "Nakládání s osobními údaji se řídí zásadami ochrany osobních údajů a GDPR.",
   },
   {
-    n: "8", title: "Podmínky pro šikuly",
+    n: "9", title: "Podmínky pro šikuly",
     text: "Pro registrované šikuly platí kromě těchto podmínek také samostatné Podmínky pro šikuly.",
   },
   {
-    n: "9", title: "Změny podmínek",
+    n: "10", title: "Změny podmínek",
     text: "Provozovatel si vyhrazuje právo tyto podmínky kdykoliv upravit nebo aktualizovat.",
   },
   {
-    n: "10", title: "Závěrečná ustanovení",
+    n: "11", title: "Závěrečná ustanovení",
     text: "Tyto podmínky se řídí právním řádem České republiky.",
   },
 ]

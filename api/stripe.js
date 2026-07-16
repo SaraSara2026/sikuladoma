@@ -167,6 +167,10 @@ async function handleCheckout(req, res, me, sql) {
 
   if (isSubscription) {
     sessionData.subscription_data = { metadata: { user_id: String(me.id), plan } };
+  } else {
+    // Jednorázová platba (top) — subscripce fakturu vytváří automaticky,
+    // u mode:'payment' je nutné si o ni říct explicitně.
+    sessionData.invoice_creation = { enabled: true };
   }
 
   if (user?.stripe_customer_id) {
