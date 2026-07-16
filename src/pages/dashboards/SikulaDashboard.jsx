@@ -202,7 +202,7 @@ function CalendarSection() {
   )
 }
 
-async function doCheckout(plan, setBusy, setErr) {
+async function doCheckout(plan, setBusy, setErr, onLogout) {
   setBusy(true)
   setErr(null)
   try {
@@ -216,6 +216,14 @@ async function doCheckout(plan, setBusy, setErr) {
     try { d = JSON.parse(text) } catch { /* non-JSON */ }
     console.log('[stripe/checkout] HTTP', r.status, 'plan:', plan, 'raw:', text.slice(0, 500))
     if (d?.url) { window.location.href = d.url; return }
+    if (r.status === 401) {
+      // Dashboard se dřív mohl zobrazovat ze staré localStorage session, i když
+      // server session (cookie) mezitím vypršela — checkout je první místo, kde se to pozná.
+      console.warn('[stripe/checkout] session expired/invalid, code:', d?.code)
+      setErr('Přihlášení vypršelo. Přihlas se prosím znovu.')
+      onLogout?.()
+      return
+    }
     const msg = d?.error || text.slice(0, 300) || `HTTP ${r.status}`
     console.error('[stripe/checkout] failed:', msg)
     setErr(`Chyba (${r.status}): ${msg}`)
@@ -227,7 +235,7 @@ async function doCheckout(plan, setBusy, setErr) {
   }
 }
 
-function VylepseniProfilu({ currentUser }) {
+function VylepseniProfilu({ currentUser, onLogout }) {
   const subStatus = currentUser?.subscription_status || 'inactive'
   const isActive = subStatus === 'active'
   const currentPlan = currentUser?.plan || 'start'
@@ -253,6 +261,13 @@ function VylepseniProfilu({ currentUser }) {
       try { d = JSON.parse(text) } catch { /* non-JSON */ }
       console.log('[stripe/checkout] HTTP', r.status, 'plan:', plan, 'raw:', text.slice(0, 500))
       if (d?.url) { window.location.href = d.url; return }
+      if (r.status === 401) {
+        console.warn('[stripe/checkout] session expired/invalid, code:', d?.code)
+        setErrPlan(plan)
+        setCheckoutErr('Přihlášení vypršelo. Přihlas se prosím znovu.')
+        onLogout?.()
+        return
+      }
       const msg = d?.error || text.slice(0, 300) || `HTTP ${r.status}`
       console.error('[stripe/checkout] failed:', msg)
       setErrPlan(plan)
@@ -717,7 +732,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                   <div style={{ fontSize: 13, color: '#6B7280', marginBottom: 20, lineHeight: 1.6 }}>
                     S tarifem Aktivní šikula za 399 Kč / měsíc se zobrazíte zákazníkům ve vaší lokalitě a budete moci reagovat na poptávky.
                   </div>
-                  <button onClick={() => doCheckout('aktiv', setOvBusy, setOvErr)}
+                  <button onClick={() => doCheckout('aktiv', setOvBusy, setOvErr, onLogout)}
                     disabled={ovBusy}
                     style={{ height: 44, padding: '0 24px', borderRadius: 10, border: 'none', background: ovBusy ? '#9CA3AF' : 'linear-gradient(135deg,#F97316,#EA580C)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: ovBusy ? 'wait' : 'pointer', fontFamily: 'inherit', transition: 'background .2s' }}>
                     {ovBusy ? 'Přesměrovávám na platbu…' : 'Aktivovat profil za 399 Kč'}
@@ -863,7 +878,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
 
         {!lockedType && activePage === 'invoices' && <InvoicePage />}
         {!lockedType && activePage === 'calendar' && <CalendarSection />}
-        {activePage === 'membership' && <VylepseniProfilu currentUser={currentUser} />}
+        {activePage === 'membership' && <VylepseniProfilu currentUser={currentUser} onLogout={onLogout} />}
         {activePage === 'messages' && <ChatPage />}
 
         {!lockedType && activePage === 'earnings' && (

@@ -39,10 +39,14 @@ export async function signToken(payload) {
 }
 
 export async function verifyToken(token) {
+  // getSecret() mimo try/catch: chybějící/nesprávně nastavený JWT_SECRET je
+  // konfigurační chyba a nesmí se tvářit jako běžné "token je neplatný".
+  const secret = getSecret();
   try {
-    const { payload } = await jwtVerify(token, getSecret());
+    const { payload } = await jwtVerify(token, secret);
     return payload;
-  } catch {
+  } catch (err) {
+    console.warn('[auth] JWT verify failed:', err?.code || err?.message || err);
     return null;
   }
 }
@@ -74,13 +78,15 @@ export function readSessionCookie(req) {
   return null;
 }
 
-// Vrátí uživatele z DB podle aktuální session, nebo null.
-// Automaticky kontroluje expiraci tarifu — pokud plan_expires_at uplynul, vrátí šikulu na 'start'.
-export async function getCurrentUser(req) {
+// Zjistí uživatele z DB podle aktuální session + důvod, proč se to případně
+// nepovedlo (pro diagnostiku 401 — viz requireUser).
+async function resolveSession(req) {
   const token = readSessionCookie(req);
-  if (!token) return null;
+  if (!token) return { user: null, reason: 'no_session_cookie' };
+
   const payload = await verifyToken(token);
-  if (!payload?.sub) return null;
+  if (!payload?.sub) return { user: null, reason: 'invalid_or_expired_token' };
+
   const [user] = await sql`
     SELECT id, email, role, name, phone, city, avatar, ico, services, plan,
            stripe_customer_id, stripe_subscription_id, plan_expires_at,
@@ -88,7 +94,7 @@ export async function getCurrentUser(req) {
            subscription_status, trial_ends_at
     FROM users WHERE id = ${Number(payload.sub)}
   `;
-  if (!user) return null;
+  if (!user) return { user: null, reason: 'user_not_found' };
 
   // Auto-expiry: pokud byl tarif placený a vypršel, degraduj zpět na 'start'
   if (user.plan !== 'start' && user.plan_expires_at && new Date(user.plan_expires_at) < new Date()) {
@@ -102,14 +108,23 @@ export async function getCurrentUser(req) {
     user.plan_expires_at = null;
     user.stripe_subscription_id = null;
   }
+  return { user, reason: null };
+}
+
+// Vrátí uživatele z DB podle aktuální session, nebo null.
+export async function getCurrentUser(req) {
+  const { user } = await resolveSession(req);
   return user;
 }
 
 // Vrátí uživatele a vyžaduje, aby existoval. Jinak pošle 401.
+// Důvod se loguje na server (nikdy citlivé detaily) a jako `code` jde i v odpovědi,
+// ať je jasné, jestli jde o chybějící/expirovanou session vs. jiný problém.
 export async function requireUser(req, res) {
-  const user = await getCurrentUser(req);
+  const { user, reason } = await resolveSession(req);
   if (!user) {
-    res.status(401).json({ error: 'Unauthorized' });
+    console.warn(`[auth] 401 Unauthorized — reason: ${reason}`);
+    res.status(401).json({ error: 'Unauthorized', code: reason });
     return null;
   }
   return user;
