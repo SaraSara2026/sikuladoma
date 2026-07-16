@@ -169,6 +169,25 @@ async function handleCheckout(req, res, me, sql) {
   const origin = req.headers.origin || req.headers.referer?.replace(/\/$/, '') || 'https://sikuladoma.vercel.app';
   const [user] = await sql`SELECT stripe_customer_id FROM users WHERE id = ${me.id}`;
 
+  // Zajistíme Stripe Customera s preferred_locales=['cs'] — session `locale` (níže)
+  // ovlivňuje jen platební stránku, ale e-maily s fakturou/účtenkou od Stripe
+  // se řídí Customer.preferred_locales, ne session locale.
+  let customerId = user?.stripe_customer_id || null;
+  try {
+    if (customerId) {
+      await stripeRequest('POST', `/customers/${customerId}`, { preferred_locales: ['cs'] });
+    } else {
+      const customer = await stripeRequest('POST', '/customers', {
+        email: me.email,
+        name: me.name,
+        preferred_locales: ['cs'],
+      });
+      customerId = customer.id;
+    }
+  } catch (e) {
+    console.warn('[stripe/checkout] nepodařilo se nastavit preferred_locales:', e.message);
+  }
+
   // 'top' je jednorázová platba (99 Kč / 30 dní), ostatní jsou subscripce
   const isSubscription = plan !== 'top';
 
@@ -190,8 +209,8 @@ async function handleCheckout(req, res, me, sql) {
     sessionData.invoice_creation = { enabled: true };
   }
 
-  if (user?.stripe_customer_id) {
-    sessionData.customer = user.stripe_customer_id;
+  if (customerId) {
+    sessionData.customer = customerId;
   } else {
     sessionData.customer_email = me.email;
   }
@@ -246,6 +265,10 @@ async function handleWebhook(req, res, sql) {
     return res.status(400).json({ error: `Webhook Error: ${err.message}` });
   }
 
+  // Bezpečný diagnostický log — potvrdí, že webhook vůbec dorazil a jestli jde
+  // o live nebo test event (bez vypsání citlivých dat).
+  console.log('[stripe/webhook] event received:', event.type, 'livemode:', event.livemode);
+
   try {
     await processEvent(event, sql);
   } catch (err) {
@@ -265,7 +288,10 @@ async function processEvent(event, sql) {
       const session = event.data.object;
       const userId = Number(session.metadata?.user_id);
       const plan   = session.metadata?.plan || 'aktiv';
-      if (!userId) break;
+      if (!userId) {
+        console.warn('[stripe/webhook] checkout.session.completed bez metadata.user_id — přeskočeno', session.id);
+        break;
+      }
 
       const customerId     = session.customer;
       const subscriptionId = session.subscription;

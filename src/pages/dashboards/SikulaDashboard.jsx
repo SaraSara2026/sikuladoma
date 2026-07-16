@@ -4,9 +4,26 @@ import Icon from '../../components/Icon'
 import InvoicePage from '../InvoicePage'
 import ChatPage from '../ChatPage'
 import { ordersApi, offersApi, reviewsApi, usersApi } from '../../lib/api'
+import { apiMe } from '../../lib/auth'
 import VerificationBanner from '../../components/VerificationBanner'
 import AvatarUpload from '../../components/AvatarUpload'
 import { SERVICES } from '../../lib/categories'
+
+// Po návratu ze Stripe checkoutu webhook aktivuje tarif v DB až s malým zpožděním.
+// currentUser v appce žije v localStorage a sám se neobnoví, tak ho tu pár vteřin
+// dotahujeme přes /api/auth/me, dokud se tarif neprojeví (nebo dokud to nevzdáme).
+async function pollUserAfterCheckout(onUpdateUser, attempt = 0) {
+  try {
+    const { user } = await apiMe()
+    if (user) onUpdateUser?.(user)
+    if (user?.subscription_status === 'active') return
+  } catch (err) {
+    console.warn('[stripe/success] obnovení uživatele selhalo:', err)
+  }
+  if (attempt < 6) {
+    setTimeout(() => pollUserAfterCheckout(onUpdateUser, attempt + 1), 2000)
+  }
+}
 
 // Mapování id kategorie → emoji ikona (pro hezké zobrazení v dashboardu).
 const CAT_ICON = Object.fromEntries(CATEGORIES.map(c => [c.id, c.icon]))
@@ -550,6 +567,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
       stripeHandled.current = true
       // Vyčistíme URL
       window.history.replaceState({}, '', window.location.pathname)
+      pollUserAfterCheckout(onUpdateUser)
     } else if (s === 'cancel') {
       setStripeMsg({ type: 'cancel' })
       stripeHandled.current = true
