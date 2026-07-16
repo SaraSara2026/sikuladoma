@@ -149,6 +149,23 @@ async function handleCheckout(req, res, me, sql) {
     return res.status(503).json({ error: `${ENV_NAMES[plan] || 'STRIPE_PRICE_?'} není nastaven v env.` });
   }
 
+  // Bezpečný diagnostický log — nikdy nevypisuje celý klíč, jen režim (live/test),
+  // aby šlo z Vercel logů poznat, proč vznikl cs_test_/cs_live_ checkout.
+  const secretKey = process.env.STRIPE_SECRET_KEY || '';
+  const keyMode = secretKey.startsWith('sk_live_') ? 'live'
+                : secretKey.startsWith('sk_test_') ? 'test'
+                : 'unknown';
+  console.log('[stripe/checkout] diagnostics:', {
+    keyMode,
+    nodeEnv: process.env.NODE_ENV,
+    vercelEnv: process.env.VERCEL_ENV,
+    plan,
+    priceIdPrefix: priceId.slice(0, 12),
+  });
+  if (keyMode !== 'live' && process.env.VERCEL_ENV === 'production') {
+    console.warn(`[stripe/checkout] POZOR: produkční nasazení používá ${keyMode} Stripe klíč!`);
+  }
+
   const origin = req.headers.origin || req.headers.referer?.replace(/\/$/, '') || 'https://sikuladoma.vercel.app';
   const [user] = await sql`SELECT stripe_customer_id FROM users WHERE id = ${me.id}`;
 
@@ -180,6 +197,7 @@ async function handleCheckout(req, res, me, sql) {
   }
 
   const session = await stripeRequest('POST', '/checkout/sessions', sessionData);
+  console.log('[stripe/checkout] session created:', session.id?.startsWith('cs_live_') ? 'cs_live_…' : session.id?.startsWith('cs_test_') ? 'cs_test_…' : session.id);
   return res.status(200).json({ url: session.url });
 }
 
