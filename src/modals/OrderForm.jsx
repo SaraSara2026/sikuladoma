@@ -11,7 +11,7 @@ import {
   IcX, IcCheck, IcArrow, IcCheckCircle,
   IcMapPin, IcTag, IcClock, IcFlame, IcZap, IcCalendar, IcShield,
 } from "../ui/icons/UIIcons";
-import { CATEGORIES, SUBCATEGORIES, OTHER, CAT_COLORS } from "../lib/categories";
+import { CATEGORIES, SUBCATEGORIES, CAT_COLORS } from "../lib/categories";
 
 const STEP_LABELS = ["Kategorie", "Služba", "Upřesnění", "Místo", "Čas", "Kontakt"];
 const TOTAL = 6;
@@ -215,7 +215,7 @@ export default function OrderForm({ initialService, initialCategory, initialCity
 
           {step === 1 && category && (
             <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-              {SUBCATEGORIES[category.id]?.filter(s => s !== OTHER).map(sub => {
+              {SUBCATEGORIES[category.id]?.map(sub => {
                 const sel = subSvc === sub;
                 return (
                   <button key={sub}
