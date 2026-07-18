@@ -173,6 +173,8 @@ export default function App() {
         .pri-chip{display:inline-flex;align-items:center;gap:6px;padding:0 14px;height:36px;border-radius:10px;border:1.5px solid;font-size:13px;font-weight:500;cursor:pointer;transition:all .14s;font-family:inherit;letter-spacing:-.01em;}
         .trust-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;}
         @media(max-width:640px){.trust-grid{grid-template-columns:repeat(2,1fr);gap:14px;}}
+        .trust-card{background:#fff;border:1px solid ${T.border};border-radius:14px;padding:16px 14px;box-shadow:0 1px 3px rgba(0,0,0,.05);transition:all .18s;}
+        .trust-card:hover{box-shadow:0 6px 20px rgba(0,0,0,.08);transform:translateY(-2px);}
       `}</style>
 
       <Layout
@@ -477,16 +479,16 @@ export default function App() {
 
       {/* TRUST */}
       <div style={{ padding: "0 24px", margin: "12px 0 56px" }}>
-        <div style={{ maxWidth: 1060, margin: "0 auto", background: "#E8EEF5", borderRadius: 16, padding: "24px 32px" }}>
+        <div style={{ maxWidth: 1060, margin: "0 auto" }}>
           <div className="trust-grid">
             {[
-              { emoji: "🔍", title: "Ověřené profily",         desc: "Profily jsou ověřené e-mailem.",        color: "#3B82F6", bg: "#EFF6FF" },
-              { emoji: "💬", title: "Poptávka zdarma",         desc: "Za zadání poptávky neplatíte.",         color: "#22C55E", bg: "#F0FDF4" },
-              { emoji: "⚡", title: "Reakce do 48 hodin",     desc: "Šikulům ji zobrazíme co nejdříve.",    color: "#F97316", bg: "#FFF7ED" },
-              { emoji: "🤝", title: "Platíte přímo šikulovi", desc: "Bez provize portálu ze zakázky.",       color: "#A855F7", bg: "#FAF5FF" },
-            ].map(({ emoji, title, desc, color, bg }) => (
-              <div key={title} style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
+              { emoji: "🔍", title: "Ověřené profily",         desc: "Profily jsou ověřené e-mailem." },
+              { emoji: "💬", title: "Poptávka zdarma",         desc: "Za zadání poptávky neplatíte." },
+              { emoji: "⚡", title: "Reakce do 48 hodin",     desc: "Šikulům ji zobrazíme co nejdříve." },
+              { emoji: "🤝", title: "Platíte přímo šikulovi", desc: "Bez provize portálu ze zakázky." },
+            ].map(({ emoji, title, desc }, i) => (
+              <div key={title} className="trust-card" style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: i % 2 === 0 ? "#EFF6FF" : "#FFF7ED", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
                   {emoji}
                 </div>
                 <div style={{ minWidth: 0 }}>
