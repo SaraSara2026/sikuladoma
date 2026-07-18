@@ -697,7 +697,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
           <div className="page-enter">
             <div className="dash-header">
               <div>
-                <div className="dash-title">Ahoj, {(currentUser?.name || '').split(' ')[0] || 'šikulo'}! 🛠️</div>
+                <div className="dash-title">Váš přehled 🛠️</div>
                 <div className="dash-subtitle">
                   <PlanBadge plan={currentUser?.plan} expiresAt={currentUser?.plan_expires_at} />
                   {' · '}{jobsCount} zakázek celkem
