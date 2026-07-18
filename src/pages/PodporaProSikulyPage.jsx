@@ -12,7 +12,7 @@ const IcMail     = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="n
 const FAQ_SIKULOVE = [
   {
     q: 'Kolik mě stojí registrace jako šikula?',
-    a: 'Aktivní šikula stojí <strong>399 Kč / měsíc</strong>. Platba probíhá kartou přes Stripe. Po úspěšné platbě se profil aktivuje a můžete přijímat poptávky. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.',
+    a: 'Aktivní šikula stojí <strong>399 Kč / měsíc</strong>. Platba probíhá bezpečně kartou online přes platební bránu. Po úspěšné platbě se profil aktivuje a můžete přijímat poptávky. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.',
   },
   {
     q: 'Mohu jako šikula reagovat na poptávky bez omezení?',
@@ -20,7 +20,7 @@ const FAQ_SIKULOVE = [
   },
   {
     q: 'Můžu kdykoliv změnit nebo zrušit tarif?',
-    a: 'Ano. V dashboardu → Členství můžete kdykoliv upgradovat nebo přes Stripe portál zrušit. Zrušení se aktivuje po skončení aktuálního období — do té doby máte výhody zaplaceného tarifu.',
+    a: 'Ano. V dashboardu → Členství můžete kdykoliv upgradovat nebo ho v zákaznickém portálu zrušit. Zrušení se aktivuje po skončení aktuálního období — do té doby máte výhody zaplaceného tarifu.',
   },
   {
     q: 'Jak získám hodnocení a recenze?',

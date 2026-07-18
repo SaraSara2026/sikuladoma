@@ -130,7 +130,7 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
           <div style={{ background: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: 10, padding: "14px 16px", marginBottom: 16, textAlign: "left" }}>
             <div style={{ fontWeight: 700, color: "#C2410C", fontSize: 13, marginBottom: 6 }}>⚡ Aktivuj profil šikuly</div>
             <div style={{ fontSize: 13, color: "#92400E", lineHeight: 1.5 }}>
-              Platba 399 Kč / měsíc probíhá kartou přes Stripe. Po úspěšné platbě se profil aktivuje. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.
+              Platba 399 Kč / měsíc probíhá bezpečně kartou online přes platební bránu. Po úspěšné platbě se profil aktivuje. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.
             </div>
           </div>
           <button onClick={async () => {
@@ -216,7 +216,7 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
               </div>
               <div style={{ padding: "16px 13px", borderRadius: 12, border: `2px solid ${T.orange}`, background: "linear-gradient(135deg,#FFF7ED,#FFEDD5)", textAlign: "center", boxShadow: "0 2px 12px rgba(249,115,22,.15)" }}>
                 <div style={{ fontWeight: 800, fontSize: 15, color: T.orangeDk, marginBottom: 4 }}>Aktivní šikula — 399 Kč / měsíc</div>
-                <div style={{ fontSize: 13, color: T.ink3 }}>Platba probíhá kartou přes Stripe. Po úspěšné platbě se profil aktivuje.</div>
+                <div style={{ fontSize: 13, color: T.ink3 }}>Platba probíhá bezpečně kartou online přes platební bránu. Po úspěšné platbě se profil aktivuje.</div>
               </div>
             </div>
           )}

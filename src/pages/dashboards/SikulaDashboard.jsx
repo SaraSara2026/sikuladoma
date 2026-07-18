@@ -168,8 +168,8 @@ function LockedScreen({ type, onActivate }) {
         </button>
         <p style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.6 }}>
           {isPlus
-            ? 'Platba probíhá kartou přes Stripe. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.'
-            : 'Platba probíhá kartou přes Stripe. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.'}
+            ? 'Platba probíhá bezpečně kartou online přes platební bránu. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.'
+            : 'Platba probíhá bezpečně kartou online přes platební bránu. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.'}
         </p>
       </div>
     </div>
@@ -474,7 +474,7 @@ function VylepseniProfilu({ currentUser, onLogout }) {
       </div>
 
       <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 16, lineHeight: 1.6 }}>
-        Platba probíhá kartou přes Stripe. Tarif se obnovuje automaticky a lze ho kdykoliv zrušit. Zaplaceno = aktivní profil. Nezaplaceno nebo zrušeno = neaktivní.
+        Platba probíhá bezpečně kartou online přes platební bránu. Tarif se obnovuje automaticky a lze ho kdykoliv zrušit. Zaplaceno = aktivní profil. Nezaplaceno nebo zrušeno = neaktivní.
       </p>
     </div>
   )

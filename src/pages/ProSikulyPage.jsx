@@ -128,7 +128,7 @@ export default function ProSikulyPage({ onBack, onReg }) {
               </button>
 
               <p style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.6, marginTop: 12, textAlign: 'center' }}>
-                Platba probíhá kartou přes Stripe. Po úspěšné platbě se profil aktivuje. Tarif se obnovuje měsíčně a můžete ho kdykoliv zrušit v profilu.
+                Platba probíhá bezpečně kartou online přes platební bránu. Po úspěšné platbě se profil aktivuje. Tarif se obnovuje měsíčně a můžete ho kdykoliv zrušit v profilu.
               </p>
             </div>
 
