@@ -337,9 +337,9 @@ async function processEvent(event, sql) {
       const expiresAt = sub.current_period_end
         ? new Date(sub.current_period_end * 1000).toISOString() : null;
 
-      const subStatus = sub.status === 'active' ? 'active'
-                      : sub.status === 'past_due' ? 'payment_failed'
-                      : 'inactive';
+      const subStatus = ['active', 'trialing'].includes(sub.status) ? 'active'
+                       : sub.status === 'past_due' ? 'payment_failed'
+                       : 'inactive';
 
       await sql`
         UPDATE users
@@ -369,6 +369,42 @@ async function processEvent(event, sql) {
         WHERE id = ${userId}
       `;
       console.log(`[stripe] User ${userId} zrušil předplatné → inactive`);
+      break;
+    }
+
+    case 'invoice.paid':
+    case 'invoice.payment_succeeded': {
+      const invoice = event.data.object;
+      const [user] = await sql`SELECT id FROM users WHERE stripe_customer_id = ${invoice.customer}`;
+      if (!user) {
+        console.warn(`[stripe/webhook] ${event.type}: uživatel pro customer ${invoice.customer} nenalezen`);
+        break;
+      }
+
+      let expiresAt = null;
+      let plan = null;
+      if (invoice.subscription) {
+        try {
+          const sub = await stripeRequest('GET', `/subscriptions/${invoice.subscription}`);
+          if (sub.current_period_end) {
+            expiresAt = new Date(sub.current_period_end * 1000).toISOString();
+          }
+          const priceId = sub.items?.data?.[0]?.price?.id;
+          plan = Object.entries(PRICE_IDS).find(([, fn]) => fn() === priceId)?.[0] || null;
+        } catch (e) {
+          console.warn('[stripe/webhook] Could not retrieve subscription for invoice:', e.message);
+        }
+      }
+
+      await sql`
+        UPDATE users
+        SET subscription_status = 'active',
+            plan_expires_at      = COALESCE(${expiresAt}, plan_expires_at),
+            plan                 = COALESCE(${plan}, plan),
+            updated_at           = NOW()
+        WHERE id = ${user.id}
+      `;
+      console.log(`[stripe] User ${user.id} invoice paid (${event.type}) — subscription_status active`);
       break;
     }
 
