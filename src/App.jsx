@@ -171,7 +171,7 @@ export default function App() {
         .how-card{background:#fff;border:1px solid ${T.border};border-radius:14px;padding:24px;transition:all .18s;box-shadow:0 1px 3px rgba(0,0,0,.05);font-family:'Inter',system-ui,sans-serif;}
         .how-card:hover{box-shadow:0 6px 24px rgba(0,0,0,.08);transform:translateY(-2px);}
         .pri-chip{display:inline-flex;align-items:center;gap:6px;padding:0 14px;height:36px;border-radius:10px;border:1.5px solid;font-size:13px;font-weight:500;cursor:pointer;transition:all .14s;font-family:inherit;letter-spacing:-.01em;}
-        .trust-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;}
+        .trust-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;}
         @media(max-width:640px){.trust-grid{grid-template-columns:repeat(2,1fr);gap:14px;}}
       `}</style>
 
@@ -485,13 +485,13 @@ export default function App() {
               { emoji: "⚡", title: "Reakce do 48 hodin",     desc: "Šikulům ji zobrazíme co nejdříve.",    color: "#F97316", bg: "#FFF7ED" },
               { emoji: "🤝", title: "Platíte přímo šikulovi", desc: "Bez provize portálu ze zakázky.",       color: "#A855F7", bg: "#FAF5FF" },
             ].map(({ emoji, title, desc, color, bg }) => (
-              <div key={title} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div key={title} style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
                   {emoji}
                 </div>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, marginBottom: 2, letterSpacing: "-.01em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</div>
-                  <div style={{ fontSize: 12, color: T.ink3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{desc}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: T.ink, marginBottom: 2, letterSpacing: "-.01em", overflowWrap: "break-word" }}>{title}</div>
+                  <div style={{ fontSize: 12, color: T.ink3, overflowWrap: "break-word" }}>{desc}</div>
                 </div>
               </div>
             ))}
