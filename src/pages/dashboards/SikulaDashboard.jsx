@@ -254,8 +254,8 @@ async function doCheckout(plan, setBusy, setErr, onLogout) {
 
 function VylepseniProfilu({ currentUser, onLogout }) {
   const subStatus = currentUser?.subscription_status || 'inactive'
-  const isActive = subStatus === 'active'
   const currentPlan = currentUser?.plan || 'start'
+  const isActive = subStatus === 'active' && (currentPlan === 'aktiv' || currentPlan === 'aktiv-plus')
   const renewalEnd = currentUser?.plan_expires_at
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' }) : null
   const [billing, setBilling] = useState('monthly') // 'monthly' | 'yearly'
@@ -536,7 +536,9 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
         avatar: profileForm.avatar,
         platce_dph: profileForm.platce_dph,
       })
-      onUpdateUser?.(user)
+      // PATCH /api/users/me nevrací celý řádek (např. subscription_status chybí) —
+      // sloučíme s dosavadním currentUser, ať se plný přepis nesmaže tarifní stav.
+      onUpdateUser?.({ ...currentUser, ...user })
       setProfileMsg({ type: 'success', text: 'Profil uložen ✓' })
       setTimeout(() => setProfileMsg(null), 3000)
     } catch (e) {
@@ -592,10 +594,11 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
   const initials = (currentUser?.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
   const avatar = currentUser?.avatar || initials
 
-  // Zamčenost dle tarifu
+  // Zamčenost dle tarifu — aktivní je jen subscription_status='active' NA tarifu
+  // aktiv/aktiv-plus (samotné 'top' zvýraznění za 99 Kč dashboard neodemyká).
   const subStatus = currentUser?.subscription_status || 'inactive'
   const currentPlanId = currentUser?.plan || 'start'
-  const isActivePlan = subStatus === 'active'
+  const isActivePlan = subStatus === 'active' && (currentPlanId === 'aktiv' || currentPlanId === 'aktiv-plus')
   const isInactive = !isActivePlan
   const hasPlusPlan = isActivePlan && currentPlanId === 'aktiv-plus'
   const activeItem = menuItems.find(m => m.id === activePage)
