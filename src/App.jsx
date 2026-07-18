@@ -476,7 +476,7 @@ export default function App() {
       </section>
 
       {/* TRUST */}
-      <div style={{ padding: "0 24px", margin: "48px 0 56px" }}>
+      <div style={{ padding: "0 24px", margin: "12px 0 56px" }}>
         <div style={{ maxWidth: 1060, margin: "0 auto", background: "#E8EEF5", borderRadius: 16, padding: "24px 32px" }}>
           <div className="trust-grid">
             {[
