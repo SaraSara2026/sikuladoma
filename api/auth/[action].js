@@ -31,6 +31,7 @@ export default async function handler(req, res) {
   const action = req.query?.action;
   try {
     if (action === 'login')               return await doLogin(req, res);
+    if (action === 'check-email')         return await doCheckEmail(req, res);
     if (action === 'register')            return await doRegister(req, res);
     if (action === 'logout')              return await doLogout(req, res);
     if (action === 'me')                  return await doMe(req, res);
@@ -73,6 +74,23 @@ async function doLogin(req, res) {
 
   const { password_hash, ...safe } = user;
   return res.status(200).json({ user: safe });
+}
+
+// ─── check-email ────────────────────────────────────────────────────────────
+// Lehká kontrola duplicity e-mailu — volá se hned po zadání e-mailu v registraci,
+// ať uživatel nevyplňuje celý formulář, když už účet existuje.
+async function doCheckEmail(req, res) {
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+  if (rateLimit(req, res, { key: 'check-email', limit: 20, windowMs: 5 * 60 * 1000 })) return;
+
+  const { email } = req.body ?? {};
+  if (!email || !EMAIL_RE.test(email)) return res.status(400).json({ error: 'Zadej platný e-mail.' });
+
+  const [existing] = await sql`SELECT id FROM users WHERE email = ${String(email).toLowerCase()}`;
+  return res.status(200).json({ exists: !!existing });
 }
 
 // ─── register ───────────────────────────────────────────────────────────────

@@ -14,6 +14,16 @@ async function parseError(res) {
   }
 }
 
+export async function apiCheckEmail(email) {
+  const res = await fetch('/api/auth/check-email', opts({
+    method: 'POST',
+    headers: j,
+    body: JSON.stringify({ email }),
+  }));
+  if (!res.ok) throw new Error(await parseError(res));
+  return res.json(); // { exists: boolean }
+}
+
 export async function apiRegister({ email, password, name, role, phone, city }) {
   const res = await fetch('/api/auth/register', opts({
     method: 'POST',

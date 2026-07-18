@@ -6,10 +6,10 @@ import { T, S, inp, lbl, hint } from "../ui/theme";
 import { IconBtn, BtnGhost, BtnBlue } from "../ui/Button";
 import { IcX, IcArrow, IcCheckCircle } from "../ui/icons/UIIcons";
 import { SERVICES } from "../lib/categories";
-import { apiRegister } from "../lib/auth.js";
+import { apiRegister, apiCheckEmail } from "../lib/auth.js";
 import PasswordField from "../components/PasswordField";
 
-export default function RegForm({ plan, onClose, onRegistered }) {
+export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot }) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
     name: "", ico: "", email: "", password: "",
@@ -19,6 +19,29 @@ export default function RegForm({ plan, onClose, onRegistered }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
   const [registeredUser, setRegisteredUser] = useState(null);
+  const [emailTaken, setEmailTaken] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+
+  const continueFromStep0 = async () => {
+    setErr(null);
+    const fullName = (form.name || "").trim();
+    if (!fullName)                         return setErr("Zadejte jméno.");
+    if (!/^\S+\s+\S+/.test(fullName))      return setErr("Zadejte jméno i příjmení.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return setErr("Zadejte platný e-mail.");
+    if ((form.password || "").length < 8) return setErr("Heslo musí mít alespoň 8 znaků.");
+    if (!form.city?.trim())               return setErr("Zadejte město.");
+
+    setCheckingEmail(true);
+    try {
+      const { exists } = await apiCheckEmail(form.email);
+      if (exists) { setEmailTaken(true); return; }
+      setStep(1);
+    } catch (e) {
+      setErr(e.message || "Nepodařilo se ověřit e-mail. Zkuste to znovu.");
+    } finally {
+      setCheckingEmail(false);
+    }
+  };
 
   const upd = (k, v) => setForm(p => ({ ...p, [k]: v }));
   const toggleSvc = id => setForm(p => ({
@@ -64,6 +87,34 @@ export default function RegForm({ plan, onClose, onRegistered }) {
       setBusy(false);
     }
   };
+
+  if (emailTaken) return (
+    <div style={S.overlay} onClick={onClose}>
+      <div style={{ ...S.modal, maxWidth: 440 }} onClick={e => e.stopPropagation()}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "16px 20px 0" }}>
+          <IconBtn onClick={onClose}><IcX /></IconBtn>
+        </div>
+        <div style={{ padding: "8px 32px 32px", textAlign: "center" }}>
+          <h2 style={{ fontSize: 19, fontWeight: 700, color: T.ink, marginBottom: 10 }}>Tento e-mail už je registrovaný</h2>
+          <p style={{ color: T.ink3, fontSize: 14, lineHeight: 1.7, marginBottom: 22 }}>
+            Tento e-mail už je registrovaný. Přihlaste se, nebo si obnovte heslo.
+          </p>
+          <button onClick={() => { onClose(); onLogin?.(); }}
+            style={{ width: "100%", height: 46, borderRadius: 10, border: "none", background: T.blue, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: "inherit", marginBottom: 10 }}>
+            Přihlásit se
+          </button>
+          <button onClick={() => { onClose(); onForgot?.(); }}
+            style={{ width: "100%", height: 46, borderRadius: 10, border: `1.5px solid ${T.border}`, background: "#fff", color: T.ink, fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit", marginBottom: 14 }}>
+            Zapomenuté heslo
+          </button>
+          <button onClick={() => setEmailTaken(false)}
+            style={{ background: "none", border: "none", color: T.ink3, fontSize: 12, cursor: "pointer", fontFamily: "inherit", textDecoration: "underline" }}>
+            Zkusit jiný e-mail
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   if (step === 2) return (
     <div style={S.overlay}>
@@ -179,23 +230,17 @@ export default function RegForm({ plan, onClose, onRegistered }) {
 
         <div style={{ padding: "14px 20px", borderTop: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between" }}>
           {step > 0 ? <BtnGhost size="sm" onClick={() => setStep(0)}>Zpět</BtnGhost> : <span />}
-          <BtnBlue size="sm" disabled={busy} onClick={() => {
-            setErr(null);
-            if (step === 0) {
-              const fullName = (form.name || "").trim();
-              if (!fullName)                         return setErr("Zadejte jméno.");
-              if (!/^\S+\s+\S+/.test(fullName))      return setErr("Zadejte jméno i příjmení.");
-              if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return setErr("Zadejte platný e-mail.");
-              if ((form.password || "").length < 8) return setErr("Heslo musí mít alespoň 8 znaků.");
-              if (!form.city?.trim())               return setErr("Zadejte město.");
-              return setStep(1);
-            }
+          <BtnBlue size="sm" disabled={busy || checkingEmail} onClick={() => {
+            if (step === 0) return continueFromStep0();
             if (step === 1 && !busy) {
+              setErr(null);
               if (form.services.length === 0) return setErr("Vyberte alespoň jednu službu, kterou nabízíte.");
               submitRegistration();
             }
           }}>
-            {step === 0 ? <>Pokračovat <IcArrow /></> : (busy ? <><span style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid rgba(255,255,255,.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginRight: 8 }} /> Zpracovávám…</> : <>Pokračovat k platbě <IcArrow /></>)}
+            {step === 0
+              ? (checkingEmail ? <><span style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid rgba(255,255,255,.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginRight: 8 }} /> Ověřuji e-mail…</> : <>Pokračovat <IcArrow /></>)
+              : (busy ? <><span style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid rgba(255,255,255,.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginRight: 8 }} /> Zpracovávám…</> : <>Pokračovat k platbě <IcArrow /></>)}
           </BtnBlue>
         </div>
       </div>
