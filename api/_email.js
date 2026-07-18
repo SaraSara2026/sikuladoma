@@ -112,10 +112,20 @@ function verificationTemplate({ name, url }) {
   });
 }
 
+// Vezme jen křestní jméno (první slovo před mezerou) z celého jména v DB.
+// Bez skloňování — bezpečná neutrální varianta, ať sedí na jakékoliv jméno.
+function firstName(fullName) {
+  const trimmed = String(fullName || '').trim();
+  if (!trimmed) return '';
+  return trimmed.split(/\s+/)[0];
+}
+
 function passwordResetTemplate({ name, url }) {
+  const first = firstName(name);
+  const greeting = first ? `Dobrý den, ${escapeHtml(first)},` : 'Dobrý den,';
   return baseLayout({
     title: 'Reset hesla',
-    intro: `Ahoj ${escapeHtml(name || '')}, požádal(a) jsi o reset hesla na ŠikulaDoma. Klikni na tlačítko níže a nastav si nové heslo.`,
+    intro: `${greeting} požádal(a) jsi o reset hesla na ŠikulaDoma. Klikni na tlačítko níže a nastav si nové heslo.`,
     ctaText: 'Resetovat heslo',
     ctaUrl: url,
     footer: 'Odkaz je platný 1 hodinu. Pokud jsi reset nepožadoval(a), tento e-mail ignoruj — tvé heslo zůstává beze změny.',
