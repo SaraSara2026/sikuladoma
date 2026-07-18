@@ -8,6 +8,7 @@ import { apiMe } from '../../lib/auth'
 import VerificationBanner from '../../components/VerificationBanner'
 import AvatarUpload from '../../components/AvatarUpload'
 import { SERVICES } from '../../lib/categories'
+import { formatPhoneCZ, isValidPhoneCZ } from '../../lib/phone'
 
 // Po návratu ze Stripe checkoutu webhook aktivuje tarif v DB až s malým zpožděním.
 // currentUser v appce žije v localStorage a sám se neobnoví, tak ho tu pár vteřin
@@ -492,6 +493,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
   })
   const [profileSaving, setProfileSaving] = useState(false)
   const [profileMsg, setProfileMsg] = useState(null)
+  const [phoneError, setPhoneError] = useState(null)
   useEffect(() => {
     if (!currentUser) return
     setProfileForm({
@@ -523,13 +525,19 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
       setProfileMsg({ type: 'error', text: 'Vyber alespoň jednu službu, kterou nabízíš.' })
       return
     }
+    if (!isValidPhoneCZ(profileForm.phone)) {
+      setProfileMsg({ type: 'error', text: 'Zadejte platné české telefonní číslo.' })
+      setPhoneError('Zadejte platné české telefonní číslo.')
+      return
+    }
+    const formattedPhone = formatPhoneCZ(profileForm.phone)
     setProfileSaving(true)
     try {
       const { user } = await usersApi.updateMe({
         name: trimmedName,
         bio: profileForm.bio,
         ico: profileForm.ico,
-        phone: profileForm.phone,
+        phone: formattedPhone,
         city: profileForm.city,
         hourly_rate: profileForm.hourly_rate === '' ? null : Number(profileForm.hourly_rate),
         services: profileForm.services,
@@ -539,6 +547,8 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
       // PATCH /api/users/me nevrací celý řádek (např. subscription_status chybí) —
       // sloučíme s dosavadním currentUser, ať se plný přepis nesmaže tarifní stav.
       onUpdateUser?.({ ...currentUser, ...user })
+      setProfileForm(p => ({ ...p, phone: formattedPhone }))
+      setPhoneError(null)
       setProfileMsg({ type: 'success', text: 'Profil uložen ✓' })
       setTimeout(() => setProfileMsg(null), 3000)
     } catch (e) {
@@ -1045,8 +1055,15 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                 <div className="form-row">
                   <div className="form-group"><label className="form-label">Telefon</label>
                     <input className="form-input" value={profileForm.phone}
-                      onChange={e => setProfileForm(p => ({ ...p, phone: e.target.value }))}
-                      placeholder="+420 777 123 456" /></div>
+                      onChange={e => { setProfileForm(p => ({ ...p, phone: e.target.value })); if (phoneError) setPhoneError(null) }}
+                      onBlur={e => {
+                        const formatted = formatPhoneCZ(e.target.value)
+                        setProfileForm(p => ({ ...p, phone: formatted }))
+                        setPhoneError(isValidPhoneCZ(formatted) ? null : 'Zadejte platné české telefonní číslo.')
+                      }}
+                      placeholder="+420 777 123 456" />
+                    {phoneError && <div style={{ color: '#B91C1C', fontSize: 12, marginTop: 4 }}>{phoneError}</div>}
+                  </div>
                   <div className="form-group"><label className="form-label">Město / oblast</label>
                     <input className="form-input" value={profileForm.city}
                       onChange={e => setProfileForm(p => ({ ...p, city: e.target.value }))}
