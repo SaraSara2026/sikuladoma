@@ -58,8 +58,9 @@ async function doLogin(req, res) {
 
   const [user] = await sql`
     SELECT id, email, password_hash, role, name, phone, city, avatar,
-           ico, services, plan, stripe_customer_id, plan_expires_at,
-           verified, email_verified_at, rating, jobs_count, bio
+           ico, services, plan, stripe_customer_id, stripe_subscription_id,
+           plan_expires_at, verified, email_verified_at, rating, jobs_count,
+           bio, hourly_rate, platce_dph, subscription_status, trial_ends_at
     FROM users WHERE email = ${String(email).toLowerCase()}
   `;
   if (!user) return res.status(401).json({ error: 'Nesprávný e-mail nebo heslo.' });
@@ -97,7 +98,8 @@ async function doRegister(req, res) {
   const [user] = await sql`
     INSERT INTO users (email, password_hash, role, name, phone, city)
     VALUES (${email.toLowerCase()}, ${password_hash}, ${role}, ${name.trim()}, ${phone || null}, ${city || null})
-    RETURNING id, email, role, name, phone, city, avatar, plan, verified, email_verified_at, jobs_count
+    RETURNING id, email, role, name, phone, city, avatar, plan, verified, email_verified_at,
+              jobs_count, subscription_status, plan_expires_at, stripe_customer_id, stripe_subscription_id
   `;
 
   // Vytvoř verifikační token + pošli email. Pokud Resend selže (např. chybí klíč

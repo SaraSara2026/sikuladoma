@@ -74,8 +74,9 @@ async function updateMe(req, res) {
       updated_at   = NOW()
     WHERE id = ${me.id}
     RETURNING id, email, role, name, phone, city, avatar, ico, services, plan,
-              stripe_customer_id, plan_expires_at, verified, email_verified_at,
-              rating, jobs_count, bio, hourly_rate, platce_dph
+              stripe_customer_id, stripe_subscription_id, plan_expires_at,
+              verified, email_verified_at, rating, jobs_count, bio,
+              hourly_rate, platce_dph, subscription_status, trial_ends_at
   `;
   return res.status(200).json({ user: row });
 }
