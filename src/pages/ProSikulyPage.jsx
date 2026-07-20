@@ -172,13 +172,13 @@ export default function ProSikulyPage({ onBack, onReg }) {
           <div style={{ textAlign: 'center', marginTop: 56, padding: '40px 32px', background: '#fff', borderRadius: 20, border: '1px solid #F3F4F6', boxShadow: '0 1px 4px rgba(0,0,0,.05)' }}>
             <h3 style={{ fontSize: 20, fontWeight: 700, color: '#1A1F2E', letterSpacing: '-.02em', marginBottom: 8 }}>Připraveni začít?</h3>
             <p style={{ fontSize: 14, color: '#9CA3AF', marginBottom: 24, lineHeight: 1.65 }}>
-              399 Kč / měsíc. Platba kartou. Zrušit lze kdykoliv.
+              Vytvořte si profil, uvidíte poptávky ve svém okolí a první reakci si vyzkoušíte zdarma.
             </p>
             <button onClick={onReg}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 50, padding: '0 32px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#F97316 0%,#EA580C 100%)', color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer', boxShadow: '0 4px 16px rgba(249,115,22,.35)', transition: 'all .15s' }}
               onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg,#EA580C 0%,#C2410C 100%)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg,#F97316 0%,#EA580C 100%)'; e.currentTarget.style.transform = 'none'; }}>
-              Aktivovat profil za 399 Kč <IcArrow />
+              Vytvořit profil zdarma <IcArrow />
             </button>
           </div>
         </div>
