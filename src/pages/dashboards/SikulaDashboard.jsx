@@ -883,7 +883,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
         {!lockedType && activePage === 'invoices' && <InvoicePage />}
         {!lockedType && activePage === 'calendar' && <CalendarSection />}
         {activePage === 'membership' && <VylepseniProfilu currentUser={currentUser} onLogout={onLogout} />}
-        {activePage === 'messages' && <ChatPage />}
+        {activePage === 'messages' && <ChatPage currentUser={currentUser} />}
 
         {!lockedType && activePage === 'earnings' && (
           <div className="page-enter">

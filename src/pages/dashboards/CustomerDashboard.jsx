@@ -396,7 +396,7 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout }) {
         )}
 
         {/* ── ZPRÁVY ────────────────────────────────────────────────────────── */}
-        {activePage === 'messages' && <ChatPage />}
+        {activePage === 'messages' && <ChatPage currentUser={currentUser} />}
 
         {/* ── PROFIL ────────────────────────────────────────────────────────── */}
         {activePage === 'profile' && (

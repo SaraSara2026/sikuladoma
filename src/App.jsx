@@ -237,7 +237,7 @@ export default function App() {
         <OrderDetailPage order={currentOrder} currentUser={sikulaUser} onNav={handleNav}
           onAcceptOffer={() => { /* refresh dashboard po accept */ }} />
       ) : page === "chat" ? (
-        <ChatPage />
+        <ChatPage currentUser={sikulaUser} />
       ) : page === "verify-email" ? (
         <VerifyEmailPage
           onBack={() => { setPage("home"); window.history.replaceState({}, '', '/'); }}
@@ -369,7 +369,7 @@ export default function App() {
             {[
               { Icon: IcShield, text: "Ověřené profily",         iconColor: "#059669" },
               { Icon: IcStar,   text: "Poptávka zdarma",         iconColor: T.orange },
-              { Icon: IcCheck,  text: "Zákazník nic neplatí",   iconColor: "#059669" },
+              { Icon: IcCheck,  text: "Za poptávku neplatíte",   iconColor: "#059669" },
               { Icon: IcGlobe,  text: "Platíte přímo šikulovi", iconColor: T.blue },
             ].map(({ Icon, text, iconColor }, i, arr) => (
               <span key={text} style={{ display: "inline-flex", alignItems: "center" }}>

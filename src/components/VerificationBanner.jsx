@@ -10,6 +10,8 @@ export default function VerificationBanner({ user }) {
 
   if (!user || user.email_verified_at) return null;
 
+  const isSikula = user.role === 'sikula';
+
   const resend = async () => {
     setState('sending');
     setMsg('');
@@ -41,7 +43,9 @@ export default function VerificationBanner({ user }) {
           Ověřte svůj e-mail
         </div>
         <div style={{ fontSize: 13, color: '#78350F', lineHeight: 1.5 }}>
-          Poslali jsme vám ověřovací odkaz na <strong>{user.email}</strong>. Bez ověření nelze posílat poptávky, nabídky ani zprávy.
+          {isSikula
+            ? <>Poslali jsme vám ověřovací odkaz na <strong>{user.email}</strong>. Bez ověření nelze odesílat nabídky ani zprávy.</>
+            : <>Poslali jsme vám ověřovací odkaz na <strong>{user.email}</strong>. Ověření pomůže zabezpečit váš účet a komunikaci se šikuly.</>}
         </div>
         {msg && (
           <div style={{ marginTop: 8, fontSize: 12, color: state === 'error' ? '#B91C1C' : '#166534' }}>

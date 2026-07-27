@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Icon from '../components/Icon'
 import { conversationsApi, messagesApi } from '../lib/api'
-import { useAuth } from '../contexts/AuthContext'
 
 const POLL_MS = 5000
 
@@ -23,8 +22,8 @@ function initials(name) {
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 }
 
-export default function ChatPage() {
-  const { user } = useAuth()
+export default function ChatPage({ currentUser }) {
+  const user = currentUser
   const [conversations, setConversations] = useState([])
   const [active, setActive]   = useState(null)        // id konverzace
   const [messages, setMessages] = useState([])
@@ -107,7 +106,7 @@ export default function ChatPage() {
       {!convLoading && conversations.length === 0 && (
         <div className="empty-state" style={{ padding: 60 }}>
           <div className="empty-icon">💬</div>
-          <h3>Žádné konverzace</h3>
+          <h3>Zatím nemáte žádné zprávy.</h3>
           <p>Konverzace se založí automaticky, jakmile přijmete nabídku (nebo dostanete přijatou).</p>
         </div>
       )}
