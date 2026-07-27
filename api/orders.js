@@ -119,7 +119,11 @@ async function listOrders(req, res) {
   const me = await getCurrentUser(req);
   if (!me) return res.status(401).json({ error: 'Unauthorized' });
 
-  const { category, city, status } = req.query || {};
+  const { category, city, status, categories } = req.query || {};
+  // 'categories' = obory šikuly (users.services), volitelný filtr na víc kategorií najednou.
+  const categoriesArr = categories
+    ? String(categories).split(',').map(s => s.trim()).filter(Boolean)
+    : null;
 
   let rows;
   if (me.role === 'admin') {
@@ -138,6 +142,7 @@ async function listOrders(req, res) {
       WHERE status IN ('new','in_progress')
         AND (${category ?? null}::text IS NULL OR category = ${category ?? null})
         AND (${city ?? null}::text IS NULL OR city ILIKE ${city ? `%${city}%` : null})
+        AND (${categoriesArr}::text[] IS NULL OR category = ANY(${categoriesArr}))
       ORDER BY created_at DESC LIMIT 200
     `;
   } else {

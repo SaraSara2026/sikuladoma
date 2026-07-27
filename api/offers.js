@@ -16,36 +16,23 @@ export default async function handler(req, res) {
   }
 }
 
-// Limity reakcí za měsíc dle tarifu
-const MONTHLY_LIMITS = { start: 5, plus: 30 };  // profi + top = neomezeno
-
 async function createOffer(req, res) {
   const me = await requireVerifiedUser(req, res);
   if (!me) return;
   if (me.role !== 'sikula') return res.status(403).json({ error: 'Nabídku může poslat jen šikula.' });
 
+  // Reakce na poptávku vyžaduje aktivní placený tarif — žádné reakce zdarma, žádné kredity.
+  const hasActivePlan = me.subscription_status === 'active' && (me.plan === 'aktiv' || me.plan === 'aktiv-plus');
+  if (!hasActivePlan) {
+    return res.status(402).json({
+      error: 'Pro reakci na poptávku a kontaktování zákazníka si aktivujte tarif Aktivní šikula od 199 Kč / měsíc. Neplatíte žádné kredity ani provizi ze zakázky.',
+      code: 'activate_required',
+    });
+  }
+
   const { order_id, price, message, available_date, available_time } = req.body ?? {};
   if (!order_id)                              return res.status(400).json({ error: 'Chybí order_id.' });
   if (price == null || Number(price) <= 0)    return res.status(400).json({ error: 'Zadejte platnou cenu.' });
-
-  // ── Kontrola měsíčního limitu dle tarifu ────────────────────────────────
-  const plan = me.plan || 'start';
-  const limit = MONTHLY_LIMITS[plan] ?? null;  // null = neomezeno (profi, top)
-  if (limit !== null) {
-    const monthStart = new Date();
-    monthStart.setDate(1);
-    monthStart.setHours(0, 0, 0, 0);
-    const [cnt] = await sql`
-      SELECT COUNT(*)::int AS n FROM offers
-      WHERE sikula_id = ${me.id} AND created_at >= ${monthStart.toISOString()}
-    `;
-    if (cnt.n >= limit) {
-      return res.status(429).json({
-        error: `Dosáhli jste měsíčního limitu ${limit} nabídek (tarif ${plan}). Upgradujte na Profi pro neomezené reakce.`,
-        limit, used: cnt.n, plan,
-      });
-    }
-  }
 
   const [order] = await sql`SELECT id, status FROM orders WHERE id = ${Number(order_id)}`;
   if (!order)                       return res.status(404).json({ error: 'Poptávka neexistuje.' });

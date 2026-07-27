@@ -214,7 +214,7 @@ export default function App() {
             ? <CustomerDashboard currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} />
             : <SikulaDashboard   currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} onUpdateUser={updateSikula} />
       ) : page === "send-offer" ? (
-        <SendOfferPage order={currentOrder} onNav={handleNav} onSend={() => { setCurrentOrder(null); }} />
+        <SendOfferPage order={currentOrder} onNav={handleNav} onSend={() => { setCurrentOrder(null); }} currentUser={sikulaUser} />
       ) : page === "order-detail" ? (
         <OrderDetailPage order={currentOrder} currentUser={sikulaUser} onNav={handleNav}
           onAcceptOffer={() => { /* refresh dashboard po accept */ }} />

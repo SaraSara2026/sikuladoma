@@ -2,7 +2,7 @@ import { useState } from 'react'
 import Icon from '../components/Icon'
 import { offersApi } from '../lib/api'
 
-export default function SendOfferPage({ order, onNav, onSend }) {
+export default function SendOfferPage({ order, onNav, onSend, currentUser }) {
   const [price, setPrice] = useState('')
   const [time, setTime]   = useState('')
   const [date, setDate]   = useState('')
@@ -11,6 +11,26 @@ export default function SendOfferPage({ order, onNav, onSend }) {
   const [err, setErr]     = useState(null)
 
   if (!order) return null
+
+  // Reakce na poptávku vyžaduje aktivní placený tarif — žádné reakce zdarma.
+  const hasActivePlan = currentUser?.subscription_status === 'active'
+    && (currentUser?.plan === 'aktiv' || currentUser?.plan === 'aktiv-plus')
+
+  if (!hasActivePlan) {
+    return (
+      <div className="page-enter" style={{ padding: '32px 24px', maxWidth: 640, margin: '0 auto' }}>
+        <button className="btn btn-ghost" onClick={() => onNav('back')} style={{ marginBottom: 16 }}>← Zpět</button>
+        <div className="card card-pad" style={{ textAlign: 'center', padding: '40px 24px' }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🔒</div>
+          <h2 style={{ marginBottom: 10 }}>Aktivujte tarif pro reakci na poptávky</h2>
+          <p style={{ color: 'var(--text2)', lineHeight: 1.7, marginBottom: 22 }}>
+            Pro reakci na poptávku a kontaktování zákazníka si aktivujte tarif Aktivní šikula od 199 Kč / měsíc. Neplatíte žádné kredity ani provizi ze zakázky.
+          </p>
+          <button className="btn btn-primary" onClick={() => onNav('dash-sikula')}>Aktivovat tarif</button>
+        </div>
+      </div>
+    )
+  }
 
   const submit = async () => {
     setErr(null)

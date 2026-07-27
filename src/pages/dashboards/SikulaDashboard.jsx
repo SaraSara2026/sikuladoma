@@ -71,14 +71,17 @@ function relativni(iso) {
 }
 
 // Hook pro načtení otevřených poptávek (refetch každých 30 s).
-function useOpenOrders(city) {
+function useOpenOrders(city, services) {
   const [orders, setOrders]   = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState(null)
+  const categoriesKey = Array.isArray(services) ? services.join(',') : ''
 
   useEffect(() => {
     let alive = true
-    const params = city ? { city } : {}
+    const params = {}
+    if (city) params.city = city
+    if (categoriesKey) params.categories = categoriesKey
     const load = () => ordersApi.list(params)
       .then(({ orders }) => { if (alive) { setOrders(orders); setError(null) } })
       .catch(e => { if (alive) setError(e.message) })
@@ -86,7 +89,7 @@ function useOpenOrders(city) {
     load()
     const id = setInterval(load, 30000)
     return () => { alive = false; clearInterval(id) }
-  }, [city])
+  }, [city, categoriesKey])
 
   return { orders, loading, error }
 }
@@ -133,10 +136,11 @@ function useMyOffers() {
 
 // lock: 'plan' = vyžaduje alespoň Aktivní šikula (199 Kč)
 // lock: 'plus'  = vyžaduje Aktivní šikula Plus (299 Kč)
+// 'new-jobs' záměrně bez zámku — náhled poptávek je zdarma, platí se až za reakci (viz SendOfferPage).
 const menuItems = [
   { id: 'profile',      icon: '👤', label: 'Profil šikuly' },
   { id: 'overview',     icon: '📊', label: 'Přehled' },
-  { id: 'new-jobs',     icon: '🔔', label: 'Nové zakázky',      lock: 'plan' },
+  { id: 'new-jobs',     icon: '🔔', label: 'Nové zakázky' },
   { id: 'offers-sent',  icon: '📤', label: 'Odeslané nabídky',  lock: 'plan' },
   { id: 'active',       icon: '⚡', label: 'Aktivní zakázky',   lock: 'plan' },
   { id: 'calendar',     icon: '📅', label: 'Kalendář',          lock: 'plus' },
@@ -220,38 +224,6 @@ function CalendarSection() {
   )
 }
 
-async function doCheckout(plan, setBusy, setErr, onLogout) {
-  setBusy(true)
-  setErr(null)
-  try {
-    const r = await fetch('/api/stripe?action=checkout', {
-      method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ plan }),
-    })
-    const text = await r.text()
-    let d = null
-    try { d = JSON.parse(text) } catch { /* non-JSON */ }
-    console.log('[stripe/checkout] HTTP', r.status, 'plan:', plan, 'raw:', text.slice(0, 500))
-    if (d?.url) { window.location.href = d.url; return }
-    if (r.status === 401) {
-      // Dashboard se dřív mohl zobrazovat ze staré localStorage session, i když
-      // server session (cookie) mezitím vypršela — checkout je první místo, kde se to pozná.
-      console.warn('[stripe/checkout] session expired/invalid, code:', d?.code)
-      setErr('Přihlášení vypršelo. Přihlas se prosím znovu.')
-      onLogout?.()
-      return
-    }
-    const msg = d?.error || text.slice(0, 300) || `HTTP ${r.status}`
-    console.error('[stripe/checkout] failed:', msg)
-    setErr(`Chyba (${r.status}): ${msg}`)
-  } catch (err) {
-    console.error('[stripe/checkout] network error:', err)
-    setErr(`Síťová chyba: ${err.message || 'Nepodařilo se připojit k serveru.'}`)
-  } finally {
-    setBusy(false)
-  }
-}
 
 function VylepseniProfilu({ currentUser, onLogout }) {
   const subStatus = currentUser?.subscription_status || 'inactive'
@@ -494,8 +466,6 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
   const [activePage, setActivePage] = useState('overview')
   const [available, setAvailable] = useState(true)
   const [stripeMsg, setStripeMsg] = useState(null)   // { type: 'success'|'cancel', plan? }
-  const [ovBusy, setOvBusy] = useState(false)
-  const [ovErr, setOvErr] = useState(null)
 
   // Profil edit state
   const [profileForm, setProfileForm] = useState({
@@ -573,7 +543,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
     services: p.services.includes(id) ? p.services.filter(s => s !== id) : [...p.services, id],
   }))
   const sikulaCity = currentUser?.city?.split(',')[0]?.trim() || ''
-  const { orders, loading: ordersLoading, error: ordersError } = useOpenOrders(sikulaCity)
+  const { orders, loading: ordersLoading, error: ordersError } = useOpenOrders(sikulaCity, currentUser?.services)
   const { offers: myOffers, reload: reloadMyOffers } = useMyOffers()
   const { reviews: myReviews, summary: reviewsSummary, loading: reviewsLoading } = useMyReviews(currentUser?.id)
 
@@ -685,17 +655,18 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
           </div>
         )}
 
-        {/* Banner pro neaktivní / zrušený profil */}
+        {/* Banner pro neaktivní tarif — registrace a náhled poptávek jsou zdarma,
+            reakce na poptávky a kontakt na zákazníka vyžadují aktivní tarif. */}
         {isInactive && activePage !== 'membership' && activePage !== 'profile' && (
           <div style={{ margin: '0 0 20px', padding: '14px 20px', borderRadius: 12, background: '#FEF2F2', border: '1px solid #FECACA', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 13, color: '#B91C1C' }}>
               {subStatus === 'payment_failed'
-                ? 'Platba selhala. Váš profil není aktivní a nezobrazuje se zákazníkům.'
-                : 'Váš profil není aktivní. Nezobrazuje se zákazníkům a nové poptávky vám nechodí.'}
+                ? 'Platba za tarif selhala. Pro reakci na poptávky a kontaktování zákazníků si tarif aktivujte znovu.'
+                : 'Zatím nemáte aktivní tarif. Pro reakci na poptávky a kontaktování zákazníků si aktivujte tarif Aktivní šikula od 199 Kč / měsíc.'}
             </span>
             <button onClick={() => setActivePage('membership')}
               style={{ height: 36, padding: '0 16px', borderRadius: 9, border: 'none', background: '#F97316', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-              Aktivovat profil
+              Aktivovat tarif
             </button>
           </div>
         )}
@@ -764,55 +735,40 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             <div className="table-wrap">
               <div className="table-header">
                 <span className="table-title">Nové zakázky v okolí</span>
-                {!isInactive && <button className="btn btn-ghost btn-sm" onClick={() => setActivePage('new-jobs')}>Zobrazit vše →</button>}
+                <button className="btn btn-ghost btn-sm" onClick={() => setActivePage('new-jobs')}>Zobrazit vše →</button>
               </div>
-              {isInactive ? (
-                <div style={{ padding: '32px 24px', textAlign: 'center' }}>
-                  <div style={{ fontSize: 32, marginBottom: 12 }}>🔒</div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#1A1F2E', marginBottom: 8 }}>Aktivujte profil a začněte přijímat poptávky</div>
-                  <div style={{ fontSize: 13, color: '#6B7280', marginBottom: 20, lineHeight: 1.6 }}>
-                    S tarifem Aktivní šikula za 199 Kč / měsíc se zobrazíte zákazníkům ve vaší lokalitě a budete moci reagovat na poptávky.
-                  </div>
-                  <button onClick={() => doCheckout('aktiv', setOvBusy, setOvErr, onLogout)}
-                    disabled={ovBusy}
-                    style={{ height: 44, padding: '0 24px', borderRadius: 10, border: 'none', background: ovBusy ? '#9CA3AF' : 'linear-gradient(135deg,#F97316,#EA580C)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: ovBusy ? 'wait' : 'pointer', fontFamily: 'inherit', transition: 'background .2s' }}>
-                    {ovBusy ? 'Přesměrovávám na platbu…' : 'Aktivovat profil za 199 Kč'}
-                  </button>
-                  {ovErr && (
-                    <div style={{ marginTop: 12, padding: '8px 12px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, fontSize: 12, color: '#B91C1C' }}>
-                      {ovErr}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <>
-                  {ordersLoading && <div style={{ padding: 16, color: 'var(--text3)', fontSize: 14 }}>Načítám…</div>}
-                  {ordersError && !ordersLoading && (
-                    <div style={{ padding: 16, color: 'var(--red, #B91C1C)', fontSize: 13 }}>Nepodařilo se načíst zakázky: {ordersError}</div>
-                  )}
-                  {!ordersLoading && !ordersError && orders.length === 0 && (
-                    <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)' }}>
-                      <div style={{ fontSize: 28, marginBottom: 8 }}>🕊️</div>
-                      Zatím žádné nové poptávky ve vaší lokalitě. Zkontroluju to znovu za 30 s.
-                    </div>
-                  )}
-                  {!ordersLoading && !ordersError && orders.slice(0, 3).map(o => (
-                    <div key={o.id} className="order-card" style={{ margin: 0, borderRadius: 0, border: 'none', borderBottom: '1px solid var(--border)' }}>
-                      <div className="order-cat-icon">{CAT_ICON[o.category] || '🔧'}</div>
-                      <div className="order-info">
-                        <div className="order-title">{o.title}</div>
-                        <div className="order-meta">
-                          <span><Icon name="map" size={13} /> {o.city}</span>
-                          {o.budget && <span><Icon name="wallet" size={13} /> {o.budget}</span>}
-                          <span><Icon name="clock" size={13} /> {relativni(o.created_at)}</span>
-                          {o.urgent && <span style={{ color: 'var(--red)' }}>🚨 Urgentní</span>}
-                        </div>
-                      </div>
-                      <button className="btn btn-primary btn-sm" onClick={() => onNav('send-offer', o)}>Nabídnout se</button>
-                    </div>
-                  ))}
-                </>
+              {ordersLoading && <div style={{ padding: 16, color: 'var(--text3)', fontSize: 14 }}>Načítám…</div>}
+              {ordersError && !ordersLoading && (
+                <div style={{ padding: 16, color: 'var(--red, #B91C1C)', fontSize: 13 }}>Nepodařilo se načíst zakázky: {ordersError}</div>
               )}
+              {!ordersLoading && !ordersError && orders.length === 0 && (
+                <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)' }}>
+                  <div style={{ fontSize: 28, marginBottom: 8 }}>🕊️</div>
+                  Zatím žádné nové poptávky ve vaší lokalitě. Zkontroluju to znovu za 30 s.
+                </div>
+              )}
+              {!ordersLoading && !ordersError && orders.slice(0, 3).map(o => (
+                <div key={o.id} className="order-card" style={{ margin: 0, borderRadius: 0, border: 'none', borderBottom: '1px solid var(--border)' }}>
+                  <div className="order-cat-icon">{CAT_ICON[o.category] || '🔧'}</div>
+                  <div className="order-info">
+                    <div className="order-title">{o.title}</div>
+                    <div className="order-meta">
+                      <span><Icon name="map" size={13} /> {o.city}</span>
+                      {o.budget && <span><Icon name="wallet" size={13} /> {o.budget}</span>}
+                      <span><Icon name="clock" size={13} /> {relativni(o.created_at)}</span>
+                      {o.urgent && <span style={{ color: 'var(--red)' }}>🚨 Urgentní</span>}
+                    </div>
+                    {o.description && (
+                      <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>
+                        {o.description.length > 140 ? `${o.description.slice(0, 140)}…` : o.description}
+                      </div>
+                    )}
+                  </div>
+                  <button className="btn btn-primary btn-sm" onClick={() => onNav('send-offer', o)}>
+                    {isActivePlan ? 'Nabídnout se' : 'Reagovat'}
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -843,8 +799,15 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                       <span><Icon name="clock" size={13} /> {relativni(o.created_at)}</span>
                       {o.urgent && <span style={{ color: 'var(--red)' }}>🚨 Urgentní</span>}
                     </div>
+                    {o.description && (
+                      <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>
+                        {o.description.length > 140 ? `${o.description.slice(0, 140)}…` : o.description}
+                      </div>
+                    )}
                   </div>
-                  <button className="btn btn-primary btn-sm" onClick={() => onNav('send-offer', o)}>Nabídnout se</button>
+                  <button className="btn btn-primary btn-sm" onClick={() => onNav('send-offer', o)}>
+                    {isActivePlan ? 'Nabídnout se' : 'Reagovat'}
+                  </button>
                 </div>
               ))}
             </div>

@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { T, S, inp, lbl, hint } from "../ui/theme";
 import { IconBtn, BtnGhost, BtnBlue } from "../ui/Button";
-import { IcX, IcArrow, IcCheckCircle } from "../ui/icons/UIIcons";
+import { IcX, IcArrow } from "../ui/icons/UIIcons";
 import { SERVICES } from "../lib/categories";
 import { apiRegister, apiCheckEmail } from "../lib/auth.js";
 import PasswordField from "../components/PasswordField";
@@ -18,7 +18,6 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
   });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
-  const [registeredUser, setRegisteredUser] = useState(null);
   const [emailTaken, setEmailTaken] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
 
@@ -53,34 +52,18 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
     setErr(null);
     setBusy(true);
     try {
+      // Registrace je zdarma — žádný Stripe checkout. Šikula se rovnou dostane
+      // do dashboardu a tarif (aktivaci reakcí na poptávky) si vybere později sám.
       const { user } = await apiRegister({
         email:    form.email,
         password: form.password,
         name:     form.name,
         role:     "sikula",
         city:     [form.street, form.psc, form.city].filter(Boolean).join(", ") || form.city,
+        services: form.services,
       });
-      // Po registraci přesměruj na Stripe Checkout — platba 199 Kč hned, profil se aktivuje po úspěšné platbě.
-      try {
-        const res = await fetch('/api/stripe?action=checkout', {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ plan: 'aktiv' }),
-        });
-        const data = await res.json();
-        if (res.ok && data.url) {
-          window.location.href = data.url;
-          return;
-        }
-        // Stripe selhal → ukáže success s výzvou aktivovat tarif ručně
-        console.warn('Stripe checkout selhal:', data.error);
-      } catch (stripeErr) {
-        console.warn('Stripe checkout error:', stripeErr);
-      }
-      // Fallback pokud Stripe není nakonfigurován
-      setRegisteredUser({ ...user, services: form.services, plan: 'start', ico: form.ico });
-      setStep(2);
+      onRegistered({ ...user, ico: form.ico });
+      onClose();
     } catch (e) {
       setErr(e.message || "Registrace selhala.");
     } finally {
@@ -116,58 +99,6 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
     </div>
   );
 
-  if (step === 2) return (
-    <div style={S.overlay}>
-      <div style={{ ...S.modal, maxWidth: 460 }} onClick={e => e.stopPropagation()}>
-        <div style={{ padding: "48px 32px", textAlign: "center" }}>
-          <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#F0FDF4", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px", color: "#16A34A" }}>
-            <IcCheckCircle />
-          </div>
-          <h2 style={{ fontSize: 22, fontWeight: 700, color: T.ink, marginBottom: 10 }}>Účet vytvořen 🎉</h2>
-          <p style={{ color: T.ink3, fontSize: 14, lineHeight: 1.7, marginBottom: 16 }}>
-            Vítej v ŠikulaDoma, <strong>{form.name}</strong>. Aktivuj profil a začni dostávat poptávky.
-          </p>
-          <div style={{ background: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: 10, padding: "14px 16px", marginBottom: 16, textAlign: "left" }}>
-            <div style={{ fontWeight: 700, color: "#C2410C", fontSize: 13, marginBottom: 6 }}>⚡ Aktivuj profil šikuly</div>
-            <div style={{ fontSize: 13, color: "#92400E", lineHeight: 1.5 }}>
-              Platba 199 Kč / měsíc probíhá bezpečně kartou online přes platební bránu. Po úspěšné platbě se profil aktivuje. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.
-            </div>
-          </div>
-          <button onClick={async () => {
-            setBusy(true);
-            setErr(null);
-            try {
-              const r = await fetch('/api/stripe?action=checkout', {
-                method: 'POST', credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ plan: 'aktiv' }),
-              });
-              const d = await r.json();
-              if (d.url) { window.location.href = d.url; return; }
-              setErr(d.error || 'Nepodařilo se otevřít platební bránu. Zkuste to znovu nebo nás kontaktujte na info@sikuladoma.cz.');
-            } catch {
-              setErr('Nepodařilo se připojit k serveru. Zkontrolujte připojení a zkuste znovu.');
-            } finally {
-              setBusy(false);
-            }
-          }} disabled={busy}
-            style={{ width: "100%", height: 50, borderRadius: 12, border: "none", background: busy ? "#CBD5E1" : `linear-gradient(135deg,#F97316,#EA580C)`, color: "#fff", fontWeight: 700, fontSize: 15, cursor: busy ? "wait" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: busy ? "none" : "0 4px 16px rgba(249,115,22,.35)", marginBottom: 10 }}>
-            {busy ? "Připravuji platbu…" : <><span>Aktivovat profil za 199 Kč</span> <IcArrow /></>}
-          </button>
-          {err && (
-            <div style={{ marginBottom: 10, padding: "10px 14px", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, fontSize: 12, color: "#B91C1C", lineHeight: 1.5 }}>
-              {err}
-            </div>
-          )}
-          <button onClick={() => { if (registeredUser) onRegistered(registeredUser); onClose(); }}
-            style={{ background: "none", border: "none", color: T.ink3, fontSize: 13, cursor: "pointer", fontFamily: "inherit", textDecoration: "underline" }}>
-            Přejít do profilu bez aktivace
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div style={S.overlay} onClick={onClose}>
       <div style={{ ...S.modal, maxWidth: 520 }} onClick={e => e.stopPropagation()}>
@@ -176,7 +107,7 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: T.blue, marginBottom: 2 }}>
               Registrace šikuly — krok {step + 1}/2
             </div>
-            <div style={{ fontSize: 17, fontWeight: 700, color: T.ink }}>{step === 0 ? "Základní údaje" : "Služby a tarif"}</div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: T.ink }}>{step === 0 ? "Základní údaje" : "Služby"}</div>
           </div>
           <IconBtn onClick={onClose}><IcX /></IconBtn>
         </div>
@@ -214,9 +145,9 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
                   );
                 })}
               </div>
-              <div style={{ padding: "16px 13px", borderRadius: 12, border: `2px solid ${T.orange}`, background: "linear-gradient(135deg,#FFF7ED,#FFEDD5)", textAlign: "center", boxShadow: "0 2px 12px rgba(249,115,22,.15)" }}>
-                <div style={{ fontWeight: 800, fontSize: 15, color: T.orangeDk, marginBottom: 4 }}>Aktivní šikula — 199 Kč / měsíc</div>
-                <div style={{ fontSize: 13, color: T.ink3 }}>Platba probíhá bezpečně kartou online přes platební bránu. Po úspěšné platbě se profil aktivuje.</div>
+              <div style={{ padding: "16px 13px", borderRadius: 12, border: `1.5px solid ${T.border}`, background: T.blueLight, textAlign: "center" }}>
+                <div style={{ fontWeight: 800, fontSize: 15, color: T.ink, marginBottom: 4 }}>Registrace je zdarma</div>
+                <div style={{ fontSize: 13, color: T.ink3 }}>Po registraci uvidíte poptávky ve svém okolí. Tarif pro reakce na poptávky a kontakt se zákazníky si vyberete později v profilu.</div>
               </div>
             </div>
           )}
@@ -240,7 +171,7 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
           }}>
             {step === 0
               ? (checkingEmail ? <><span style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid rgba(255,255,255,.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginRight: 8 }} /> Ověřuji e-mail…</> : <>Pokračovat <IcArrow /></>)
-              : (busy ? <><span style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid rgba(255,255,255,.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginRight: 8 }} /> Zpracovávám…</> : <>Pokračovat k platbě <IcArrow /></>)}
+              : (busy ? <><span style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid rgba(255,255,255,.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginRight: 8 }} /> Zpracovávám…</> : <>Dokončit registraci <IcArrow /></>)}
           </BtnBlue>
         </div>
       </div>
