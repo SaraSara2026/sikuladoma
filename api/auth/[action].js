@@ -122,6 +122,22 @@ async function doRegister(req, res) {
               jobs_count, subscription_status, plan_expires_at, stripe_customer_id, stripe_subscription_id
   `;
 
+  // Nový účet dostane odpovídající profil rovnou při vzniku, ať profilové
+  // tabulky nezaostávají za novými registracemi. Plan zůstává NULL (žádný
+  // aktivní tarif), subscription_status defaultně 'inactive' — beze změny
+  // stávající logiky, jen se profil zapíše i do nové tabulky.
+  if (role === 'sikula') {
+    await sql`
+      INSERT INTO sikula_profiles (user_id, services) VALUES (${user.id}, ${svc})
+      ON CONFLICT (user_id) DO NOTHING
+    `;
+  } else if (role === 'customer') {
+    await sql`
+      INSERT INTO customer_profiles (user_id) VALUES (${user.id})
+      ON CONFLICT (user_id) DO NOTHING
+    `;
+  }
+
   // Vytvoř verifikační token + pošli email. Pokud Resend selže (např. chybí klíč
   // v dev prostředí), registrace nesmí spadnout — uživatel se přihlásí a vidí banner.
   try {

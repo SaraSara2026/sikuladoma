@@ -98,6 +98,15 @@ async function createOrder(req, res) {
     }
   }
 
+  // Kdokoliv projde touto cestou (nový účet, ověřený existující účet, i šikula
+  // zadávající poptávku pod vlastním e-mailem) dostane customer_profiles řádek —
+  // aby nezaostávaly za nově vznikajícími účty. Nemění to routing ani chování,
+  // jen udržuje profilové tabulky v aktuálním stavu.
+  await sql`
+    INSERT INTO customer_profiles (user_id) VALUES (${customerId})
+    ON CONFLICT (user_id) DO NOTHING
+  `;
+
   const [row] = await sql`
     INSERT INTO orders (
       customer_id, customer_name, customer_email, customer_phone,
