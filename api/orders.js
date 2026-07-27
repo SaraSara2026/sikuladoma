@@ -42,12 +42,21 @@ async function createOrder(req, res) {
   // Verify check je až u akcí které spotřebovávají čas šikulovi:
   // odeslání nabídky (api/offers) a chat zprávy (api/messages).
 
-  const customer_name  = String((b.customer_name || b.name || me?.name || '')).trim();
-  const customer_email = String((b.customer_email || b.email || me?.email || '')).trim().toLowerCase();
-  const customer_phone = b.customer_phone || b.phone || me?.phone || null;
-  // Heslo se řeší jen pro anonymní (nepřihlášené) zadání — přihlášený uživatel
-  // má účet a heslo už dávno hotové.
-  const password = me ? null : String(b.password || '');
+  const customer_email_typed = String(b.customer_email || b.email || '').trim().toLowerCase();
+
+  // Session se použije JEN pokud e-mail ve formuláři odpovídá přihlášenému účtu
+  // (nebo formulář e-mail vůbec neposlal, a bereme tedy identitu ze session).
+  // Jinak by se poptávka — a nově zadané heslo — mohly omylem přiřadit k cizí
+  // nebo zapomenuté staré session. Při shodě e-mailu je to v pořádku i pro
+  // šikulu, co si zadává vlastní poptávku pod stejným účtem.
+  const useExistingSession = !!me && (!customer_email_typed || (me.email && me.email.toLowerCase() === customer_email_typed));
+
+  const customer_name  = String((b.customer_name || b.name || (useExistingSession ? me?.name : '') || '')).trim();
+  const customer_email = customer_email_typed || (useExistingSession ? String(me?.email || '').toLowerCase() : '');
+  const customer_phone = b.customer_phone || b.phone || (useExistingSession ? me?.phone : null) || null;
+  // Heslo se řeší jen když session nepoužíváme — přihlášený uživatel se stejným
+  // e-mailem má účet a heslo už dávno hotové.
+  const password = useExistingSession ? null : String(b.password || '');
 
   if (title.length < 3)                              return res.status(400).json({ error: 'Zadejte název poptávky (min. 3 znaky).' });
   if (!category)                                     return res.status(400).json({ error: 'Vyberte kategorii.' });
@@ -55,16 +64,16 @@ async function createOrder(req, res) {
   if (!customer_name)                                return res.status(400).json({ error: 'Zadejte své jméno.' });
   if (!/^\S+\s+\S+/.test(customer_name))             return res.status(400).json({ error: 'Zadejte jméno i příjmení.' });
   if (!EMAIL_RE.test(customer_email))                return res.status(400).json({ error: 'Zadejte platný e-mail.' });
-  if (!me && (!password || password.length < 8))    return res.status(400).json({ error: 'Zadejte heslo (min. 8 znaků).' });
+  if (!useExistingSession && (!password || password.length < 8)) return res.status(400).json({ error: 'Zadejte heslo (min. 8 znaků).' });
 
-  // Anonymní poptávka: klient si zadal vlastní heslo rovnou ve formuláři —
+  // Anonymní / cizí poptávka: klient si zadal vlastní heslo rovnou ve formuláři —
   // žádný reset-link, žádné čekání na e-mail.
   // Pokud e-mail už v DB existuje, heslo jen OVĚŘÍME (nikdy nepřepisujeme cizí
   // password_hash) — sedí-li, přihlásíme; nesedí-li, poptávku přesto uložíme,
   // ale bez přihlášení (ochrana před převzetím cizího účtu).
-  let customerId = me?.id || null;
-  const isAnonymous = !me;
-  let loggedIn = !!me;
+  let customerId = useExistingSession ? me.id : null;
+  const isAnonymous = !useExistingSession;
+  let loggedIn = useExistingSession;
   let accountConflict = false;
 
   if (!customerId) {
