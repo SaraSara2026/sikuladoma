@@ -131,8 +131,8 @@ function useMyOffers() {
   return { offers, loading, error, reload: () => setBump(x => x + 1) }
 }
 
-// lock: 'plan' = vyžaduje alespoň Aktivní šikula (399 Kč)
-// lock: 'plus'  = vyžaduje Aktivní šikula Plus (499 Kč)
+// lock: 'plan' = vyžaduje alespoň Aktivní šikula (199 Kč)
+// lock: 'plus'  = vyžaduje Aktivní šikula Plus (299 Kč)
 const menuItems = [
   { id: 'profile',      icon: '👤', label: 'Profil šikuly' },
   { id: 'overview',     icon: '📊', label: 'Přehled' },
@@ -159,12 +159,12 @@ function LockedScreen({ type, onActivate }) {
         </h2>
         <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.7, marginBottom: 24 }}>
           {isPlus
-            ? 'Tato funkce je dostupná v tarifu Aktivní šikula Plus za 499 Kč / měsíc.'
-            : 'Tato funkce je dostupná po aktivaci profilu. Aktivujte tarif Aktivní šikula za 399 Kč / měsíc.'}
+            ? 'Tato funkce je dostupná v tarifu Aktivní šikula Plus za 299 Kč / měsíc.'
+            : 'Tato funkce je dostupná po aktivaci profilu. Aktivujte tarif Aktivní šikula za 199 Kč / měsíc.'}
         </p>
         <button onClick={onActivate}
           style={{ height: 48, padding: '0 28px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#F97316,#EA580C)', color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 16px rgba(249,115,22,.35)', marginBottom: 14 }}>
-          {isPlus ? 'Aktivovat Plus za 499 Kč' : 'Aktivovat profil za 399 Kč'}
+          {isPlus ? 'Aktivovat Plus za 299 Kč' : 'Aktivovat profil za 199 Kč'}
         </button>
         <p style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.6 }}>
           {isPlus
@@ -303,9 +303,9 @@ function VylepseniProfilu({ currentUser, onLogout }) {
     {
       id: 'aktiv',
       name: 'Aktivní šikula',
-      monthlyPrice: 399,
-      yearlyPrice: 4500,
-      yearlyOriginal: 4788,
+      monthlyPrice: 199,
+      yearlyPrice: 2240,
+      yearlyOriginal: 2388,
       color: '#F97316',
       border: '#FED7AA',
       features: [
@@ -316,6 +316,7 @@ function VylepseniProfilu({ currentUser, onLogout }) {
         'Recenze',
         'Zobrazení zákazníkům',
         'Možnost reagovat na poptávky',
+        'Bez kreditů za odpovědi',
         'Žádná provize ze zakázky',
         'Zákazník platí přímo šikulovi',
       ],
@@ -323,14 +324,15 @@ function VylepseniProfilu({ currentUser, onLogout }) {
     {
       id: 'aktiv-plus',
       name: 'Aktivní šikula Plus',
-      monthlyPrice: 499,
-      yearlyPrice: 5500,
-      yearlyOriginal: 5988,
+      monthlyPrice: 299,
+      yearlyPrice: 3300,
+      yearlyOriginal: 3588,
       color: '#7C3AED',
       border: '#C4B5FD',
       badge: 'Více funkcí',
       features: [
         'Vše z tarifu Aktivní šikula',
+        'Bez kreditů za odpovědi',
         'Přehled zakázek na jednom místě',
         'Kalendář zakázek',
         'Jednoduchý fakturovač',
@@ -384,6 +386,14 @@ function VylepseniProfilu({ currentUser, onLogout }) {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Info blok — bez kreditů, jedna měsíční cena */}
+      <div style={{ marginBottom: 24, padding: '18px 22px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 14 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#166534', marginBottom: 6 }}>Žádné kredity. Žádné skryté poplatky. Jen jedna měsíční cena.</div>
+        <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.6, margin: 0 }}>
+          U ŠikulaDoma neplatíte za každou odpověď zvlášť. Neřešíte kredity ani to, jestli se vám poptávka vyplatí otevřít. Máte jeden jasný měsíční tarif a zákazník platí přímo vám.
+        </p>
       </div>
 
       {/* Tarifní boxy */}
@@ -731,7 +741,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                 <div className="stat-label">Odeslané nabídky</div>
               </div>
             </div>
-            {/* Upgrade banner — pro Aktivní šikula (399 Kč), nabízí Plus (499 Kč) */}
+            {/* Upgrade banner — pro Aktivní šikula (199 Kč), nabízí Plus (299 Kč) */}
             {isActivePlan && currentPlanId === 'aktiv' && (
               <div style={{
                 marginBottom: 20,
@@ -743,7 +753,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
               }}>
                 <div>
                   <div style={{ fontWeight: 700, marginBottom: 4 }}>⭐ Aktivní šikula Plus</div>
-                  <div style={{ fontSize: 13, color: 'var(--text2)' }}>S tariferem Aktivní šikula Plus (499 Kč) získáte kalendář, fakturovač a přehled příjmů.</div>
+                  <div style={{ fontSize: 13, color: 'var(--text2)' }}>S tariferem Aktivní šikula Plus (299 Kč) získáte kalendář, fakturovač a přehled příjmů.</div>
                 </div>
                 <button className="btn btn-primary btn-sm" onClick={() => setActivePage('membership')}>
                   Zobrazit tarify →
@@ -761,12 +771,12 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                   <div style={{ fontSize: 32, marginBottom: 12 }}>🔒</div>
                   <div style={{ fontSize: 15, fontWeight: 700, color: '#1A1F2E', marginBottom: 8 }}>Aktivujte profil a začněte přijímat poptávky</div>
                   <div style={{ fontSize: 13, color: '#6B7280', marginBottom: 20, lineHeight: 1.6 }}>
-                    S tarifem Aktivní šikula za 399 Kč / měsíc se zobrazíte zákazníkům ve vaší lokalitě a budete moci reagovat na poptávky.
+                    S tarifem Aktivní šikula za 199 Kč / měsíc se zobrazíte zákazníkům ve vaší lokalitě a budete moci reagovat na poptávky.
                   </div>
                   <button onClick={() => doCheckout('aktiv', setOvBusy, setOvErr, onLogout)}
                     disabled={ovBusy}
                     style={{ height: 44, padding: '0 24px', borderRadius: 10, border: 'none', background: ovBusy ? '#9CA3AF' : 'linear-gradient(135deg,#F97316,#EA580C)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: ovBusy ? 'wait' : 'pointer', fontFamily: 'inherit', transition: 'background .2s' }}>
-                    {ovBusy ? 'Přesměrovávám na platbu…' : 'Aktivovat profil za 399 Kč'}
+                    {ovBusy ? 'Přesměrovávám na platbu…' : 'Aktivovat profil za 199 Kč'}
                   </button>
                   {ovErr && (
                     <div style={{ marginTop: 12, padding: '8px 12px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, fontSize: 12, color: '#B91C1C' }}>
