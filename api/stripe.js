@@ -64,21 +64,35 @@ function constructStripeEvent(rawBody, sig, secret) {
 
 // ── Plan konfigurace ───────────────────────────────────────────────────────────
 
+// Forward lookup (checkout): plan + billing period → Stripe Price ID.
+// 'yearly' má smysl jen u subscripčních tarifů aktiv/aktiv-plus.
 const PRICE_IDS = {
-  aktiv:        () => process.env.STRIPE_PRICE_AKTIV,
-  'aktiv-plus': () => process.env.STRIPE_PRICE_PLUS,
+  aktiv:        (billing) => billing === 'yearly' ? process.env.STRIPE_PRICE_AKTIV_YEARLY : process.env.STRIPE_PRICE_AKTIV,
+  'aktiv-plus': (billing) => billing === 'yearly' ? process.env.STRIPE_PRICE_PLUS_YEARLY  : process.env.STRIPE_PRICE_PLUS,
   plus:         () => process.env.STRIPE_PRICE_PLUS,
   profi:        () => process.env.STRIPE_PRICE_PROFI,
   top:          () => process.env.STRIPE_PRICE_TOP,
 };
 
 const ENV_NAMES = {
-  aktiv:        'STRIPE_PRICE_AKTIV',
-  'aktiv-plus': 'STRIPE_PRICE_PLUS',
-  plus:         'STRIPE_PRICE_PLUS',
-  profi:        'STRIPE_PRICE_PROFI',
-  top:          'STRIPE_PRICE_TOP',
+  aktiv:        (billing) => billing === 'yearly' ? 'STRIPE_PRICE_AKTIV_YEARLY' : 'STRIPE_PRICE_AKTIV',
+  'aktiv-plus': (billing) => billing === 'yearly' ? 'STRIPE_PRICE_PLUS_YEARLY'  : 'STRIPE_PRICE_PLUS',
+  plus:         () => 'STRIPE_PRICE_PLUS',
+  profi:        () => 'STRIPE_PRICE_PROFI',
+  top:          () => 'STRIPE_PRICE_TOP',
 };
+
+// Reverzní lookup (webhook): Stripe Price ID → kanonický plan ('aktiv'/'aktiv-plus').
+// Měsíční i roční cena stejného tarifu se musí namapovat na STEJNÝ plan id —
+// do users.plan se nikdy nezapisuje "-yearly" varianta (viz DB constraint).
+function planFromPriceId(priceId) {
+  if (!priceId) return null;
+  if (priceId === process.env.STRIPE_PRICE_AKTIV || priceId === process.env.STRIPE_PRICE_AKTIV_YEARLY) return 'aktiv';
+  if (priceId === process.env.STRIPE_PRICE_PLUS  || priceId === process.env.STRIPE_PRICE_PLUS_YEARLY)  return 'aktiv-plus';
+  if (priceId === process.env.STRIPE_PRICE_PROFI) return 'profi';
+  if (priceId === process.env.STRIPE_PRICE_TOP)   return 'top';
+  return null;
+}
 
 const PLAN_NAMES = {
   aktiv:        'Aktivní šikula',
@@ -140,13 +154,16 @@ export default async function handler(req, res) {
 // ── POST /api/stripe?action=checkout ──────────────────────────────────────────
 
 async function handleCheckout(req, res, me, sql) {
-  const { plan = 'aktiv' } = req.body ?? {};
+  const { plan = 'aktiv', billing = 'monthly' } = req.body ?? {};
   if (!PLAN_NAMES[plan]) {
     return res.status(400).json({ error: 'Neplatný plán.' });
   }
-  const priceId = PRICE_IDS[plan]();
+  if (billing !== 'monthly' && billing !== 'yearly') {
+    return res.status(400).json({ error: 'Neplatné zúčtovací období.' });
+  }
+  const priceId = PRICE_IDS[plan](billing);
   if (!priceId) {
-    return res.status(503).json({ error: `${ENV_NAMES[plan] || 'STRIPE_PRICE_?'} není nastaven v env.` });
+    return res.status(503).json({ error: `${ENV_NAMES[plan]?.(billing) || 'STRIPE_PRICE_?'} není nastaven v env.` });
   }
 
   // Bezpečný diagnostický log — nikdy nevypisuje celý klíč, jen režim (live/test),
@@ -160,6 +177,7 @@ async function handleCheckout(req, res, me, sql) {
     nodeEnv: process.env.NODE_ENV,
     vercelEnv: process.env.VERCEL_ENV,
     plan,
+    billing,
     priceIdPrefix: priceId.slice(0, 12),
   });
   if (keyMode !== 'live' && process.env.VERCEL_ENV === 'production') {
@@ -332,7 +350,7 @@ async function processEvent(event, sql) {
       if (!userId) break;
 
       const priceId = sub.items?.data?.[0]?.price?.id;
-      const plan = Object.entries(PRICE_IDS).find(([, fn]) => fn() === priceId)?.[0] || 'aktiv';
+      const plan = planFromPriceId(priceId) || 'aktiv';
 
       const expiresAt = sub.current_period_end
         ? new Date(sub.current_period_end * 1000).toISOString() : null;
@@ -390,7 +408,7 @@ async function processEvent(event, sql) {
             expiresAt = new Date(sub.current_period_end * 1000).toISOString();
           }
           const priceId = sub.items?.data?.[0]?.price?.id;
-          plan = Object.entries(PRICE_IDS).find(([, fn]) => fn() === priceId)?.[0] || null;
+          plan = planFromPriceId(priceId);
         } catch (e) {
           console.warn('[stripe/webhook] Could not retrieve subscription for invoice:', e.message);
         }

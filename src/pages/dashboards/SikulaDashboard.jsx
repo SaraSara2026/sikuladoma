@@ -272,12 +272,12 @@ function VylepseniProfilu({ currentUser, onLogout }) {
       const r = await fetch('/api/stripe?action=checkout', {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, billing }),
       })
       const text = await r.text()
       let d = null
       try { d = JSON.parse(text) } catch { /* non-JSON */ }
-      console.log('[stripe/checkout] HTTP', r.status, 'plan:', plan, 'raw:', text.slice(0, 500))
+      console.log('[stripe/checkout] HTTP', r.status, 'plan:', plan, 'billing:', billing, 'raw:', text.slice(0, 500))
       if (d?.url) { window.location.href = d.url; return }
       if (r.status === 401) {
         console.warn('[stripe/checkout] session expired/invalid, code:', d?.code)
