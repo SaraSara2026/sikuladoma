@@ -1,19 +1,12 @@
 // /api/orders — GET (list) + POST (create)
 // PATCH/:id je v api/orders/[id].js (Vercel optional catch-all nematchuje base path).
 
-import { randomBytes } from 'node:crypto';
 import { sql } from './_db.js';
-import { getCurrentUser, hashPassword } from './_auth.js';
-import { sendPasswordResetEmail } from './_email.js';
+import { getCurrentUser, hashPassword, verifyPassword, signToken, setSessionCookie } from './_auth.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const STATUS_NEW = 'new';
 const VALID_GENDER = new Set(['jedno', 'zena', 'muz']);
-const RESET_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;  // 7 dní pro nově vytvořené účty
-
-function genToken() {
-  return randomBytes(32).toString('base64url');
-}
 
 export default async function handler(req, res) {
   try {
@@ -52,6 +45,9 @@ async function createOrder(req, res) {
   const customer_name  = String((b.customer_name || b.name || me?.name || '')).trim();
   const customer_email = String((b.customer_email || b.email || me?.email || '')).trim().toLowerCase();
   const customer_phone = b.customer_phone || b.phone || me?.phone || null;
+  // Heslo se řeší jen pro anonymní (nepřihlášené) zadání — přihlášený uživatel
+  // má účet a heslo už dávno hotové.
+  const password = me ? null : String(b.password || '');
 
   if (title.length < 3)                              return res.status(400).json({ error: 'Zadejte název poptávky (min. 3 znaky).' });
   if (!category)                                     return res.status(400).json({ error: 'Vyberte kategorii.' });
@@ -59,25 +55,37 @@ async function createOrder(req, res) {
   if (!customer_name)                                return res.status(400).json({ error: 'Zadejte své jméno.' });
   if (!/^\S+\s+\S+/.test(customer_name))             return res.status(400).json({ error: 'Zadejte jméno i příjmení.' });
   if (!EMAIL_RE.test(customer_email))                return res.status(400).json({ error: 'Zadejte platný e-mail.' });
+  if (!me && (!password || password.length < 8))    return res.status(400).json({ error: 'Zadejte heslo (min. 8 znaků).' });
 
-  // Anonymní poptávka: vytvoř customer účet + pošli email s nastavením hesla.
-  // Pokud už účet s tímto e-mailem existuje, použij ho a pošli mu reset link
-  // (pomůže obnovit přístup, pokud zapomněl heslo).
+  // Anonymní poptávka: klient si zadal vlastní heslo rovnou ve formuláři —
+  // žádný reset-link, žádné čekání na e-mail.
+  // Pokud e-mail už v DB existuje, heslo jen OVĚŘÍME (nikdy nepřepisujeme cizí
+  // password_hash) — sedí-li, přihlásíme; nesedí-li, poptávku přesto uložíme,
+  // ale bez přihlášení (ochrana před převzetím cizího účtu).
   let customerId = me?.id || null;
   const isAnonymous = !me;
+  let loggedIn = !!me;
+  let accountConflict = false;
+
   if (!customerId) {
-    const [existing] = await sql`SELECT id FROM users WHERE email = ${customer_email}`;
+    const [existing] = await sql`SELECT id, password_hash FROM users WHERE email = ${customer_email}`;
     if (existing) {
       customerId = existing.id;
+      const matches = await verifyPassword(password, existing.password_hash);
+      if (matches) {
+        loggedIn = true;
+      } else {
+        accountConflict = true;
+      }
     } else {
-      const randomPassword = randomBytes(32).toString('base64url');
-      const password_hash = await hashPassword(randomPassword);
+      const password_hash = await hashPassword(password);
       const [newUser] = await sql`
         INSERT INTO users (email, password_hash, role, name, phone, city)
         VALUES (${customer_email}, ${password_hash}, 'customer', ${customer_name}, ${customer_phone}, ${city})
         RETURNING id
       `;
       customerId = newUser.id;
+      loggedIn = true;
     }
   }
 
@@ -94,25 +102,22 @@ async function createOrder(req, res) {
     RETURNING *
   `;
 
-  // Anonymní poptávka → pošli reset-password email pro nastavení / obnovu hesla.
-  // Selhání emailu nesmí zrušit poptávku — uživatel ji už má v DB.
-  if (isAnonymous) {
-    try {
-      // Smaž stará nepoužitá tokeny aby měl jen nejnovější
-      await sql`DELETE FROM password_resets WHERE user_id = ${customerId} AND used_at IS NULL`;
-      const token = genToken();
-      const expires = new Date(Date.now() + RESET_TOKEN_TTL_MS);
-      await sql`
-        INSERT INTO password_resets (token, user_id, expires_at)
-        VALUES (${token}, ${customerId}, ${expires.toISOString()})
-      `;
-      await sendPasswordResetEmail({ to: customer_email, name: customer_name, token });
-    } catch (err) {
-      console.error('[orders] welcome email failed:', err);
-    }
+  // Nově vytvořený nebo úspěšně ověřený anonymní zákazník → rovnou přihlásit
+  // (session cookie i vrácený `user` objekt, ať si ho frontend uloží do stavu).
+  let user = null;
+  if (isAnonymous && loggedIn) {
+    const token = await signToken({ sub: String(customerId), role: 'customer' });
+    setSessionCookie(res, token);
+    [user] = await sql`
+      SELECT id, email, role, name, phone, city, avatar, ico, services, plan,
+             stripe_customer_id, stripe_subscription_id, plan_expires_at,
+             verified, email_verified_at, rating, jobs_count, bio,
+             hourly_rate, platce_dph, subscription_status, trial_ends_at
+      FROM users WHERE id = ${customerId}
+    `;
   }
 
-  return res.status(201).json({ order: row, emailSent: isAnonymous });
+  return res.status(201).json({ order: row, loggedIn, accountConflict, user });
 }
 
 async function listOrders(req, res) {

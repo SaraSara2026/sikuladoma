@@ -504,7 +504,7 @@ export default function App() {
       </>)}
       </Layout>
 
-      {orderForm !== null && <OrderForm initialService={orderForm.service} initialCategory={orderForm.category} initialCity={orderForm.city} onClose={() => setOrderForm(null)} onHome={() => { setPage("home"); window.history.replaceState({}, '', '/'); window.scrollTo(0, 0); }} />}
+      {orderForm !== null && <OrderForm initialService={orderForm.service} initialCategory={orderForm.category} initialCity={orderForm.city} onClose={() => setOrderForm(null)} onHome={() => { setPage("home"); window.history.replaceState({}, '', '/'); window.scrollTo(0, 0); }} onLoggedIn={updateSikula} />}
       {regForm   !== null && <RegForm   plan={regForm.plan} onClose={() => setRegForm(null)} onRegistered={loginSikula}
         onLogin={() => setLoginModal(true)}
         onForgot={() => { setPage("forgot-password"); window.scrollTo(0, 0); }} />}

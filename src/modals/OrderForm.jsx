@@ -12,11 +12,12 @@ import {
   IcMapPin, IcTag, IcClock, IcFlame, IcZap, IcCalendar, IcShield,
 } from "../ui/icons/UIIcons";
 import { CATEGORIES, SUBCATEGORIES, CAT_COLORS } from "../lib/categories";
+import PasswordField from "../components/PasswordField";
 
 const STEP_LABELS = ["Kategorie", "Služba", "Upřesnění", "Místo", "Čas", "Kontakt"];
 const TOTAL = 6;
 
-export default function OrderForm({ initialService, initialCategory, initialCity, onClose, onHome }) {
+export default function OrderForm({ initialService, initialCategory, initialCity, onClose, onHome, onLoggedIn }) {
   const initCat = initialService
     ? CATEGORIES.find(c => c.id === initialService.id) || null
     : initialCategory
@@ -35,7 +36,9 @@ export default function OrderForm({ initialService, initialCategory, initialCity
   const [name, setName]     = useState("");
   const [email, setEmail]   = useState("");
   const [phone, setPhone]   = useState("");
+  const [password, setPassword] = useState("");
   const [done, setDone]     = useState(false);
+  const [accountConflict, setAccountConflict] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitErr, setSubmitErr]   = useState(null);
 
@@ -49,7 +52,7 @@ export default function OrderForm({ initialService, initialCategory, initialCity
     if (step === 4) return !!priority;
     if (step === 5) {
       const fullName = name.trim();
-      return /^\S+\s+\S+/.test(fullName) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && gdprOk;
+      return /^\S+\s+\S+/.test(fullName) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && password.length >= 8 && gdprOk;
     }
     return false;
   };
@@ -75,10 +78,13 @@ export default function OrderForm({ initialService, initialCategory, initialCity
           customer_name: name.trim(),
           customer_email: email.trim().toLowerCase(),
           customer_phone: phone,
+          password,
         }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Poptávku se nepodařilo odeslat.');
+      setAccountConflict(!!data.accountConflict);
+      if (data.loggedIn && data.user) onLoggedIn?.(data.user);
       setDone(true);
     } catch (e) {
       setSubmitErr(e.message || 'Něco se pokazilo. Zkuste to znovu.');
@@ -98,17 +104,19 @@ export default function OrderForm({ initialService, initialCategory, initialCity
             <IcCheckCircle />
           </div>
           <h2 style={{ fontSize: 21, fontWeight: 700, color: T.ink, marginBottom: 8, letterSpacing: "-.02em" }}>
-            Hotovo. Šikulové už o vás vědí.
+            Hotovo. Poptávka byla odeslána.
           </h2>
-          <p style={{ color: T.ink3, fontSize: 14, lineHeight: 1.65, marginBottom: 18 }}>
-            Do pár minut začnete dostávat nabídky od šikulů z okolí.
-          </p>
-          <div style={{ background: "#FEF3C7", border: "1px solid #FCD34D", borderRadius: 10, padding: "14px 16px", marginBottom: 18, textAlign: "left" }}>
-            <div style={{ fontWeight: 700, color: "#92400E", fontSize: 13, marginBottom: 6 }}>📧 Zkontrolujte e-mail</div>
-            <div style={{ fontSize: 13, color: "#78350F", lineHeight: 1.55 }}>
-              Poslali jsme vám odkaz na <strong>{email}</strong>, kde si nastavíte heslo. Pak uvidíte všechny nabídky a budete moci chatovat se šikuly.
+          {accountConflict ? (
+            <div style={{ background: "#FEF3C7", border: "1px solid #FCD34D", borderRadius: 10, padding: "14px 16px", marginBottom: 18, textAlign: "left" }}>
+              <div style={{ fontSize: 13, color: "#78350F", lineHeight: 1.55 }}>
+                Tento e-mail už u nás má účet. Poptávka byla odeslána, ale nepřihlásili jsme vás. Přihlaste se prosím svým heslem, nebo si heslo obnovte.
+              </div>
             </div>
-          </div>
+          ) : (
+            <p style={{ color: T.ink3, fontSize: 14, lineHeight: 1.65, marginBottom: 18 }}>
+              Poptávku jsme předali šikulům ve vašem okolí. Jste přihlášeni a nabídky najdete ve svém účtu.
+            </p>
+          )}
           <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 10, padding: "12px 16px", marginBottom: 20, textAlign: "left" }}>
             {["Průměrná první reakce do 2 hodin", "Nabídky zdarma", "Platíte až po dokončení práce"].map(t => (
               <div key={t} style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 7, fontSize: 13, color: T.ink2 }}>
@@ -138,8 +146,8 @@ export default function OrderForm({ initialService, initialCategory, initialCity
             <BtnGhost onClick={() => {
               setCat(null); setSubSvc(null); setDesc("");
               setStreet(""); setPsc(""); setCity(""); setFloor("");
-              setPrio(null); setName(""); setEmail(""); setPhone("");
-              setGdprOk(false); setSubmitErr(null); setDone(false); setStep(0);
+              setPrio(null); setName(""); setEmail(""); setPhone(""); setPassword("");
+              setGdprOk(false); setSubmitErr(null); setAccountConflict(false); setDone(false); setStep(0);
             }}>
               Zadat další poptávku
             </BtnGhost>
@@ -308,11 +316,12 @@ export default function OrderForm({ initialService, initialCategory, initialCity
             <div>
               <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 9, padding: "12px 14px", marginBottom: 16, fontSize: 13, color: T.blueDark, lineHeight: 1.5 }}>
                 <div style={{ fontWeight: 600, marginBottom: 4 }}>📧 Účet vám vytvoříme automaticky</div>
-                Po odeslání poptávky vám pošleme e-mail s odkazem, kde si nastavíte heslo. Pak uvidíte všechny nabídky a budete moci chatovat se šikuly.
+                Zadejte si rovnou heslo — po odeslání poptávky budete přihlášeni a uvidíte všechny nabídky i chat se šikuly.
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
                 <div><label style={lbl}>Jméno a příjmení *</label><input value={name} onChange={e => setName(e.target.value)} placeholder="Jana Nováková" style={inp} autoFocus /></div>
                 <div><label style={lbl}>E-mail *</label><input value={email} onChange={e => setEmail(e.target.value)} placeholder="vas@email.cz" type="email" autoComplete="email" style={inp} /></div>
+                <div><label style={lbl}>Heslo * (min. 8 znaků)</label><PasswordField value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" /></div>
                 <div><label style={lbl}>Telefon</label><input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+420 777 000 000" type="tel" autoComplete="tel" style={inp} /></div>
               </div>
               <label style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 16, padding: "12px 14px", background: T.bg, border: `1px solid ${T.border}`, borderRadius: 10, cursor: "pointer", fontSize: 13, color: T.ink2, lineHeight: 1.55 }}>
