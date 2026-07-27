@@ -35,11 +35,11 @@ const FAQ_CUSTOMERS = [
 const FAQ_SIKULOVE = [
   {
     q: 'Kolik mě stojí registrace jako šikula?',
-    a: 'Aktivní šikula stojí <strong>399 Kč / měsíc</strong>. Platba probíhá bezpečně kartou online přes platební bránu. Po úspěšné platbě se profil aktivuje a můžete přijímat poptávky. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.',
+    a: 'Aktivní šikula stojí <strong>199 Kč / měsíc</strong>. Platba probíhá bezpečně kartou online přes platební bránu. Po úspěšné platbě se profil aktivuje a můžete přijímat poptávky. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.',
   },
   {
     q: 'Mohu jako šikula reagovat na poptávky bez omezení?',
-    a: 'Ano. S tarifem <strong>Aktivní šikula (399 Kč / měsíc)</strong> reagujete na poptávky bez omezení počtu. Tarif se obnovuje každý měsíc a zrušit ho lze kdykoliv přímo v dashboardu.',
+    a: 'Ano. S tarifem <strong>Aktivní šikula (199 Kč / měsíc)</strong> reagujete na poptávky bez omezení počtu. Tarif se obnovuje každý měsíc a zrušit ho lze kdykoliv přímo v dashboardu.',
   },
   {
     q: 'Můžu kdykoliv změnit nebo zrušit tarif?',
@@ -51,7 +51,7 @@ const FAQ_SIKULOVE = [
   },
   {
     q: 'Musím odvádět z výdělků daně?',
-    a: 'Ano, jako samostatně výdělečně činná osoba (OSVČ) odvádíte daně sami. Pomůže vám <strong>fakturovač</strong>, který je součástí tarifu <strong>Aktivní šikula Plus za 499 Kč / měsíc</strong> — vystavíte fakturu, stáhnete PDF, pošlete zákazníkovi.',
+    a: 'Ano, jako samostatně výdělečně činná osoba (OSVČ) odvádíte daně sami. Pomůže vám <strong>fakturovač</strong>, který je součástí tarifu <strong>Aktivní šikula Plus za 299 Kč / měsíc</strong> — vystavíte fakturu, stáhnete PDF, pošlete zákazníkovi.',
   },
   {
     q: 'Co když mi zákazník nezaplatí?',

@@ -60,7 +60,7 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
         role:     "sikula",
         city:     [form.street, form.psc, form.city].filter(Boolean).join(", ") || form.city,
       });
-      // Po registraci přesměruj na Stripe Checkout — platba 399 Kč hned, profil se aktivuje po úspěšné platbě.
+      // Po registraci přesměruj na Stripe Checkout — platba 199 Kč hned, profil se aktivuje po úspěšné platbě.
       try {
         const res = await fetch('/api/stripe?action=checkout', {
           method: 'POST',
@@ -130,7 +130,7 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
           <div style={{ background: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: 10, padding: "14px 16px", marginBottom: 16, textAlign: "left" }}>
             <div style={{ fontWeight: 700, color: "#C2410C", fontSize: 13, marginBottom: 6 }}>⚡ Aktivuj profil šikuly</div>
             <div style={{ fontSize: 13, color: "#92400E", lineHeight: 1.5 }}>
-              Platba 399 Kč / měsíc probíhá bezpečně kartou online přes platební bránu. Po úspěšné platbě se profil aktivuje. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.
+              Platba 199 Kč / měsíc probíhá bezpečně kartou online přes platební bránu. Po úspěšné platbě se profil aktivuje. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.
             </div>
           </div>
           <button onClick={async () => {
@@ -152,7 +152,7 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
             }
           }} disabled={busy}
             style={{ width: "100%", height: 50, borderRadius: 12, border: "none", background: busy ? "#CBD5E1" : `linear-gradient(135deg,#F97316,#EA580C)`, color: "#fff", fontWeight: 700, fontSize: 15, cursor: busy ? "wait" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: busy ? "none" : "0 4px 16px rgba(249,115,22,.35)", marginBottom: 10 }}>
-            {busy ? "Připravuji platbu…" : <><span>Aktivovat profil za 399 Kč</span> <IcArrow /></>}
+            {busy ? "Připravuji platbu…" : <><span>Aktivovat profil za 199 Kč</span> <IcArrow /></>}
           </button>
           {err && (
             <div style={{ marginBottom: 10, padding: "10px 14px", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, fontSize: 12, color: "#B91C1C", lineHeight: 1.5 }}>
@@ -215,7 +215,7 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
                 })}
               </div>
               <div style={{ padding: "16px 13px", borderRadius: 12, border: `2px solid ${T.orange}`, background: "linear-gradient(135deg,#FFF7ED,#FFEDD5)", textAlign: "center", boxShadow: "0 2px 12px rgba(249,115,22,.15)" }}>
-                <div style={{ fontWeight: 800, fontSize: 15, color: T.orangeDk, marginBottom: 4 }}>Aktivní šikula — 399 Kč / měsíc</div>
+                <div style={{ fontWeight: 800, fontSize: 15, color: T.orangeDk, marginBottom: 4 }}>Aktivní šikula — 199 Kč / měsíc</div>
                 <div style={{ fontSize: 13, color: T.ink3 }}>Platba probíhá bezpečně kartou online přes platební bránu. Po úspěšné platbě se profil aktivuje.</div>
               </div>
             </div>
