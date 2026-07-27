@@ -1,5 +1,5 @@
 import { sql } from './_db.js';
-import { requireUser, requireVerifiedUser } from './_auth.js';
+import { requireUser } from './_auth.js';
 
 export default async function handler(req, res) {
   try {
@@ -52,8 +52,15 @@ async function listMessages(req, res) {
 
 // POST /api/messages { conversation_id, text }
 async function sendMessage(req, res) {
-  const me = await requireVerifiedUser(req, res);
+  // Ověření e-mailu se vyžaduje jen od šikuly — zákazník smí psát bez ověření.
+  const me = await requireUser(req, res);
   if (!me) return;
+  if (me.role === 'sikula' && !me.email_verified_at) {
+    return res.status(403).json({
+      error: 'Nejdřív si ověř e-mail. Pošli si nový ověřovací odkaz z dashboardu.',
+      code: 'verify_required',
+    });
+  }
 
   const { conversation_id, text } = req.body ?? {};
   const convId = Number(conversation_id);

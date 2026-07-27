@@ -4,7 +4,6 @@ import Icon from '../../components/Icon'
 import ChatPage from '../ChatPage'
 import { ordersApi, offersApi, reviewsApi } from '../../lib/api.js'
 import HodnoceniForm from '../../modals/HodnoceniForm.jsx'
-import VerificationBanner from '../../components/VerificationBanner'
 
 const menuItems = [
   { id: 'overview',  icon: '📊', label: 'Přehled' },
@@ -199,7 +198,8 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout }) {
 
       <div className="dash-content">
 
-        <VerificationBanner user={currentUser} />
+        {/* Zákazník se ověřovat nemusí — poptávku i účet může používat bez
+            ověření e-mailu, banner je jen pro šikulu (viz SikulaDashboard). */}
 
         {/* ── PŘEHLED ─────────────────────────────────────────────────────── */}
         {activePage === 'overview' && (

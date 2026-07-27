@@ -3,6 +3,7 @@
 
 import { sql } from './_db.js';
 import { getCurrentUser, hashPassword, verifyPassword, signToken, setSessionCookie } from './_auth.js';
+import { sendOrderConfirmationEmail } from './_email.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const STATUS_NEW = 'new';
@@ -133,6 +134,25 @@ async function createOrder(req, res) {
              hourly_rate, platce_dph, subscription_status, trial_ends_at
       FROM users WHERE id = ${customerId}
     `;
+  }
+
+  // Informační potvrzení poptávky — čistě na vědomí, žádný token ani ověřovací
+  // odkaz. Selhání e-mailu nesmí zrušit poptávku ani odhlásit zákazníka, jen
+  // se zaloguje.
+  try {
+    const timingParts = [];
+    if (urgent) timingParts.push('Urgentní');
+    if (preferred_date) timingParts.push(preferred_date);
+    if (preferred_time) timingParts.push(preferred_time);
+    await sendOrderConfirmationEmail({
+      to: customer_email,
+      name: customer_name,
+      orderTitle: title,
+      city,
+      timing: timingParts.length ? timingParts.join(', ') : 'Dle domluvy',
+    });
+  } catch (err) {
+    console.error('[orders] order confirmation email failed:', err);
   }
 
   return res.status(201).json({ order: row, loggedIn, accountConflict, user });
