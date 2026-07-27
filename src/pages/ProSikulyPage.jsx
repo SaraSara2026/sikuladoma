@@ -9,10 +9,10 @@ const IcTag     = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="no
 const IcReceipt = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
 
 const VYHODY = [
-  'Vlastní profil šikuly',
+  'Profil šikuly ve vaší lokalitě',
   'Poptávky z vašeho okolí',
-  '1 reakce na poptávku zdarma',
-  'Tarify si vyberete až v profilu',
+  'Neomezené reakce na poptávky',
+  'Tarif Plus za 299 Kč / měsíc přidá kalendář a fakturovač',
 ]
 
 const STEPS = [
@@ -85,10 +85,10 @@ export default function ProSikulyPage({ onBack, onReg }) {
                 Proč se vám ŠikulaDoma vyplatí?
               </h2>
               <p style={{ fontSize: 15, color: '#374151', lineHeight: 1.8, marginBottom: 16 }}>
-                Pro vás samé výhody. Jedna jasná platba, žádné provize a žádné kredity za odpovědi. Profil si aktivujete jednou a pak už se můžete zobrazovat zákazníkům ve své lokalitě.
+                Pro vás samé výhody. Jedna jasná platba, žádné provize a žádné kredity za odpovědi. Zaregistrujete se zdarma a hned uvidíte poptávky ve svém okolí.
               </p>
               <p style={{ fontSize: 15, color: '#374151', lineHeight: 1.8, marginBottom: 16 }}>
-                Když přijde poptávka, která vám dává smysl, jednoduše se ozvete. Vy sami si vybíráte, na co odpovíte, kdy máte čas a jestli je pro vás zakázka zajímavá.
+                Když najdete poptávku, která vám dává smysl, aktivujete si tarif a můžete rovnou kontaktovat zákazníka. Vy sami si vybíráte, na co odpovíte, kdy máte čas a jestli je pro vás zakázka zajímavá.
               </p>
               <p style={{ fontSize: 15, color: '#374151', lineHeight: 1.8, margin: 0 }}>
                 Cenu, termín i rozsah práce si domlouváte přímo se zákazníkem. Co si domluvíte, je vaše. ŠikulaDoma si nebere procenta ze zakázky.
@@ -98,8 +98,8 @@ export default function ProSikulyPage({ onBack, onReg }) {
             {/* Pravý sloupec: tarifní karta */}
             <div style={{ flex: '1 1 320px', minWidth: 0, background: '#fff', borderRadius: 20, border: '2px solid #FED7AA', boxShadow: '0 8px 32px rgba(249,115,22,.12)', padding: '36px 32px 28px', textAlign: 'left' }}>
               <div style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 18, fontWeight: 800, color: '#1A1F2E', marginBottom: 4 }}>Šikula Start</div>
-                <div style={{ fontSize: 15, color: '#9CA3AF', fontWeight: 500 }}>Vyzkoušejte si ŠikulaDoma zdarma</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: '#1A1F2E', marginBottom: 4 }}>Aktivní šikula</div>
+                <div style={{ fontSize: 15, color: '#9CA3AF', fontWeight: 500 }}>od 199 Kč / měsíc</div>
               </div>
 
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: 9 }}>
@@ -117,18 +117,18 @@ export default function ProSikulyPage({ onBack, onReg }) {
                 style={{ width: '100%', height: 50, borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#F97316 0%,#EA580C 100%)', color: '#fff', fontWeight: 700, fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 16px rgba(249,115,22,.35)', transition: 'all .15s' }}
                 onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg,#EA580C 0%,#C2410C 100%)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg,#F97316 0%,#EA580C 100%)'; e.currentTarget.style.transform = 'none'; }}>
-                Vytvořit profil zdarma <IcArrow />
+                Zaregistrovat se <IcArrow />
               </button>
 
               <p style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.6, marginTop: 12, textAlign: 'center' }}>
-                Založíte si profil, uvidíte poptávky ve svém okolí a první reakci si vyzkoušíte zdarma. Pokud budete chtít pokračovat, vyberete si tarif v profilu.
+                Zaregistrujete se a aktivujete tarif Aktivní šikula za 199 Kč / měsíc. Tarif Plus vyberete kdykoliv v profilu.
               </p>
             </div>
 
           </div>
 
           <p style={{ fontSize: 13, color: '#9CA3AF', marginTop: 20, lineHeight: 1.6, textAlign: 'center' }}>
-            Až budete chtít reagovat častěji, vyberete si tarif podle toho, jak chcete ŠikulaDoma používat.
+            Tarif si vyberete podle toho, jak chcete ŠikulaDoma používat.
           </p>
         </div>
       </section>
