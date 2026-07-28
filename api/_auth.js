@@ -90,8 +90,8 @@ async function resolveSession(req) {
   const [user] = await sql`
     SELECT id, email, role, name, phone, city, avatar, ico, services, plan,
            stripe_customer_id, stripe_subscription_id, plan_expires_at,
-           verified, rating, jobs_count, bio, hourly_rate, platce_dph,
-           subscription_status, trial_ends_at
+           verified, email_verified_at, rating, jobs_count, bio, hourly_rate,
+           platce_dph, subscription_status, trial_ends_at
     FROM users WHERE id = ${Number(payload.sub)}
   `;
   if (!user) return { user: null, reason: 'user_not_found' };

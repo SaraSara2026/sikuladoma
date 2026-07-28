@@ -767,9 +767,12 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                       </div>
                     )}
                   </div>
-                  <button className="btn btn-primary btn-sm" onClick={() => onNav('send-offer', o)}>
-                    {isActivePlan ? 'Nabídnout se' : 'Reagovat'}
-                  </button>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <button className="btn btn-outline btn-sm" onClick={() => onNav('order-detail', o)}>Detail</button>
+                    <button className="btn btn-primary btn-sm" onClick={() => onNav('send-offer', o)}>
+                      {isActivePlan ? 'Nabídnout se' : 'Reagovat'}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -808,9 +811,12 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                       </div>
                     )}
                   </div>
-                  <button className="btn btn-primary btn-sm" onClick={() => onNav('send-offer', o)}>
-                    {isActivePlan ? 'Nabídnout se' : 'Reagovat'}
-                  </button>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <button className="btn btn-outline btn-sm" onClick={() => onNav('order-detail', o)}>Detail</button>
+                    <button className="btn btn-primary btn-sm" onClick={() => onNav('send-offer', o)}>
+                      {isActivePlan ? 'Nabídnout se' : 'Reagovat'}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Icon from '../components/Icon'
 import { offersApi } from '../lib/api'
-import { apiResendVerification } from '../lib/auth.js'
+import { apiResendVerification, apiMe } from '../lib/auth.js'
 
-export default function SendOfferPage({ order, onNav, onSend, currentUser }) {
+export default function SendOfferPage({ order, onNav, onSend, currentUser, onUpdateUser }) {
   const [price, setPrice] = useState('')
   const [time, setTime]   = useState('')
   const [date, setDate]   = useState('')
@@ -12,12 +12,38 @@ export default function SendOfferPage({ order, onNav, onSend, currentUser }) {
   const [err, setErr]     = useState(null)
   const [verifyState, setVerifyState] = useState('idle') // idle | sending | sent | error
   const [verifyMsg, setVerifyMsg]     = useState('')
+  // localStorage/App state může být zastaralý (typicky po ověření e-mailu
+  // v jiné kartě/zařízení) — než rozhodneme, jestli je e-mail ověřený, si
+  // stránka vždy nejdřív ověří čerstvý stav ze serveru.
+  const [freshUser, setFreshUser] = useState(currentUser)
+  const [checkingUser, setCheckingUser] = useState(true)
+
+  useEffect(() => {
+    let alive = true
+    apiMe()
+      .then(({ user }) => {
+        if (!alive) return
+        if (user) { setFreshUser(user); onUpdateUser?.(user) }
+        setCheckingUser(false)
+      })
+      .catch(() => { if (alive) setCheckingUser(false) })
+    return () => { alive = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   if (!order) return null
 
+  if (checkingUser) {
+    return (
+      <div className="page-enter" style={{ padding: '32px 24px', maxWidth: 640, margin: '0 auto' }}>
+        <div style={{ color: 'var(--text3)', padding: 24, textAlign: 'center' }}>Načítám…</div>
+      </div>
+    )
+  }
+
   // Reakce na poptávku vyžaduje aktivní placený tarif — žádné reakce zdarma.
-  const hasActivePlan = currentUser?.subscription_status === 'active'
-    && (currentUser?.plan === 'aktiv' || currentUser?.plan === 'aktiv-plus')
+  const hasActivePlan = freshUser?.subscription_status === 'active'
+    && (freshUser?.plan === 'aktiv' || freshUser?.plan === 'aktiv-plus')
 
   if (!hasActivePlan) {
     return (
@@ -49,7 +75,7 @@ export default function SendOfferPage({ order, onNav, onSend, currentUser }) {
     }
   }
 
-  if (!currentUser?.email_verified_at) {
+  if (!freshUser?.email_verified_at) {
     return (
       <div className="page-enter" style={{ padding: '32px 24px', maxWidth: 640, margin: '0 auto' }}>
         <button className="btn btn-ghost" onClick={() => onNav('back')} style={{ marginBottom: 16 }}>← Zpět</button>
@@ -57,7 +83,7 @@ export default function SendOfferPage({ order, onNav, onSend, currentUser }) {
           <div style={{ fontSize: 40, marginBottom: 12 }}>✉️</div>
           <h2 style={{ marginBottom: 10 }}>Ověřte svůj e-mail, abyste mohli posílat nabídky.</h2>
           <p style={{ color: 'var(--text2)', lineHeight: 1.7, marginBottom: 22 }}>
-            Poslali jsme vám ověřovací odkaz na <strong>{currentUser?.email}</strong>. Klikněte na něj, nebo si nechte poslat nový.
+            Poslali jsme vám ověřovací odkaz na <strong>{freshUser?.email}</strong>. Klikněte na něj, nebo si nechte poslat nový.
           </p>
           {verifyMsg && (
             <div style={{
@@ -96,7 +122,7 @@ export default function SendOfferPage({ order, onNav, onSend, currentUser }) {
       onNav('dash-sikula')
     } catch (e) {
       if (e.code === 'verify_required') {
-        setErr('Nejdřív si ověřte e-mail. Obnovte prosím stránku.')
+        setErr('Váš e-mail ještě není ověřený. Zkuste stránku znovu otevřít z přehledu zakázek.')
       } else {
         setErr(e.message || 'Odeslání nabídky selhalo.')
       }
@@ -117,8 +143,8 @@ export default function SendOfferPage({ order, onNav, onSend, currentUser }) {
             <input className="form-input" value={price} onChange={e => setPrice(e.target.value)} placeholder="900" type="number" min="1" />
           </div>
           <div className="form-group">
-            <label className="form-label">Odhadovaný čas</label>
-            <input className="form-input" value={time} onChange={e => setTime(e.target.value)} placeholder="1,5 hod" />
+            <label className="form-label">Odhad délky práce</label>
+            <input className="form-input" value={time} onChange={e => setTime(e.target.value)} placeholder="Např. 2 hodiny, 1 den, 14 dní nebo dle domluvy" />
           </div>
         </div>
         <div className="form-group">

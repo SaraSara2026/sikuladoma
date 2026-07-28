@@ -242,7 +242,7 @@ export default function App() {
                 </div>
               )
       ) : page === "send-offer" ? (
-        <SendOfferPage order={currentOrder} onNav={handleNav} onSend={() => { setCurrentOrder(null); }} currentUser={sikulaUser} />
+        <SendOfferPage order={currentOrder} onNav={handleNav} onSend={() => { setCurrentOrder(null); }} currentUser={sikulaUser} onUpdateUser={updateSikula} />
       ) : page === "order-detail" ? (
         <OrderDetailPage order={currentOrder} currentUser={sikulaUser} onNav={handleNav}
           onAcceptOffer={() => { /* refresh dashboard po accept */ }} />
