@@ -7,8 +7,11 @@ const json = { 'Content-Type': 'application/json' };
 async function unwrap(res) {
   if (!res.ok) {
     let msg = `HTTP ${res.status}`;
-    try { const d = await res.json(); msg = d.error || msg; } catch {}
-    throw new Error(msg);
+    let code;
+    try { const d = await res.json(); msg = d.error || msg; code = d.code; } catch {}
+    const err = new Error(msg);
+    if (code) err.code = code;
+    throw err;
   }
   return res.json();
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Icon from '../components/Icon'
 import { offersApi } from '../lib/api'
+import { apiResendVerification } from '../lib/auth.js'
 
 export default function SendOfferPage({ order, onNav, onSend, currentUser }) {
   const [price, setPrice] = useState('')
@@ -9,6 +10,8 @@ export default function SendOfferPage({ order, onNav, onSend, currentUser }) {
   const [msg, setMsg]     = useState('')
   const [busy, setBusy]   = useState(false)
   const [err, setErr]     = useState(null)
+  const [verifyState, setVerifyState] = useState('idle') // idle | sending | sent | error
+  const [verifyMsg, setVerifyMsg]     = useState('')
 
   if (!order) return null
 
@@ -32,6 +35,48 @@ export default function SendOfferPage({ order, onNav, onSend, currentUser }) {
     )
   }
 
+  // Zaplacený tarif nestačí — bez ověřeného e-mailu se nabídka poslat nesmí.
+  const resendVerification = async () => {
+    setVerifyState('sending')
+    setVerifyMsg('')
+    try {
+      await apiResendVerification()
+      setVerifyState('sent')
+      setVerifyMsg('Ověřovací e-mail jsme vám poslali.')
+    } catch (e) {
+      setVerifyState('error')
+      setVerifyMsg(e.message || 'Odeslání se nepodařilo. Zkuste to prosím znovu.')
+    }
+  }
+
+  if (!currentUser?.email_verified_at) {
+    return (
+      <div className="page-enter" style={{ padding: '32px 24px', maxWidth: 640, margin: '0 auto' }}>
+        <button className="btn btn-ghost" onClick={() => onNav('back')} style={{ marginBottom: 16 }}>← Zpět</button>
+        <div className="card card-pad" style={{ textAlign: 'center', padding: '40px 24px' }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>✉️</div>
+          <h2 style={{ marginBottom: 10 }}>Ověřte svůj e-mail, abyste mohli posílat nabídky.</h2>
+          <p style={{ color: 'var(--text2)', lineHeight: 1.7, marginBottom: 22 }}>
+            Poslali jsme vám ověřovací odkaz na <strong>{currentUser?.email}</strong>. Klikněte na něj, nebo si nechte poslat nový.
+          </p>
+          {verifyMsg && (
+            <div style={{
+              marginBottom: 16, fontSize: 13, padding: '10px 12px', borderRadius: 8,
+              background: verifyState === 'error' ? '#FEF2F2' : '#F0FDF4',
+              color: verifyState === 'error' ? '#B91C1C' : '#166534',
+            }}>
+              {verifyMsg}
+            </div>
+          )}
+          <button className="btn btn-primary" onClick={resendVerification}
+            disabled={verifyState === 'sending' || verifyState === 'sent'}>
+            {verifyState === 'sending' ? 'Posílám…' : verifyState === 'sent' ? '✓ Odesláno' : 'Poslat ověřovací e-mail'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   const submit = async () => {
     setErr(null)
     const priceNum = Number(price)
@@ -50,7 +95,11 @@ export default function SendOfferPage({ order, onNav, onSend, currentUser }) {
       onSend?.()
       onNav('dash-sikula')
     } catch (e) {
-      setErr(e.message || 'Odeslání nabídky selhalo.')
+      if (e.code === 'verify_required') {
+        setErr('Nejdřív si ověřte e-mail. Obnovte prosím stránku.')
+      } else {
+        setErr(e.message || 'Odeslání nabídky selhalo.')
+      }
     } finally {
       setBusy(false)
     }

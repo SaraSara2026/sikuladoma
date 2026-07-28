@@ -1,7 +1,7 @@
 // Hlavní routing aplikace + globální stav (page, modaly, sikulaUser session).
 // Veškerá UI byla rozdělena do menších souborů — viz src/ui/, src/modals/, src/pages/.
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 // Stránky
 import InvoicePage from "./pages/InvoicePage";
@@ -41,7 +41,7 @@ import { IcSearch, IcArrow, IcShield, IcStar, IcCheck, IcGlobe } from "./ui/icon
 
 // Data (jen pro homepage tile grid)
 import { SERVICES } from "./lib/categories";
-import { apiLogout } from "./lib/auth.js";
+import { apiLogout, apiMe } from "./lib/auth.js";
 
 // SEO metadata pro každou hlavní route. Klíče = hodnoty `page` state.
 const PAGE_META = {
@@ -93,6 +93,16 @@ export default function App() {
   const [sikulaUser,  setSikulaUser]   = useState(() => {
     try { const s = localStorage.getItem("sd_user"); return s ? JSON.parse(s) : null; } catch { return null; }
   });
+
+  // sd_user v localStorage je snapshot z doby přihlášení a sám se neobnoví —
+  // pokud se mezitím na serveru něco změnilo (např. ověření e-mailu kliknutím
+  // z jiné karty/zařízení), appka by o tom jinak nevěděla, dokud se uživatel
+  // znovu nepřihlásí. Při startu appky proto stav jednou potichu dosynchronizujeme.
+  useEffect(() => {
+    if (!sikulaUser) return;
+    apiMe().then(({ user }) => { if (user) updateSikula(user); }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Navigace ze sub-stránek (dashboard, send-offer apod.).
   // Konvence: onNav('cílová-stránka', payload)
@@ -241,7 +251,12 @@ export default function App() {
       ) : page === "verify-email" ? (
         <VerifyEmailPage
           onBack={() => { setPage("home"); window.history.replaceState({}, '', '/'); }}
-          onLogin={() => { setPage("home"); window.history.replaceState({}, '', '/'); setLoginModal(true); }} />
+          onVerified={updateSikula}
+          onLogin={() => {
+            window.history.replaceState({}, '', '/');
+            if (sikulaUser) { setPage("dashboard"); window.scrollTo(0, 0); }
+            else { setPage("home"); setLoginModal(true); }
+          }} />
       ) : page === "forgot-password" ? (
         <ForgotPasswordPage
           onBack={() => { setPage("home"); window.history.replaceState({}, '', '/'); }} />

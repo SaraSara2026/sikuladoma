@@ -24,14 +24,15 @@ function getFromAddress() {
 }
 
 // ─── Verifikace emailu ──────────────────────────────────────────────────────
-export async function sendVerificationEmail({ to, name, token }) {
+export async function sendVerificationEmail({ to, token }) {
   const url = `${getAppUrl()}/?page=verify-email&token=${encodeURIComponent(token)}`;
   const resend = getResend();
   const { data, error } = await resend.emails.send({
     from: getFromAddress(),
     to,
-    subject: 'Ověř svůj e-mail na ŠikulaDoma',
-    html: verificationTemplate({ name, url }),
+    subject: 'Ověřte svůj e-mail na ŠikulaDoma',
+    html: verificationTemplate({ url }),
+    text: verificationTextVersion({ url }),
   });
   if (error) {
     console.error('[email] verification send failed:', error);
@@ -144,14 +145,31 @@ function baseLayout({ title, intro, ctaText, ctaUrl, footer }) {
 </html>`;
 }
 
-function verificationTemplate({ name, url }) {
+function verificationTemplate({ url }) {
   return baseLayout({
-    title: 'Ověř svůj e-mail',
-    intro: `Ahoj ${escapeHtml(name)}, díky za registraci na ŠikulaDoma. Pro dokončení registrace klikni na tlačítko níže a ověř svůj e-mail.`,
+    title: 'Ověřte svůj e-mail',
+    intro: 'Dobrý den,<br><br>děkujeme za registraci na ŠikulaDoma.<br><br>Pro dokončení ověření e-mailu klikněte na tlačítko níže. Po ověření budete moct bezpečně posílat nabídky zákazníkům.',
     ctaText: 'Ověřit e-mail',
     ctaUrl: url,
-    footer: 'Odkaz je platný 24 hodin. Pokud jsi se neregistroval(a), tento e-mail ignoruj.',
+    footer: 'Odkaz je platný 24 hodin. Pokud jste se neregistroval(a), tento e-mail ignorujte.',
   });
+}
+
+function verificationTextVersion({ url }) {
+  const lines = [
+    'Dobrý den,',
+    '',
+    'děkujeme za registraci na ŠikulaDoma.',
+    '',
+    'Pro dokončení ověření e-mailu klikněte na odkaz níže:',
+    '',
+    `Ověřit e-mail: ${url}`,
+    '',
+    'Po ověření budete moct bezpečně posílat nabídky zákazníkům.',
+    '',
+    'ŠikulaDoma',
+  ];
+  return lines.join('\n');
 }
 
 // Vezme jen křestní jméno (první slovo před mezerou) z celého jména v DB.

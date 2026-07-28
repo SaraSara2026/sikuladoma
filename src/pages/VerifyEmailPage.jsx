@@ -4,9 +4,9 @@
 
 import { useEffect, useState } from 'react';
 import { T } from '../ui/theme';
-import { apiVerifyEmail } from '../lib/auth.js';
+import { apiVerifyEmail, apiMe } from '../lib/auth.js';
 
-export default function VerifyEmailPage({ onBack, onLogin }) {
+export default function VerifyEmailPage({ onBack, onLogin, onVerified }) {
   const [state, setState] = useState('verifying'); // verifying | success | error
   const [errMsg, setErrMsg] = useState('');
 
@@ -19,7 +19,16 @@ export default function VerifyEmailPage({ onBack, onLogin }) {
     }
     let alive = true;
     apiVerifyEmail(token)
-      .then(() => { if (alive) setState('success'); })
+      .then(async () => {
+        // Pokud je uživatel v tomto prohlížeči přihlášený, rovnou mu obnovíme
+        // stav (email_verified_at), ať se po návratu do dashboardu hned
+        // zobrazí jako ověřený a nemusí se znovu přihlašovat.
+        try {
+          const { user } = await apiMe();
+          if (user) onVerified?.(user);
+        } catch {}
+        if (alive) setState('success');
+      })
       .catch(err => {
         if (!alive) return;
         setState('error');
