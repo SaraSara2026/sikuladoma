@@ -542,7 +542,10 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
     ...p,
     services: p.services.includes(id) ? p.services.filter(s => s !== id) : [...p.services, id],
   }))
-  const sikulaCity = currentUser?.city?.split(',')[0]?.trim() || ''
+  // users.city se ukládá jako "ulice, PSČ, město" — město je poslední segment,
+  // ne první (dřív se bral první segment, což byla u víceslovných adres ulice,
+  // takže se poptávky v okolí prakticky nikdy nenašly).
+  const sikulaCity = (currentUser?.city || '').split(',').pop().trim()
   const { orders, loading: ordersLoading, error: ordersError } = useOpenOrders(sikulaCity, currentUser?.services)
   const { offers: myOffers, reload: reloadMyOffers } = useMyOffers()
   const { reviews: myReviews, summary: reviewsSummary, loading: reviewsLoading } = useMyReviews(currentUser?.id)

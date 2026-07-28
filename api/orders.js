@@ -170,12 +170,26 @@ async function createOrder(req, res) {
       if (services.some(s => relevant.has(s))) recipients.set(u.id, u);
     }
     const categoryLabel = CATEGORY_LABELS[category] || category;
-    await Promise.allSettled(
+    const results = await Promise.allSettled(
       Array.from(recipients.values()).map(u =>
         sendNewOrderNotificationEmail({ to: u.email, orderTitle: title, category: categoryLabel, city, timing })
-          .catch(err => console.error('[orders] new-order notification failed for', u.email, err))
+          .catch(err => { console.error('[orders] new-order notification failed for user', u.id, err); throw err; })
       )
     );
+    const sent = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.length - sent;
+    // Diagnostický log bez e-mailů/PII — jen id a počty, ať jde dohledat proč
+    // konkrétní šikula notifikaci nedostal (chybějící/neshodné services vs.
+    // reálné selhání odeslání).
+    console.log('[orders] new-order notification', {
+      orderId: row.id,
+      category,
+      expandedCategories: Array.from(relevant),
+      candidatesChecked: sikulaCandidates.length,
+      matchedUserIds: Array.from(recipients.keys()),
+      sent,
+      failed,
+    });
   } catch (err) {
     console.error('[orders] new-order notification batch failed:', err);
   }

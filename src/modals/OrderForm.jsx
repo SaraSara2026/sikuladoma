@@ -17,7 +17,7 @@ import PasswordField from "../components/PasswordField";
 const STEP_LABELS = ["Kategorie", "Služba", "Upřesnění", "Místo", "Čas", "Kontakt"];
 const TOTAL = 6;
 
-export default function OrderForm({ initialService, initialCategory, initialCity, onClose, onHome, onLoggedIn, currentUser }) {
+export default function OrderForm({ initialService, initialCategory, initialCity, onClose, onHome, onDashboard, onLoggedIn, currentUser }) {
   // Přihlášený zákazník už má účet i heslo hotové — poptávka se zadává pod
   // jeho existující identitou, žádné nové heslo/účet se nezakládá.
   const isLoggedInCustomer = currentUser?.role === 'customer';
@@ -144,10 +144,17 @@ export default function OrderForm({ initialService, initialCategory, initialCity
             ))}
           </div>
           <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-            <button onClick={() => { onClose(); onHome?.(); }}
-              style={{ height: 42, padding: "0 22px", borderRadius: 10, border: "none", background: T.orange, color: "#fff", fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
-              Zpět na úvod
-            </button>
+            {isLoggedInCustomer ? (
+              <button onClick={() => { onClose(); onDashboard?.(); }}
+                style={{ height: 42, padding: "0 22px", borderRadius: 10, border: "none", background: T.orange, color: "#fff", fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+                Zpět do přehledu
+              </button>
+            ) : (
+              <button onClick={() => { onClose(); onHome?.(); }}
+                style={{ height: 42, padding: "0 22px", borderRadius: 10, border: "none", background: T.orange, color: "#fff", fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+                Zpět na úvod
+              </button>
+            )}
             <BtnGhost onClick={() => {
               setCat(null); setSubSvc(null); setDesc("");
               setStreet(""); setPsc(""); setCity(""); setFloor("");
