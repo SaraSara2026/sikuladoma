@@ -17,7 +17,11 @@ import PasswordField from "../components/PasswordField";
 const STEP_LABELS = ["Kategorie", "Služba", "Upřesnění", "Místo", "Čas", "Kontakt"];
 const TOTAL = 6;
 
-export default function OrderForm({ initialService, initialCategory, initialCity, onClose, onHome, onLoggedIn }) {
+export default function OrderForm({ initialService, initialCategory, initialCity, onClose, onHome, onLoggedIn, currentUser }) {
+  // Přihlášený zákazník už má účet i heslo hotové — poptávka se zadává pod
+  // jeho existující identitou, žádné nové heslo/účet se nezakládá.
+  const isLoggedInCustomer = currentUser?.role === 'customer';
+
   const initCat = initialService
     ? CATEGORIES.find(c => c.id === initialService.id) || null
     : initialCategory
@@ -33,9 +37,9 @@ export default function OrderForm({ initialService, initialCategory, initialCity
   const [floor, setFloor]   = useState("");
   const [gdprOk, setGdprOk] = useState(false);
   const [priority, setPrio] = useState(null);
-  const [name, setName]     = useState("");
-  const [email, setEmail]   = useState("");
-  const [phone, setPhone]   = useState("");
+  const [name, setName]     = useState(isLoggedInCustomer ? (currentUser?.name || "") : "");
+  const [email, setEmail]   = useState(isLoggedInCustomer ? (currentUser?.email || "") : "");
+  const [phone, setPhone]   = useState(isLoggedInCustomer ? (currentUser?.phone || "") : "");
   const [password, setPassword] = useState("");
   const [done, setDone]     = useState(false);
   const [accountConflict, setAccountConflict] = useState(false);
@@ -52,7 +56,8 @@ export default function OrderForm({ initialService, initialCategory, initialCity
     if (step === 4) return !!priority;
     if (step === 5) {
       const fullName = name.trim();
-      return /^\S+\s+\S+/.test(fullName) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && password.length >= 8 && gdprOk;
+      const baseOk = /^\S+\s+\S+/.test(fullName) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && gdprOk;
+      return isLoggedInCustomer ? baseOk : (baseOk && password.length >= 8);
     }
     return false;
   };
@@ -78,7 +83,7 @@ export default function OrderForm({ initialService, initialCategory, initialCity
           customer_name: name.trim(),
           customer_email: email.trim().toLowerCase(),
           customer_phone: phone,
-          password,
+          ...(isLoggedInCustomer ? {} : { password }),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -146,7 +151,11 @@ export default function OrderForm({ initialService, initialCategory, initialCity
             <BtnGhost onClick={() => {
               setCat(null); setSubSvc(null); setDesc("");
               setStreet(""); setPsc(""); setCity(""); setFloor("");
-              setPrio(null); setName(""); setEmail(""); setPhone(""); setPassword("");
+              setPrio(null);
+              setName(isLoggedInCustomer ? (currentUser?.name || "") : "");
+              setEmail(isLoggedInCustomer ? (currentUser?.email || "") : "");
+              setPhone(isLoggedInCustomer ? (currentUser?.phone || "") : "");
+              setPassword("");
               setGdprOk(false); setSubmitErr(null); setAccountConflict(false); setDone(false); setStep(0);
             }}>
               Zadat další poptávku
@@ -314,21 +323,36 @@ export default function OrderForm({ initialService, initialCategory, initialCity
 
           {step === 5 && (
             <div>
-              <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 9, padding: "12px 14px", marginBottom: 16, fontSize: 13, color: T.blueDark, lineHeight: 1.5 }}>
-                <div style={{ fontWeight: 600, marginBottom: 4 }}>📧 Účet vám vytvoříme automaticky</div>
-                Zadejte si rovnou heslo — po odeslání poptávky budete přihlášeni a uvidíte všechny nabídky i chat se šikuly.
-              </div>
+              {isLoggedInCustomer ? (
+                <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 9, padding: "12px 14px", marginBottom: 16, fontSize: 13, color: T.blueDark, lineHeight: 1.5 }}>
+                  Poptávku odešleme pod vaším přihlášeným účtem. Nabídky najdete ve svém zákaznickém přehledu.
+                </div>
+              ) : (
+                <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 9, padding: "12px 14px", marginBottom: 16, fontSize: 13, color: T.blueDark, lineHeight: 1.5 }}>
+                  <div style={{ fontWeight: 600, marginBottom: 4 }}>📧 Účet vám vytvoříme automaticky</div>
+                  Zadejte si rovnou heslo — po odeslání poptávky budete přihlášeni a uvidíte všechny nabídky i chat se šikuly.
+                </div>
+              )}
               <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
                 <div><label style={lbl}>Jméno a příjmení *</label><input value={name} onChange={e => setName(e.target.value)} placeholder="Jana Nováková" style={inp} autoFocus /></div>
-                <div><label style={lbl}>E-mail *</label><input value={email} onChange={e => setEmail(e.target.value)} placeholder="vas@email.cz" type="email" autoComplete="email" style={inp} /></div>
-                <div><label style={lbl}>Heslo * (min. 8 znaků)</label><PasswordField value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" /></div>
+                <div>
+                  <label style={lbl}>E-mail *</label>
+                  <input value={email} onChange={e => setEmail(e.target.value)} placeholder="vas@email.cz" type="email" autoComplete="email" style={inp} readOnly={isLoggedInCustomer} disabled={isLoggedInCustomer} />
+                </div>
+                {!isLoggedInCustomer && (
+                  <div><label style={lbl}>Heslo * (min. 8 znaků)</label><PasswordField value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" /></div>
+                )}
                 <div><label style={lbl}>Telefon</label><input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+420 777 000 000" type="tel" autoComplete="tel" style={inp} /></div>
               </div>
               <label style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 16, padding: "12px 14px", background: T.bg, border: `1px solid ${T.border}`, borderRadius: 10, cursor: "pointer", fontSize: 13, color: T.ink2, lineHeight: 1.55 }}>
                 <input type="checkbox" checked={gdprOk} onChange={e => setGdprOk(e.target.checked)}
                   style={{ marginTop: 2, flexShrink: 0, width: 16, height: 16, cursor: "pointer" }} />
                 <span>
-                  Souhlasím s <strong>vytvořením účtu</strong> na ŠikulaDoma a se zpracováním osobních údajů pro účely této poptávky.
+                  {isLoggedInCustomer ? (
+                    <>Souhlasím se zpracováním osobních údajů pro účely této poptávky.</>
+                  ) : (
+                    <>Souhlasím s <strong>vytvořením účtu</strong> na ŠikulaDoma a se zpracováním osobních údajů pro účely této poptávky.</>
+                  )}{" "}
                   Podrobnosti v <a href="/?page=ochrana-soukromi" target="_blank" rel="noopener" style={{ color: T.orange, textDecoration: "underline" }}>Ochraně soukromí</a> a <a href="/?page=podminky-pouziti" target="_blank" rel="noopener" style={{ color: T.orange, textDecoration: "underline" }}>Podmínkách</a>.
                 </span>
               </label>
