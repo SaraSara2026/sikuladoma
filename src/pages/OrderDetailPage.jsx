@@ -73,7 +73,6 @@ export default function OrderDetailPage({ order, onNav, currentUser, onAcceptOff
                 {[
                   ['Patro / přístup', order.floor || order.access],
                   ['Parkování',       order.parking],
-                  ['Pohlaví šikuly',  { jedno: 'Jedno mi je', zena: 'Žena', muz: 'Muž' }[order.gender_preference || order.gender]],
                   ['Urgentní',        order.urgent ? '🚨 Ano' : 'Ne'],
                   ['Preferovaný termín', order.preferred_date],
                 ].filter(([, v]) => v).map(([k, v]) => (

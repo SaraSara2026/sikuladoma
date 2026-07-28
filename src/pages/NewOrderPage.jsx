@@ -10,7 +10,7 @@ export default function NewOrderPage({ onNav, onSubmit }) {
   const [step, setStep] = useState(1)
   const [data, setData] = useState({
     title: '', category: '', desc: '', city: '', budget: '',
-    urgent: false, date: '', gender: 'jedno', floor: '', parking: '', note: '',
+    urgent: false, date: '', floor: '', parking: '', note: '',
     // contact – collected last
     name: '', email: '', phone: '',
   })
@@ -32,7 +32,6 @@ export default function NewOrderPage({ onNav, onSubmit }) {
         budget:          data.budget,
         urgent:          data.urgent,
         preferred_date:  data.date || null,
-        gender:          data.gender,
         floor:           data.floor,
         parking:         data.parking,
         note:            data.note,
@@ -155,17 +154,6 @@ export default function NewOrderPage({ onNav, onSubmit }) {
           {/* STEP 3 – Detaily */}
           {step === 3 && (
             <>
-              <div className="form-group">
-                <label className="form-label">Preference pohlaví šikuly</label>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {[['jedno', '🤷 Jedno mi je'], ['zena', '👩 Žena'], ['muz', '👨 Muž']].map(([g, label]) => (
-                    <button key={g} onClick={() => update('gender', g)}
-                      style={{ flex: 1, padding: '10px 8px', border: `2px solid ${data.gender === g ? 'var(--brand)' : 'var(--border)'}`, borderRadius: 10, background: data.gender === g ? 'var(--brand)' : 'white', color: data.gender === g ? 'white' : 'var(--text)', cursor: 'pointer', fontWeight: 600, fontSize: 13, transition: 'all 0.15s' }}>
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
               <div className="form-group">
                 <label className="form-label">Fotky (volitelné)</label>
                 <div style={{ border: '2px dashed var(--border)', borderRadius: 12, padding: '28px', textAlign: 'center', background: 'var(--bg)', cursor: 'pointer' }}>
