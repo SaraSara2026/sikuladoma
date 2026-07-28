@@ -75,6 +75,26 @@ export async function sendOrderConfirmationEmail({ to, name, orderTitle, city, t
   return data;
 }
 
+// ─── Nová poptávka v oboru (šikula) ─────────────────────────────────────────
+// Informuje šikulu, že vznikla poptávka odpovídající jeho oboru (nebo schválené
+// příbuzné kategorii). Posílá se i šikulovi bez aktivního tarifu — poptávku
+// může vidět, reagovat může až po aktivaci tarifu.
+export async function sendNewOrderNotificationEmail({ to, orderTitle, category, city, timing }) {
+  const resend = getResend();
+  const { data, error } = await resend.emails.send({
+    from: getFromAddress(),
+    to,
+    subject: 'Nová poptávka ve vašem okolí na ŠikulaDoma',
+    html: newOrderNotificationTemplate({ orderTitle, category, city, timing }),
+    text: newOrderNotificationTextVersion({ orderTitle, category, city, timing }),
+  });
+  if (error) {
+    console.error('[email] new order notification send failed:', error);
+    throw new Error('Nepodařilo se odeslat e-mail o nové poptávce.');
+  }
+  return data;
+}
+
 // ─── HTML šablony ───────────────────────────────────────────────────────────
 function baseLayout({ title, intro, ctaText, ctaUrl, footer }) {
   return `<!DOCTYPE html>
@@ -185,6 +205,45 @@ function orderConfirmationTextVersion({ name, orderTitle, city, timing }) {
     '',
     'ŠikulaDoma',
   ].filter(line => line !== null);
+  return lines.join('\n');
+}
+
+function newOrderNotificationTemplate({ orderTitle, category, city, timing }) {
+  const details = [
+    orderTitle && `<strong>Poptávka:</strong> ${escapeHtml(orderTitle)}`,
+    category   && `<strong>Kategorie:</strong> ${escapeHtml(category)}`,
+    city       && `<strong>Místo:</strong> ${escapeHtml(city)}`,
+    timing     && `<strong>Termín:</strong> ${escapeHtml(timing)}`,
+  ].filter(Boolean).join('<br>');
+
+  return baseLayout({
+    title: 'Nová poptávka ve vašem okolí',
+    intro: `Dobrý den,<br><br>ve vašem okolí přibyla nová poptávka, která odpovídá vašemu oboru.<br><br>${details}<br><br>Pokud máte zájem, přihlaste se do svého profilu a pošlete zákazníkovi nabídku.`,
+  });
+}
+
+function newOrderNotificationTextVersion({ orderTitle, category, city, timing }) {
+  const lines = [
+    'Dobrý den,',
+    '',
+    've vašem okolí přibyla nová poptávka, která odpovídá vašemu oboru.',
+    '',
+    'Poptávka:',
+    orderTitle || '—',
+    '',
+    'Kategorie:',
+    category || '—',
+    '',
+    'Místo:',
+    city || '—',
+    '',
+    'Termín:',
+    timing || '—',
+    '',
+    'Pokud máte zájem, přihlaste se do svého profilu a pošlete zákazníkovi nabídku.',
+    '',
+    'ŠikulaDoma',
+  ];
   return lines.join('\n');
 }
 

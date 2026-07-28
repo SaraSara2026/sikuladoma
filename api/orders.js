@@ -3,7 +3,8 @@
 
 import { sql } from './_db.js';
 import { getCurrentUser, hashPassword, verifyPassword, signToken, setSessionCookie } from './_auth.js';
-import { sendOrderConfirmationEmail } from './_email.js';
+import { sendOrderConfirmationEmail, sendNewOrderNotificationEmail } from './_email.js';
+import { expandCategories, CATEGORY_LABELS } from './_relatedCategories.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const STATUS_NEW = 'new';
@@ -136,23 +137,47 @@ async function createOrder(req, res) {
     `;
   }
 
+  const timingParts = [];
+  if (urgent) timingParts.push('Urgentní');
+  if (preferred_date) timingParts.push(preferred_date);
+  if (preferred_time) timingParts.push(preferred_time);
+  const timing = timingParts.length ? timingParts.join(', ') : 'Dle domluvy';
+
   // Informační potvrzení poptávky — čistě na vědomí, žádný token ani ověřovací
   // odkaz. Selhání e-mailu nesmí zrušit poptávku ani odhlásit zákazníka, jen
   // se zaloguje.
   try {
-    const timingParts = [];
-    if (urgent) timingParts.push('Urgentní');
-    if (preferred_date) timingParts.push(preferred_date);
-    if (preferred_time) timingParts.push(preferred_time);
-    await sendOrderConfirmationEmail({
-      to: customer_email,
-      name: customer_name,
-      orderTitle: title,
-      city,
-      timing: timingParts.length ? timingParts.join(', ') : 'Dle domluvy',
-    });
+    await sendOrderConfirmationEmail({ to: customer_email, name: customer_name, orderTitle: title, city, timing });
   } catch (err) {
     console.error('[orders] order confirmation email failed:', err);
+  }
+
+  // Upozornění šikulům v oboru (a schválených příbuzných oborech) o nové
+  // poptávce. Nikdy se neposílá zadavateli samotnému, každý šikula dostane
+  // nejvýš jeden e-mail na tuto poptávku a selhání jednotlivého e-mailu
+  // nezablokuje odeslání ostatním ani vznik poptávky.
+  try {
+    const relevant = expandCategories(category);
+    const sikulaCandidates = await sql`
+      SELECT id, email, services FROM users
+      WHERE role = 'sikula' AND email IS NOT NULL
+    `;
+    const recipients = new Map();
+    for (const u of sikulaCandidates) {
+      if (u.id === customerId) continue;
+      if (recipients.has(u.id)) continue;
+      const services = Array.isArray(u.services) ? u.services : [];
+      if (services.some(s => relevant.has(s))) recipients.set(u.id, u);
+    }
+    const categoryLabel = CATEGORY_LABELS[category] || category;
+    await Promise.allSettled(
+      Array.from(recipients.values()).map(u =>
+        sendNewOrderNotificationEmail({ to: u.email, orderTitle: title, category: categoryLabel, city, timing })
+          .catch(err => console.error('[orders] new-order notification failed for', u.email, err))
+      )
+    );
+  } catch (err) {
+    console.error('[orders] new-order notification batch failed:', err);
   }
 
   return res.status(201).json({ order: row, loggedIn, accountConflict, user });
@@ -163,9 +188,11 @@ async function listOrders(req, res) {
   if (!me) return res.status(401).json({ error: 'Unauthorized' });
 
   const { category, city, status, categories } = req.query || {};
-  // 'categories' = obory šikuly (users.services), volitelný filtr na víc kategorií najednou.
+  // 'categories' = obory šikuly (users.services). Rozšíříme o schválené příbuzné
+  // kategorie (viz _relatedCategories.js), ať šikula nevidí jen přesně svůj obor,
+  // ale i sousední generalistické/renovační/stěhovací kategorie.
   const categoriesArr = categories
-    ? String(categories).split(',').map(s => s.trim()).filter(Boolean)
+    ? Array.from(expandCategories(String(categories).split(',').map(s => s.trim()).filter(Boolean)))
     : null;
 
   let rows;
