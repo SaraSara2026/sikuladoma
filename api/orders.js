@@ -219,8 +219,14 @@ async function listOrders(req, res) {
       ORDER BY created_at DESC LIMIT 200
     `;
   } else if (me.role === 'sikula') {
+    // Dokud šikula poptávku nepřijme, nesmí vidět přesnou adresu zákazníka —
+    // orders.city je uložené jako "ulice, PSČ, město", tady se posílá jen
+    // poslední segment (obecná lokalita). Přesná adresa se odemkne až u
+    // přijaté zakázky (viz api/offers.js).
     rows = await sql`
-      SELECT o.id, o.title, o.category, o.subcategory, o.description, o.city, o.budget, o.urgent,
+      SELECT o.id, o.title, o.category, o.subcategory, o.description,
+             trim(reverse(split_part(reverse(o.city), ',', 1))) AS city,
+             o.budget, o.urgent,
              o.preferred_date, o.preferred_time, o.gender_preference, o.status, o.created_at,
              EXISTS (
                SELECT 1 FROM offers off WHERE off.order_id = o.id AND off.sikula_id = ${me.id}

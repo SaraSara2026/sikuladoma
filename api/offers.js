@@ -101,10 +101,15 @@ async function listOffers(req, res) {
       return res.status(200).json({ offers: rows });
     }
 
-    // customer_phone se pošle jen u přijaté/dokončené zakázky — před přijetím
-    // nabídky šikula telefon zákazníka nevidí.
+    // customer_phone i přesná adresa (order_city) se pošlou jen u přijaté/
+    // dokončené zakázky — před přijetím nabídky vidí šikula jen obecnou
+    // lokalitu a žádný kontakt na zákazníka.
     const rows = await sql`
-      SELECT o.*, ord.title AS order_title, ord.city AS order_city,
+      SELECT o.*, ord.title AS order_title,
+             CASE WHEN ord.status IN ('accepted', 'completed')
+               THEN ord.city
+               ELSE trim(reverse(split_part(reverse(ord.city), ',', 1)))
+             END AS order_city,
              ord.customer_id AS customer_id, ord.customer_name AS customer_name,
              ord.status AS order_status,
              CASE WHEN ord.status IN ('accepted', 'completed') THEN ord.customer_phone ELSE NULL END AS customer_phone
