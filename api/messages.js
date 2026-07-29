@@ -96,6 +96,7 @@ async function sendMessage(req, res) {
         senderName: me.name,
         orderTitle,
         messagePreview: body.length > 200 ? `${body.slice(0, 200)}…` : body,
+        conversationId: convId,
       });
     }
   } catch (err) {

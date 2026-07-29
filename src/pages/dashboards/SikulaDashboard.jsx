@@ -136,21 +136,21 @@ function useMyOffers() {
 }
 
 // Hook: součet nepřečtených zpráv napříč konverzacemi — pro badge u „Zprávy“.
-function useUnreadMessages() {
-  const [count, setCount] = useState(0)
+// Vrací všechny konverzace (pro badge "Zprávy" u konkrétní zakázky) i součet
+// nepřečtených napříč všemi — pro badge v levém menu.
+function useConversations() {
+  const [conversations, setConversations] = useState([])
   useEffect(() => {
     let alive = true
     const load = () => conversationsApi.list()
-      .then(({ conversations }) => {
-        if (!alive) return
-        setCount(conversations.reduce((sum, c) => sum + (Number(c.unread_count) || 0), 0))
-      })
+      .then(({ conversations }) => { if (alive) setConversations(conversations) })
       .catch(() => {})
     load()
     const id = setInterval(load, 30000)
     return () => { alive = false; clearInterval(id) }
   }, [])
-  return count
+  const unreadTotal = conversations.reduce((sum, c) => sum + (Number(c.unread_count) || 0), 0)
+  return { conversations, unreadTotal }
 }
 
 // lock: 'plan' = vyžaduje alespoň Aktivní šikula (199 Kč)
@@ -569,7 +569,18 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
   const { orders, loading: ordersLoading, error: ordersError } = useOpenOrders(sikulaCity, currentUser?.services)
   const { offers: myOffers, reload: reloadMyOffers } = useMyOffers()
   const { reviews: myReviews, summary: reviewsSummary, loading: reviewsLoading } = useMyReviews(currentUser?.id)
-  const unreadMessages = useUnreadMessages()
+  const { conversations, unreadTotal: unreadMessages } = useConversations()
+  const conversationForOrder = (orderId) => conversations.find(c => c.order_id === orderId)
+  const renderMsgBadge = (orderId) => {
+    const conv = conversationForOrder(orderId)
+    if (!conv) return null
+    const unread = Number(conv.unread_count) || 0
+    return (
+      <span className={`badge ${unread > 0 ? 'badge-orange' : 'badge-gray'}`} style={{ fontSize: 11 }}>
+        {unread > 0 ? `✉️ Nová zpráva (${unread})` : '💬 Zprávy'}
+      </span>
+    )
+  }
 
   // Detekce ?stripe=success/cancel po návratu ze Stripe Checkout
   const stripeHandled = useRef(false)
@@ -591,7 +602,11 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
     }
   }, [])
 
-  const acceptedJobs = myOffers.filter(o => o.status === 'accepted')
+  // offer.status zůstává 'accepted' napořád (accept ho nemění) — jestli je
+  // zakázka pořád aktivní nebo už dokončená, poznáme podle order_status
+  // (ord.status z listOffers), ne podle offer.status.
+  const acceptedJobs  = myOffers.filter(o => o.status === 'accepted' && o.order_status === 'accepted')
+  const completedJobs = myOffers.filter(o => o.status === 'accepted' && o.order_status === 'completed')
 
   const markComplete = async (orderId) => {
     if (!confirm('Označit zakázku jako hotovou?')) return
@@ -636,8 +651,9 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                        : m.lock === 'plus' ? !hasPlusPlan
                        : false
           const menuLabel = m.label
-          const badgeCount = m.id === 'messages' ? unreadMessages
-                           : m.id === 'active'   ? acceptedJobs.length
+          const badgeCount = m.id === 'messages'    ? unreadMessages
+                           : m.id === 'active'      ? acceptedJobs.length
+                           : m.id === 'offers-sent' ? acceptedJobs.length
                            : 0
           return (
             <button key={m.id}
@@ -793,6 +809,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                       <span><Icon name="clock" size={13} /> {relativni(o.created_at)}</span>
                       {o.urgent && <span style={{ color: 'var(--red)' }}>🚨 Urgentní</span>}
                       {o.has_my_offer && <span className="badge badge-green" style={{ fontSize: 11 }}>✓ Nabídka odeslána</span>}
+                      {renderMsgBadge(o.id)}
                     </div>
                     {o.description && (
                       <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>
@@ -841,6 +858,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                       <span><Icon name="clock" size={13} /> {relativni(o.created_at)}</span>
                       {o.urgent && <span style={{ color: 'var(--red)' }}>🚨 Urgentní</span>}
                       {o.has_my_offer && <span className="badge badge-green" style={{ fontSize: 11 }}>✓ Nabídka odeslána</span>}
+                      {renderMsgBadge(o.id)}
                     </div>
                     {o.description && (
                       <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>
@@ -875,15 +893,17 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {acceptedJobs.map(o => (
                 <div key={o.id} className="order-card" style={{ cursor: 'pointer' }}
-                  onClick={() => onNav('order-detail', { id: o.order_id, title: o.order_title, city: o.order_city, status: o.order_status })}>
+                  onClick={() => onNav('order-detail', { id: o.order_id, title: o.order_title, city: o.order_city, status: o.order_status, customer_id: o.customer_id, customer_name: o.customer_name })}>
                   <div className="order-info">
                     <div className="order-title">{o.order_title || 'Zakázka'}</div>
                     <div className="order-meta">
                       <span><Icon name="map" size={13} /> {o.order_city}</span>
                       <span><Icon name="wallet" size={13} /> {formatCurrencyCz(o.price)} (dohodnutá cena)</span>
                       {formatDateCz(o.available_date) && <span><Icon name="calendar" size={13} /> {formatDateCz(o.available_date)}</span>}
+                      {renderMsgBadge(o.order_id)}
                     </div>
                     {o.customer_name && <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>Zákazník: {o.customer_name}</div>}
+                    {o.customer_phone && <div style={{ fontSize: 13, color: 'var(--text3)' }}>Tel: {o.customer_phone}</div>}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
                     <span className="badge badge-green">Přijato</span>
@@ -914,7 +934,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {myOffers.map(o => (
                 <div key={o.id} className="order-card" style={{ cursor: 'pointer' }}
-                  onClick={() => onNav('order-detail', { id: o.order_id, title: o.order_title, city: o.order_city, status: o.order_status })}>
+                  onClick={() => onNav('order-detail', { id: o.order_id, title: o.order_title, city: o.order_city, status: o.order_status, customer_id: o.customer_id, customer_name: o.customer_name })}>
                   <div className="order-info">
                     <div className="order-title">{o.order_title || 'Zakázka'}</div>
                     <div className="order-meta">
@@ -922,13 +942,16 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                       <span><Icon name="wallet" size={13} /> {formatCurrencyCz(o.price)}</span>
                       {o.available_time && <span><Icon name="clock" size={13} /> {o.available_time}</span>}
                       {formatDateCz(o.available_date) && <span><Icon name="calendar" size={13} /> {formatDateCz(o.available_date)}</span>}
+                      {renderMsgBadge(o.order_id)}
                     </div>
                     {o.customer_name && <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>Zákazník: {o.customer_name}</div>}
+                    {o.customer_phone && <div style={{ fontSize: 13, color: 'var(--text3)' }}>Tel: {o.customer_phone}</div>}
                     {o.message && <p style={{ fontSize: 13, color: 'var(--text2)', marginTop: 6 }}>{o.message}</p>}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
                     {o.status === 'pending'  && <span className="badge badge-orange">Čeká na odpověď</span>}
-                    {o.status === 'accepted' && <span className="badge badge-green">Přijato ✓</span>}
+                    {o.status === 'accepted' && o.order_status === 'completed' && <span className="badge badge-green">Dokončeno</span>}
+                    {o.status === 'accepted' && o.order_status !== 'completed' && <span className="badge badge-green">Přijato ✓</span>}
                     {o.status === 'rejected' && <span className="badge badge-gray">Odmítnuto</span>}
                     {o.status === 'withdrawn' && <span className="badge badge-gray">Staženo</span>}
                     {(o.status === 'pending' || o.status === 'accepted') && (
@@ -1132,11 +1155,43 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
         )}
         {!lockedType && activePage === 'history' && (
           <div className="page-enter">
-            <div className="dash-title" style={{ marginBottom: 24 }}>Historie</div>
-            <div className="empty-state" style={{ padding: 40 }}>
-              <div className="empty-icon">📚</div>
-              <h3>Historie zakázek</h3>
-              <p>Brzy zde uvidíte všechny dokončené zakázky.</p>
+            <div className="dash-title" style={{ marginBottom: 24 }}>Historie — dokončené zakázky</div>
+            {completedJobs.length === 0 && (
+              <div className="empty-state" style={{ padding: 40 }}>
+                <div className="empty-icon">📚</div>
+                <h3>Zatím žádné dokončené zakázky</h3>
+                <p>Jakmile zakázku označíte jako hotovou, zobrazí se tady.</p>
+              </div>
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {completedJobs.map(o => {
+                const review = myReviews.find(r => r.order_id === o.order_id)
+                return (
+                  <div key={o.id} className="order-card" style={{ background: '#F8FAFC', cursor: 'pointer' }}
+                    onClick={() => onNav('order-detail', { id: o.order_id, title: o.order_title, city: o.order_city, status: o.order_status, customer_id: o.customer_id, customer_name: o.customer_name })}>
+                    <div className="order-info">
+                      <div className="order-title">{o.order_title || 'Zakázka'}</div>
+                      <div className="order-meta">
+                        <span><Icon name="map" size={13} /> {o.order_city}</span>
+                        <span><Icon name="wallet" size={13} /> {formatCurrencyCz(o.price)}</span>
+                        {formatDateCz(o.available_date) && <span><Icon name="calendar" size={13} /> {formatDateCz(o.available_date)}</span>}
+                      </div>
+                      {o.customer_name && <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>Zákazník: {o.customer_name}</div>}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                      <span className="badge badge-green">Dokončeno</span>
+                      {review ? (
+                        <div style={{ textAlign: 'right' }}>
+                          <div className="stars" style={{ fontSize: 13 }}>{'★'.repeat(review.stars)}</div>
+                          {review.comment && <div style={{ fontSize: 12, color: 'var(--text3)', maxWidth: 200 }}>&ldquo;{review.comment}&rdquo;</div>}
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: 12, color: 'var(--text3)' }}>Zatím bez hodnocení</span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}

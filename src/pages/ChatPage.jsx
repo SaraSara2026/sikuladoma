@@ -32,14 +32,20 @@ export default function ChatPage({ currentUser, startWith, onNav }) {
   const [msgLoading, setMsgLoading]   = useState(false)
   const [sending, setSending] = useState(false)
   const [error, setError]     = useState(null)
-  const [creating, setCreating] = useState(!!startWith?.otherUserId)
+  const [creating, setCreating] = useState(!!startWith?.otherUserId || !!startWith?.conversationId)
   const endRef = useRef(null)
 
-  // Přišli jsme sem přes "Napsat zprávu" u konkrétní nabídky/poptávky —
-  // konverzace mezi zákazníkem a šikulou možná ještě neexistuje, tak ji
-  // (idempotentně) založíme/otevřeme, než necháme běžet obvyklý seznam+poll.
+  // Přišli jsme sem přes "Napsat zprávu"/e-mailový odkaz ke konkrétní zakázce —
+  // buď už víme přesné ID konverzace (deep-link z e-mailu), nebo ji (idempotentně)
+  // založíme/najdeme podle druhé strany, než necháme běžet obvyklý seznam+poll.
   useEffect(() => {
-    if (!user || !startWith?.otherUserId) { setCreating(false); return }
+    if (!user) { setCreating(false); return }
+    if (startWith?.conversationId) {
+      setActive(startWith.conversationId)
+      setCreating(false)
+      return
+    }
+    if (!startWith?.otherUserId) { setCreating(false); return }
     let alive = true
     setCreating(true)
     conversationsApi.create({ other_user_id: startWith.otherUserId, order_id: startWith.orderId || null })
@@ -53,7 +59,7 @@ export default function ChatPage({ currentUser, startWith, onNav }) {
       .finally(() => { if (alive) setCreating(false) })
     return () => { alive = false }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, startWith?.otherUserId, startWith?.orderId])
+  }, [user, startWith?.otherUserId, startWith?.orderId, startWith?.conversationId])
 
   // Načti konverzace + poll každých POLL_MS.
   useEffect(() => {
@@ -65,7 +71,7 @@ export default function ChatPage({ currentUser, startWith, onNav }) {
         setConversations(conversations)
         // Pokud právě zakládáme/otevíráme konkrétní konverzaci (startWith), nechceme
         // mezitím přeskočit na jinou — počkáme, až se dokončí.
-        if (active == null && conversations.length > 0 && !startWith?.otherUserId) setActive(conversations[0].id)
+        if (active == null && conversations.length > 0 && !startWith?.otherUserId && !startWith?.conversationId) setActive(conversations[0].id)
       })
       .catch(e => alive && setError(e.message))
       .finally(() => alive && setConvLoading(false))
@@ -175,6 +181,9 @@ export default function ChatPage({ currentUser, startWith, onNav }) {
                 {activeConv?.other_avatar || initials(activeConv?.other_name)}
               </div>
               <div>
+                <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.3px' }}>
+                  {user.role === 'customer' ? 'Šikula' : 'Zákazník'}
+                </div>
                 <div style={{ fontWeight: 700, fontSize: 15 }}>{activeConv?.other_name}</div>
                 {activeConv?.order_title && (
                   <div style={{ fontSize: 12, color: 'var(--text3)' }}>Zakázka: {activeConv.order_title}</div>

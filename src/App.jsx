@@ -69,12 +69,13 @@ const PAGE_META = {
 
 
 export default function App() {
-  // Detekce ?page= z URL při startu (pro email linky verify-email + reset-password)
+  // Detekce ?page= z URL při startu (pro email linky verify-email + reset-password + chat/dashboard)
   const [page,        setPage]         = useState(() => {
     try {
       const p = new URL(window.location.href).searchParams.get('page');
       if (p === 'verify-email' || p === 'reset-password' || p === 'forgot-password') return p;
       if (p === 'sikulove' || p === 'kontakt' || p === 'sikuly' || p === 'pricing') return p;
+      if (p === 'chat' || p === 'dashboard') return p;
     } catch {}
     return "home";
   });
@@ -87,7 +88,18 @@ export default function App() {
   const [priority,    setPriority]     = useState(null);
   const [dashboardTab, setDashboardTab] = useState("prehled");
   const [currentOrder, setCurrentOrder] = useState(null); // pro SendOffer/OrderDetail navigaci
-  const [chatStart, setChatStart] = useState(null); // { otherUserId, orderId } pro "Napsat zprávu" u konkrétní nabídky
+  // { otherUserId, orderId } pro "Napsat zprávu" u konkrétní nabídky, nebo
+  // { conversationId } při otevření z e-mailového odkazu (?page=chat&conversation=)
+  const [chatStart, setChatStart] = useState(() => {
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('page') === 'chat') {
+        const conv = url.searchParams.get('conversation');
+        if (conv) return { conversationId: Number(conv) };
+      }
+    } catch {}
+    return null;
+  });
   const [profileId, setProfileId] = useState(() => {
     try { return new URL(window.location.href).searchParams.get('sikula'); } catch { return null; }
   });
@@ -232,7 +244,7 @@ export default function App() {
         sikulaUser?.role === "admin"
           ? <AdminDashboard     currentUser={sikulaUser} onLogout={logoutSikula} />
           : sikulaUser?.role === "customer"
-            ? <CustomerDashboard currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} />
+            ? <CustomerDashboard currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} onUpdateUser={updateSikula} />
             : sikulaUser?.role === "sikula"
               ? <SikulaDashboard currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} onUpdateUser={updateSikula} />
               : (

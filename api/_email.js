@@ -61,13 +61,14 @@ export async function sendPasswordResetEmail({ to, name, token }) {
 // ─── Potvrzení přijaté poptávky (zákazník) ─────────────────────────────────
 // Čistě informační e-mail — žádný token, žádný ověřovací odkaz, nic neblokuje.
 export async function sendOrderConfirmationEmail({ to, name, orderTitle, city, timing }) {
+  const url = `${getAppUrl()}/?page=dashboard`;
   const resend = getResend();
   const { data, error } = await resend.emails.send({
     from: getFromAddress(),
     to,
     subject: 'Vaše poptávka na ŠikulaDoma byla odeslána',
-    html: orderConfirmationTemplate({ name, orderTitle, city, timing }),
-    text: orderConfirmationTextVersion({ name, orderTitle, city, timing }),
+    html: orderConfirmationTemplate({ name, orderTitle, city, timing, url }),
+    text: orderConfirmationTextVersion({ name, orderTitle, city, timing, url }),
   });
   if (error) {
     console.error('[email] order confirmation send failed:', error);
@@ -81,13 +82,14 @@ export async function sendOrderConfirmationEmail({ to, name, orderTitle, city, t
 // příbuzné kategorii). Posílá se i šikulovi bez aktivního tarifu — poptávku
 // může vidět, reagovat může až po aktivaci tarifu.
 export async function sendNewOrderNotificationEmail({ to, orderTitle, category, city, timing }) {
+  const url = `${getAppUrl()}/?page=dashboard`;
   const resend = getResend();
   const { data, error } = await resend.emails.send({
     from: getFromAddress(),
     to,
     subject: 'Nová poptávka ve vašem okolí na ŠikulaDoma',
-    html: newOrderNotificationTemplate({ orderTitle, category, city, timing }),
-    text: newOrderNotificationTextVersion({ orderTitle, category, city, timing }),
+    html: newOrderNotificationTemplate({ orderTitle, category, city, timing, url }),
+    text: newOrderNotificationTextVersion({ orderTitle, category, city, timing, url }),
   });
   if (error) {
     console.error('[email] new order notification send failed:', error);
@@ -99,13 +101,14 @@ export async function sendNewOrderNotificationEmail({ to, orderTitle, category, 
 // ─── Nová nabídka na poptávku (zákazník) ────────────────────────────────────
 // Informuje zákazníka, že mu šikula poslal nabídku na jeho poptávku.
 export async function sendNewOfferNotificationEmail({ to, orderTitle, price, duration, date, message }) {
+  const url = `${getAppUrl()}/?page=dashboard`;
   const resend = getResend();
   const { data, error } = await resend.emails.send({
     from: getFromAddress(),
     to,
     subject: 'Máte novou nabídku na ŠikulaDoma',
-    html: newOfferNotificationTemplate({ orderTitle, price, duration, date, message }),
-    text: newOfferNotificationTextVersion({ orderTitle, price, duration, date, message }),
+    html: newOfferNotificationTemplate({ orderTitle, price, duration, date, message, url }),
+    text: newOfferNotificationTextVersion({ orderTitle, price, duration, date, message, url }),
   });
   if (error) {
     console.error('[email] new offer notification send failed:', error);
@@ -115,16 +118,19 @@ export async function sendNewOfferNotificationEmail({ to, orderTitle, price, dur
 }
 
 // ─── Nová zpráva v chatu (zákazník i šikula) ─────────────────────────────────
-// Stejná šablona pro obě strany — CTA text je neutrální ("odpovězte"),
-// protože se posílá zákazníkovi i šikulovi podle toho, kdo zprávu dostal.
-export async function sendNewMessageNotificationEmail({ to, senderName, orderTitle, messagePreview }) {
+// Stejná šablona pro obě strany. Pokud známe conversationId, odkaz vede rovnou
+// na konkrétní konverzaci; jinak aspoň na dashboard.
+export async function sendNewMessageNotificationEmail({ to, senderName, orderTitle, messagePreview, conversationId }) {
+  const url = conversationId
+    ? `${getAppUrl()}/?page=chat&conversation=${conversationId}`
+    : `${getAppUrl()}/?page=dashboard`;
   const resend = getResend();
   const { data, error } = await resend.emails.send({
     from: getFromAddress(),
     to,
     subject: 'Máte novou zprávu na ŠikulaDoma',
-    html: newMessageNotificationTemplate({ senderName, orderTitle, messagePreview }),
-    text: newMessageNotificationTextVersion({ senderName, orderTitle, messagePreview }),
+    html: newMessageNotificationTemplate({ senderName, orderTitle, messagePreview, url }),
+    text: newMessageNotificationTextVersion({ senderName, orderTitle, messagePreview, url }),
   });
   if (error) {
     console.error('[email] new message notification send failed:', error);
@@ -134,7 +140,9 @@ export async function sendNewMessageNotificationEmail({ to, senderName, orderTit
 }
 
 // ─── HTML šablony ───────────────────────────────────────────────────────────
-function baseLayout({ title, intro, ctaText, ctaUrl, footer }) {
+// box = předrenderované řádky (viz fieldRows) — oddělený zvýrazněný blok
+// s hlavní informací, ať e-mail není jen dlouhý odstavec textu.
+function baseLayout({ title, intro, box, ctaText, ctaUrl, footer }) {
   return `<!DOCTYPE html>
 <html lang="cs">
 <head>
@@ -153,18 +161,23 @@ function baseLayout({ title, intro, ctaText, ctaUrl, footer }) {
           </tr>
           <tr>
             <td style="padding:32px;">
-              <h1 style="margin:0 0 16px 0;font-size:22px;font-weight:600;color:#111827;">${title}</h1>
-              <p style="margin:0 0 24px 0;font-size:16px;line-height:1.5;color:#374151;">${intro}</p>
-              ${ctaUrl ? `
-              <div style="text-align:center;margin:32px 0;">
-                <a href="${ctaUrl}" style="display:inline-block;padding:12px 28px;background:#0EA5A4;color:#FFFFFF;text-decoration:none;border-radius:8px;font-weight:600;font-size:16px;">${ctaText}</a>
+              <h1 style="margin:0 0 12px 0;font-size:22px;font-weight:700;color:#111827;">${title}</h1>
+              <p style="margin:0 0 20px 0;font-size:15px;line-height:1.5;color:#374151;">${intro}</p>
+              ${box ? `
+              <div style="background:#F0FDFA;border:1px solid #99F6E4;border-left:4px solid #0EA5A4;border-radius:8px;padding:16px 18px;margin:0 0 24px 0;font-size:14px;line-height:1.8;color:#134E4A;">
+                ${box}
               </div>
-              <p style="margin:24px 0 8px 0;font-size:13px;color:#6B7280;">Nebo zkopíruj tento odkaz do prohlížeče:</p>
-              <p style="margin:0 0 24px 0;font-size:13px;color:#0EA5A4;word-break:break-all;">${ctaUrl}</p>
+              ` : ''}
+              ${ctaUrl ? `
+              <div style="text-align:center;margin:28px 0;">
+                <a href="${ctaUrl}" style="display:inline-block;padding:13px 30px;background:#0EA5A4;color:#FFFFFF;text-decoration:none;border-radius:8px;font-weight:700;font-size:16px;">${ctaText}</a>
+              </div>
+              <p style="margin:20px 0 6px 0;font-size:12px;color:#9CA3AF;">Nebo zkopírujte tento odkaz do prohlížeče:</p>
+              <p style="margin:0 0 8px 0;font-size:12px;color:#0EA5A4;word-break:break-all;">${ctaUrl}</p>
               ` : ''}
               ${footer ? `
-              <hr style="border:none;border-top:1px solid #E5E7EB;margin:24px 0;">
-              <p style="margin:0;font-size:13px;color:#6B7280;line-height:1.5;">${footer}</p>
+              <hr style="border:none;border-top:1px solid #E5E7EB;margin:20px 0 0 0;">
+              <p style="margin:16px 0 0 0;font-size:13px;color:#6B7280;line-height:1.5;">${footer}</p>
               ` : ''}
             </td>
           </tr>
@@ -180,6 +193,14 @@ function baseLayout({ title, intro, ctaText, ctaUrl, footer }) {
   </table>
 </body>
 </html>`;
+}
+
+// Řádky pro zvýrazněný box e-mailu: [['Label', hodnota], ...] -> escapované HTML.
+function fieldRows(pairs) {
+  return pairs
+    .filter(([, v]) => v)
+    .map(([k, v]) => `<div style="margin-bottom:4px;"><strong>${escapeHtml(k)}:</strong> ${escapeHtml(String(v))}</div>`)
+    .join('');
 }
 
 function verificationTemplate({ url }) {
@@ -229,22 +250,23 @@ function passwordResetTemplate({ name, url }) {
   });
 }
 
-function orderConfirmationTemplate({ name, orderTitle, city, timing }) {
+function orderConfirmationTemplate({ name, orderTitle, city, timing, url }) {
   const first = firstName(name);
-  const greeting = first ? `Dobrý den, ${escapeHtml(first)},` : 'Dobrý den,';
-  const details = [
-    orderTitle && `<strong>Poptávka:</strong> ${escapeHtml(orderTitle)}`,
-    city && `<strong>Místo:</strong> ${escapeHtml(city)}`,
-    timing && `<strong>Čas:</strong> ${escapeHtml(timing)}`,
-  ].filter(Boolean).join('<br>');
-
   return baseLayout({
     title: 'Poptávka byla odeslána',
-    intro: `${greeting} vaši poptávku jsme přijali a zobrazíme ji šikulům ve vašem okolí.<br><br>${details}<br><br>Do svého účtu se můžete přihlásit e-mailem a heslem, které jste zadali při odeslání poptávky.`,
+    intro: `${first ? `Dobrý den, ${escapeHtml(first)},` : 'Dobrý den,'} vaši poptávku jsme přijali a zobrazíme ji šikulům ve vašem okolí.`,
+    box: fieldRows([
+      ['Poptávka', orderTitle],
+      ['Místo', city],
+      ['Čas', timing],
+    ]),
+    ctaText: 'Zobrazit poptávku',
+    ctaUrl: url,
+    footer: 'Do svého účtu se můžete přihlásit e-mailem a heslem, které jste zadali při odeslání poptávky.',
   });
 }
 
-function orderConfirmationTextVersion({ name, orderTitle, city, timing }) {
+function orderConfirmationTextVersion({ name, orderTitle, city, timing, url }) {
   const first = firstName(name);
   const greeting = first ? `Dobrý den, ${first},` : 'Dobrý den,';
   const lines = [
@@ -256,6 +278,8 @@ function orderConfirmationTextVersion({ name, orderTitle, city, timing }) {
     city ? `Místo: ${city}` : null,
     timing ? `Čas: ${timing}` : null,
     '',
+    `Zobrazit poptávku: ${url}`,
+    '',
     'Do svého účtu se můžete přihlásit e-mailem a heslem, které jste zadali při odeslání poptávky.',
     '',
     'ŠikulaDoma',
@@ -263,21 +287,23 @@ function orderConfirmationTextVersion({ name, orderTitle, city, timing }) {
   return lines.join('\n');
 }
 
-function newOrderNotificationTemplate({ orderTitle, category, city, timing }) {
-  const details = [
-    orderTitle && `<strong>Poptávka:</strong> ${escapeHtml(orderTitle)}`,
-    category   && `<strong>Kategorie:</strong> ${escapeHtml(category)}`,
-    city       && `<strong>Místo:</strong> ${escapeHtml(city)}`,
-    timing     && `<strong>Termín:</strong> ${escapeHtml(timing)}`,
-  ].filter(Boolean).join('<br>');
-
+function newOrderNotificationTemplate({ orderTitle, category, city, timing, url }) {
   return baseLayout({
     title: 'Nová poptávka ve vašem okolí',
-    intro: `Dobrý den,<br><br>ve vašem okolí přibyla nová poptávka, která odpovídá vašemu oboru.<br><br>${details}<br><br>Pokud máte zájem, přihlaste se do svého profilu a pošlete zákazníkovi nabídku.`,
+    intro: 've vašem okolí přibyla nová poptávka, která odpovídá vašemu oboru.',
+    box: fieldRows([
+      ['Poptávka', orderTitle],
+      ['Kategorie', category],
+      ['Místo', city],
+      ['Termín', timing],
+    ]),
+    ctaText: 'Zobrazit poptávku',
+    ctaUrl: url,
+    footer: 'Pokud máte zájem, přihlaste se do svého profilu a pošlete zákazníkovi nabídku.',
   });
 }
 
-function newOrderNotificationTextVersion({ orderTitle, category, city, timing }) {
+function newOrderNotificationTextVersion({ orderTitle, category, city, timing, url }) {
   const lines = [
     'Dobrý den,',
     '',
@@ -294,6 +320,8 @@ function newOrderNotificationTextVersion({ orderTitle, category, city, timing })
     '',
     'Termín:',
     timing || '—',
+    '',
+    `Zobrazit poptávku: ${url}`,
     '',
     'Pokud máte zájem, přihlaste se do svého profilu a pošlete zákazníkovi nabídku.',
     '',
@@ -315,24 +343,26 @@ function formatPriceKc(price) {
   return n.toLocaleString('cs-CZ');
 }
 
-function newOfferNotificationTemplate({ orderTitle, price, duration, date, message }) {
+function newOfferNotificationTemplate({ orderTitle, price, duration, date, message, url }) {
   const priceStr = formatPriceKc(price);
   const dateStr = formatDateCz(date);
-  const details = [
-    orderTitle && `<strong>Poptávka:</strong> ${escapeHtml(orderTitle)}`,
-    priceStr  && `<strong>Cena:</strong> ${escapeHtml(priceStr)} Kč`,
-    duration  && `<strong>Odhad délky práce:</strong> ${escapeHtml(duration)}`,
-    dateStr   && `<strong>Navrhovaný termín:</strong> ${escapeHtml(dateStr)}`,
-    message   && `<strong>Zpráva šikuly:</strong> ${escapeHtml(message)}`,
-  ].filter(Boolean).join('<br>');
-
   return baseLayout({
-    title: 'Nová nabídka na vaši poptávku',
-    intro: `Dobrý den,<br><br>na vaši poptávku přišla nová nabídka od šikuly.<br><br>${details}<br><br>Přihlaste se do svého zákaznického přehledu a nabídku si zobrazte.`,
+    title: 'Máte novou nabídku',
+    intro: 'Na vaši poptávku přišla nová nabídka od šikuly.',
+    box: fieldRows([
+      ['Poptávka', orderTitle],
+      ['Cena', priceStr ? `${priceStr} Kč` : null],
+      ['Odhad délky práce', duration],
+      ['Navrhovaný termín', dateStr],
+      ['Zpráva šikuly', message],
+    ]),
+    ctaText: 'Zobrazit nabídku',
+    ctaUrl: url,
+    footer: 'Přihlaste se do svého zákaznického přehledu a nabídku si zobrazte.',
   });
 }
 
-function newOfferNotificationTextVersion({ orderTitle, price, duration, date, message }) {
+function newOfferNotificationTextVersion({ orderTitle, price, duration, date, message, url }) {
   const priceStr = formatPriceKc(price);
   const dateStr = formatDateCz(date);
   const lines = [
@@ -355,6 +385,8 @@ function newOfferNotificationTextVersion({ orderTitle, price, duration, date, me
     'Zpráva šikuly:',
     message || '—',
     '',
+    `Zobrazit nabídku: ${url}`,
+    '',
     'Přihlaste se do svého zákaznického přehledu a nabídku si zobrazte.',
     '',
     'ŠikulaDoma',
@@ -362,20 +394,22 @@ function newOfferNotificationTextVersion({ orderTitle, price, duration, date, me
   return lines.join('\n');
 }
 
-function newMessageNotificationTemplate({ senderName, orderTitle, messagePreview }) {
-  const details = [
-    senderName   && `<strong>Od:</strong> ${escapeHtml(senderName)}`,
-    orderTitle   && `<strong>Zakázka:</strong> ${escapeHtml(orderTitle)}`,
-    messagePreview && `<strong>Zpráva:</strong> ${escapeHtml(messagePreview)}`,
-  ].filter(Boolean).join('<br>');
-
+function newMessageNotificationTemplate({ senderName, orderTitle, messagePreview, url }) {
   return baseLayout({
-    title: 'Nová zpráva na ŠikulaDoma',
-    intro: `Dobrý den,<br><br>na ŠikulaDoma vám přišla nová zpráva.<br><br>${details}<br><br>Přihlaste se do svého profilu a odpovězte.`,
+    title: 'Máte novou zprávu',
+    intro: 'Na ŠikulaDoma vám přišla nová zpráva.',
+    box: fieldRows([
+      ['Od', senderName],
+      ['Zakázka', orderTitle],
+      ['Zpráva', messagePreview],
+    ]),
+    ctaText: 'Otevřít zprávy',
+    ctaUrl: url,
+    footer: 'Po přihlášení můžete rovnou odpovědět.',
   });
 }
 
-function newMessageNotificationTextVersion({ senderName, orderTitle, messagePreview }) {
+function newMessageNotificationTextVersion({ senderName, orderTitle, messagePreview, url }) {
   const lines = [
     'Dobrý den,',
     '',
@@ -390,7 +424,9 @@ function newMessageNotificationTextVersion({ senderName, orderTitle, messagePrev
     'Zpráva:',
     messagePreview || '—',
     '',
-    'Přihlaste se do svého profilu a odpovězte.',
+    `Otevřít zprávy: ${url}`,
+    '',
+    'Po přihlášení můžete rovnou odpovědět.',
     '',
     'ŠikulaDoma',
   ];

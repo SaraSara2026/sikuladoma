@@ -65,7 +65,7 @@ async function listReviews(req, res) {
 
   if (targetId) {
     const rows = await sql`
-      SELECT r.id, r.stars, r.recommend, r.comment, r.created_at,
+      SELECT r.id, r.order_id, r.stars, r.recommend, r.comment, r.created_at,
              u.name AS reviewer_name, u.avatar AS reviewer_avatar
       FROM reviews r
       JOIN users u ON u.id = r.reviewer_id

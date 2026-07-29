@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { CATEGORIES, ORDER_STATUS_MAP } from '../../data'
 import Icon from '../../components/Icon'
 import ChatPage from '../ChatPage'
-import { ordersApi, offersApi, reviewsApi, conversationsApi } from '../../lib/api.js'
+import { ordersApi, offersApi, reviewsApi, conversationsApi, usersApi } from '../../lib/api.js'
 import { formatCurrencyCz } from '../../lib/format.js'
 import HodnoceniForm from '../../modals/HodnoceniForm.jsx'
 
@@ -110,30 +110,69 @@ function useMyReviews() {
 }
 
 // Hook: součet nepřečtených zpráv napříč konverzacemi — pro badge u „Zprávy“.
-function useUnreadMessages() {
-  const [count, setCount] = useState(0)
+// Vrací všechny konverzace (pro badge "Zprávy" u konkrétní zakázky) i součet
+// nepřečtených napříč všemi — pro badge v levém menu.
+function useConversations() {
+  const [conversations, setConversations] = useState([])
   useEffect(() => {
     let alive = true
     const load = () => conversationsApi.list()
-      .then(({ conversations }) => {
-        if (!alive) return
-        setCount(conversations.reduce((sum, c) => sum + (Number(c.unread_count) || 0), 0))
-      })
+      .then(({ conversations }) => { if (alive) setConversations(conversations) })
       .catch(() => {})
     load()
     const id = setInterval(load, 30000)
     return () => { alive = false; clearInterval(id) }
   }, [])
-  return count
+  const unreadTotal = conversations.reduce((sum, c) => sum + (Number(c.unread_count) || 0), 0)
+  return { conversations, unreadTotal }
 }
 
-export default function CustomerDashboard({ currentUser, onNav, onLogout }) {
+export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpdateUser }) {
   const [activePage, setActivePage] = useState('overview')
   const { orders, loading, error, reload } = useMyOrders()
   const { offers: allOffers } = useAllMyOffers(orders)
   const { reviews: myReviews, loading: reviewsLoading, reload: reloadReviews } = useMyReviews()
-  const unreadMessages = useUnreadMessages()
+  const { conversations, unreadTotal: unreadMessages } = useConversations()
+  const renderMsgBadge = (orderId) => {
+    const conv = conversations.find(c => c.order_id === orderId)
+    if (!conv) return null
+    const unread = Number(conv.unread_count) || 0
+    return (
+      <span className={`badge ${unread > 0 ? 'badge-orange' : 'badge-gray'}`} style={{ fontSize: 11 }}>
+        {unread > 0 ? `✉️ Nová zpráva (${unread})` : '💬 Zprávy'}
+      </span>
+    )
+  }
   const pendingOffersCount = allOffers.filter(o => o.status === 'pending').length
+
+  const [profileForm, setProfileForm] = useState({ name: '', city: '', phone: '' })
+  const [profileSaving, setProfileSaving] = useState(false)
+  const [profileMsg, setProfileMsg] = useState(null)
+  useEffect(() => {
+    if (!currentUser) return
+    setProfileForm({ name: currentUser.name || '', city: currentUser.city || '', phone: currentUser.phone || '' })
+  }, [currentUser?.id])
+
+  const saveProfile = async () => {
+    setProfileMsg(null)
+    const trimmedName = (profileForm.name || '').trim()
+    if (!trimmedName) { setProfileMsg({ type: 'error', text: 'Zadejte jméno.' }); return }
+    setProfileSaving(true)
+    try {
+      const { user } = await usersApi.updateMe({
+        name: trimmedName,
+        city: profileForm.city,
+        phone: profileForm.phone,
+      })
+      onUpdateUser?.({ ...currentUser, ...user })
+      setProfileMsg({ type: 'success', text: 'Profil uložen ✓' })
+      setTimeout(() => setProfileMsg(null), 3000)
+    } catch (e) {
+      setProfileMsg({ type: 'error', text: e.message || 'Nepodařilo se uložit.' })
+    } finally {
+      setProfileSaving(false)
+    }
+  }
 
   const completedOrders  = orders.filter(o => o.status === 'completed')
   const activeOrders     = orders.filter(o => o.status === 'accepted')
@@ -158,9 +197,15 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout }) {
     try { await ordersApi.patch(orderId, 'cancel'); reload() } catch (e) { alert(e.message) }
   }
 
+  const sikulaIdForOrder = (orderId) => allOffers.find(o => o.order_id === orderId && o.status === 'accepted')?.sikula_id
+
   const renderOrderCard = (o, opts = {}) => (
     <div key={o.id} className="order-card" onClick={() => onNav?.('order-detail', o)}
-      style={{ cursor: 'pointer', ...(opts.flat && { margin: 0, borderRadius: 0, border: 'none', borderBottom: '1px solid var(--border)' }) }}>
+      style={{
+        cursor: 'pointer',
+        ...(o.status === 'completed' && { background: '#F8FAFC' }),
+        ...(opts.flat && { margin: 0, borderRadius: 0, border: 'none', borderBottom: '1px solid var(--border)' }),
+      }}>
       <div className="order-cat-icon">{CAT_ICON[o.category] || '🔧'}</div>
       <div className="order-info">
         <div className="order-title">{o.title}</div>
@@ -168,6 +213,7 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout }) {
           <span><Icon name="map" size={13} /> {o.city}</span>
           {o.budget && <span><Icon name="wallet" size={13} /> {o.budget}</span>}
           <span><Icon name="clock" size={13} /> {relativni(o.created_at)}</span>
+          {renderMsgBadge(o.id)}
         </div>
       </div>
       <div className="order-actions" style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
@@ -175,6 +221,12 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout }) {
           {ORDER_STATUS_MAP[o.status]?.label || o.status}
         </div>
         {o.offers_count > 0 && <div className="badge badge-orange">{o.offers_count} nabídek</div>}
+        {o.status === 'accepted' && sikulaIdForOrder(o.id) && (
+          <button className="btn btn-outline btn-sm"
+            onClick={(e) => { e.stopPropagation(); onNav('chat', { otherUserId: sikulaIdForOrder(o.id), orderId: o.id }) }}>
+            💬 Napsat zprávu
+          </button>
+        )}
         {o.status === 'accepted' && (
           <button className="btn btn-green btn-sm" onClick={(e) => { e.stopPropagation(); handleCompleteOrder(o.id) }}>
             Označit jako dokončené
@@ -305,7 +357,10 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout }) {
                   <div className="offer-avatar">{offer.sikula_avatar || offer.sikula_name?.[0] || '?'}</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: 16 }}>{offer.sikula_name}</div>
-                    <div style={{ fontSize: 13, color: 'var(--text2)' }}>Na poptávku: {offer.order_title}</div>
+                    <div style={{ fontSize: 13, color: 'var(--text2)', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span>Na poptávku: {offer.order_title}</span>
+                      {renderMsgBadge(offer.order_id)}
+                    </div>
                     {offer.sikula_rating && <Stars n={Math.round(offer.sikula_rating)} />}
                   </div>
                   <div className="offer-price">{formatCurrencyCz(offer.price)}</div>
@@ -448,11 +503,28 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout }) {
                 </div>
               </div>
               <div className="form-row">
-                <div className="form-group"><label className="form-label">Jméno</label><input className="form-input" defaultValue={currentUser?.name} /></div>
+                <div className="form-group"><label className="form-label">Jméno</label>
+                  <input className="form-input" value={profileForm.name} onChange={e => setProfileForm(p => ({ ...p, name: e.target.value }))} />
+                </div>
                 <div className="form-group"><label className="form-label">E-mail</label><input className="form-input" defaultValue={currentUser?.email} disabled /></div>
               </div>
-              <div className="form-group"><label className="form-label">Město</label><input className="form-input" defaultValue={currentUser?.city} /></div>
-              <button className="btn btn-primary">Uložit změny</button>
+              <div className="form-row">
+                <div className="form-group"><label className="form-label">Město</label>
+                  <input className="form-input" value={profileForm.city} onChange={e => setProfileForm(p => ({ ...p, city: e.target.value }))} />
+                </div>
+                <div className="form-group"><label className="form-label">Telefon (nepovinné)</label>
+                  <input className="form-input" value={profileForm.phone} onChange={e => setProfileForm(p => ({ ...p, phone: e.target.value }))}
+                    placeholder="+420 777 000 000" type="tel" />
+                </div>
+              </div>
+              {profileMsg && (
+                <div style={{ marginBottom: 12, fontSize: 13, color: profileMsg.type === 'error' ? '#B91C1C' : '#166534' }}>
+                  {profileMsg.text}
+                </div>
+              )}
+              <button className="btn btn-primary" onClick={saveProfile} disabled={profileSaving}>
+                {profileSaving ? 'Ukládám…' : 'Uložit změny'}
+              </button>
             </div>
           </div>
         )}

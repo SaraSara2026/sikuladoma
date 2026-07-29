@@ -3,6 +3,7 @@ import { ORDER_STATUS_MAP } from '../data'
 import Icon from '../components/Icon'
 import { offersApi } from '../lib/api'
 import { formatCurrencyCz, formatDateCz } from '../lib/format.js'
+import ChatPage from './ChatPage.jsx'
 
 const fieldLabel = { fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px' }
 const fieldValue = { fontSize: 15, fontWeight: 600, marginTop: 4 }
@@ -26,6 +27,12 @@ export default function OrderDetailPage({ order, onNav, currentUser, onAcceptOff
   }, [order?.id])
 
   if (!order) return null
+
+  // "Zprávy k zakázce" má smysl jen když je jasné, s kým — u přijaté/dokončené
+  // zakázky je to jednoznačně buď přijatý šikula, nebo zadavatel poptávky.
+  const isResolved = order.status === 'accepted' || order.status === 'completed'
+  const acceptedOffer = offers.find(o => o.status === 'accepted')
+  const chatOtherUserId = currentUser?.role === 'customer' ? acceptedOffer?.sikula_id : order.customer_id
 
   const accept = async (offer) => {
     setActing(offer.id)
@@ -62,7 +69,11 @@ export default function OrderDetailPage({ order, onNav, currentUser, onAcceptOff
         </div>
 
         <div className="tabs" style={{ margin: '16px 16px 0' }}>
-          {[['detail', '📋 Detail'], ['offers', `💬 Nabídky (${offers.length})`]].map(([t, label]) => (
+          {[
+            ['detail', '📋 Detail'],
+            ['offers', `💬 Nabídky (${offers.length})`],
+            ...(isResolved && chatOtherUserId ? [['messages', '✉️ Zprávy k zakázce']] : []),
+          ].map(([t, label]) => (
             <button key={t} className={`tab-btn ${activeTab === t ? 'active' : ''}`} onClick={() => setActiveTab(t)}>{label}</button>
           ))}
         </div>
@@ -161,6 +172,12 @@ export default function OrderDetailPage({ order, onNav, currentUser, onAcceptOff
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {activeTab === 'messages' && isResolved && chatOtherUserId && (
+            <div style={{ margin: '-24px' }}>
+              <ChatPage currentUser={currentUser} startWith={{ otherUserId: chatOtherUserId, orderId: order.id }} />
             </div>
           )}
         </div>
