@@ -155,14 +155,6 @@ export default function NewOrderPage({ onNav, onSubmit }) {
           {step === 3 && (
             <>
               <div className="form-group">
-                <label className="form-label">Fotky (volitelné)</label>
-                <div style={{ border: '2px dashed var(--border)', borderRadius: 12, padding: '28px', textAlign: 'center', background: 'var(--bg)', cursor: 'pointer' }}>
-                  <div style={{ fontSize: 28, marginBottom: 6 }}>📷</div>
-                  <p style={{ fontSize: 14, color: 'var(--text2)' }}>Kliknutím nebo přetažením přidejte fotky</p>
-                  <p style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>JPG, PNG do 10 MB</p>
-                </div>
-              </div>
-              <div className="form-group">
                 <label className="form-label">Poznámka pro šikuly</label>
                 <textarea className="form-textarea" value={data.note} onChange={e => update('note', e.target.value)}
                   placeholder="Cokoliv dalšího, co by šikula měl vědět…" style={{ minHeight: 80 }} />

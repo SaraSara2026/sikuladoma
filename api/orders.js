@@ -219,15 +219,21 @@ async function listOrders(req, res) {
       ORDER BY created_at DESC LIMIT 200
     `;
   } else if (me.role === 'sikula') {
-    // Dokud šikula poptávku nepřijme, nesmí vidět přesnou adresu zákazníka —
-    // orders.city je uložené jako "ulice, PSČ, město", tady se posílá jen
-    // poslední segment (obecná lokalita). Přesná adresa se odemkne až u
-    // přijaté zakázky (viz api/offers.js).
+    // Bez aktivního tarifu smí šikula vidět jen omezený náhled poptávky —
+    // název, kategorii, podslužbu, obecnou lokalitu a že poptávka existuje.
+    // Popis práce, termín a urgentnost jsou "detail poptávky" a odemyká je
+    // až aktivní tarif (199/299 Kč). Přesná adresa se navíc odemyká zvlášť
+    // až u přijaté zakázky (viz api/offers.js) — bez ohledu na tarif.
+    const hasActivePlan = me.subscription_status === 'active' && (me.plan === 'aktiv' || me.plan === 'aktiv-plus');
     rows = await sql`
-      SELECT o.id, o.title, o.category, o.subcategory, o.description,
+      SELECT o.id, o.title, o.category, o.subcategory,
              trim(reverse(split_part(reverse(o.city), ',', 1))) AS city,
-             o.budget, o.urgent,
-             o.preferred_date, o.preferred_time, o.gender_preference, o.status, o.created_at,
+             o.budget,
+             CASE WHEN ${hasActivePlan} THEN o.description ELSE NULL END AS description,
+             CASE WHEN ${hasActivePlan} THEN o.urgent ELSE false END AS urgent,
+             CASE WHEN ${hasActivePlan} THEN o.preferred_date ELSE NULL END AS preferred_date,
+             CASE WHEN ${hasActivePlan} THEN o.preferred_time ELSE NULL END AS preferred_time,
+             o.gender_preference, o.status, o.created_at,
              EXISTS (
                SELECT 1 FROM offers off WHERE off.order_id = o.id AND off.sikula_id = ${me.id}
              ) AS has_my_offer

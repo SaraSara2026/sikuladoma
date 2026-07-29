@@ -823,14 +823,25 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                       </div>
                     )}
                   </div>
-                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                    <button className="btn btn-outline btn-sm" onClick={(e) => { e.stopPropagation(); onNav('order-detail', o) }}>Detail</button>
-                    {!o.has_my_offer && (
-                      <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); onNav('send-offer', o) }}>
-                        {isActivePlan ? 'Nabídnout se' : 'Reagovat'}
+                  {isActivePlan ? (
+                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                      <button className="btn btn-outline btn-sm" onClick={(e) => { e.stopPropagation(); onNav('order-detail', o) }}>Detail</button>
+                      {!o.has_my_offer && (
+                        <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); onNav('send-offer', o) }}>
+                          Nabídnout se
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end', maxWidth: 170, flexShrink: 0 }}>
+                      <div style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'right' }}>
+                        Pro zobrazení detailu poptávky a odeslání nabídky si aktivujte tarif.
+                      </div>
+                      <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); setActivePage('membership') }}>
+                        Aktivovat tarif
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -872,14 +883,25 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                       </div>
                     )}
                   </div>
-                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                    <button className="btn btn-outline btn-sm" onClick={(e) => { e.stopPropagation(); onNav('order-detail', o) }}>Detail</button>
-                    {!o.has_my_offer && (
-                      <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); onNav('send-offer', o) }}>
-                        {isActivePlan ? 'Nabídnout se' : 'Reagovat'}
+                  {isActivePlan ? (
+                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                      <button className="btn btn-outline btn-sm" onClick={(e) => { e.stopPropagation(); onNav('order-detail', o) }}>Detail</button>
+                      {!o.has_my_offer && (
+                        <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); onNav('send-offer', o) }}>
+                          Nabídnout se
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end', maxWidth: 170, flexShrink: 0 }}>
+                      <div style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'right' }}>
+                        Pro zobrazení detailu poptávky a odeslání nabídky si aktivujte tarif.
+                      </div>
+                      <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); setActivePage('membership') }}>
+                        Aktivovat tarif
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

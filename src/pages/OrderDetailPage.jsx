@@ -15,8 +15,13 @@ export default function OrderDetailPage({ order, onNav, currentUser, onAcceptOff
   const [error, setError]         = useState(null)
   const [acting, setActing]       = useState(null) // id právě akceptované nabídky
 
+  // Bez aktivního tarifu šikula nesmí vidět detail poptávky ani nabídky/zprávy k ní.
+  const sikulaHasActivePlan = currentUser?.subscription_status === 'active'
+    && (currentUser?.plan === 'aktiv' || currentUser?.plan === 'aktiv-plus')
+  const gateForSikula = currentUser?.role === 'sikula' && !sikulaHasActivePlan
+
   useEffect(() => {
-    if (!order?.id) return
+    if (!order?.id || gateForSikula) return
     let alive = true
     setLoading(true)
     offersApi.listByOrder(order.id)
@@ -24,9 +29,22 @@ export default function OrderDetailPage({ order, onNav, currentUser, onAcceptOff
       .catch(e => { if (alive) setError(e.message) })
       .finally(() => { if (alive) setLoading(false) })
     return () => { alive = false }
-  }, [order?.id])
+  }, [order?.id, gateForSikula])
 
   if (!order) return null
+
+  if (gateForSikula) {
+    return (
+      <div className="page-enter" style={{ padding: '32px 24px', maxWidth: 640, margin: '0 auto' }}>
+        <button className="btn btn-ghost" onClick={() => onNav('back')} style={{ marginBottom: 16 }}>← Zpět</button>
+        <div className="card card-pad" style={{ textAlign: 'center', padding: '40px 24px' }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🔒</div>
+          <h2 style={{ marginBottom: 22 }}>Pro zobrazení detailu poptávky a odeslání nabídky si aktivujte tarif.</h2>
+          <button className="btn btn-primary" onClick={() => onNav('dash-sikula')}>Aktivovat tarif</button>
+        </div>
+      </div>
+    )
+  }
 
   // "Zprávy k zakázce" má smysl jen když je jasné, s kým — u přijaté/dokončené
   // zakázky je to jednoznačně buď přijatý šikula, nebo zadavatel poptávky.
