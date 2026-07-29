@@ -96,6 +96,24 @@ export async function sendNewOrderNotificationEmail({ to, orderTitle, category, 
   return data;
 }
 
+// ─── Nová nabídka na poptávku (zákazník) ────────────────────────────────────
+// Informuje zákazníka, že mu šikula poslal nabídku na jeho poptávku.
+export async function sendNewOfferNotificationEmail({ to, orderTitle, price, duration, date, message }) {
+  const resend = getResend();
+  const { data, error } = await resend.emails.send({
+    from: getFromAddress(),
+    to,
+    subject: 'Máte novou nabídku na ŠikulaDoma',
+    html: newOfferNotificationTemplate({ orderTitle, price, duration, date, message }),
+    text: newOfferNotificationTextVersion({ orderTitle, price, duration, date, message }),
+  });
+  if (error) {
+    console.error('[email] new offer notification send failed:', error);
+    throw new Error('Nepodařilo se odeslat e-mail o nové nabídce.');
+  }
+  return data;
+}
+
 // ─── HTML šablony ───────────────────────────────────────────────────────────
 function baseLayout({ title, intro, ctaText, ctaUrl, footer }) {
   return `<!DOCTYPE html>
@@ -259,6 +277,66 @@ function newOrderNotificationTextVersion({ orderTitle, category, city, timing })
     timing || '—',
     '',
     'Pokud máte zájem, přihlaste se do svého profilu a pošlete zákazníkovi nabídku.',
+    '',
+    'ŠikulaDoma',
+  ];
+  return lines.join('\n');
+}
+
+function formatDateCz(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return null;
+  return `${d.getUTCDate()}. ${d.getUTCMonth() + 1}. ${d.getUTCFullYear()}`;
+}
+
+function formatPriceKc(price) {
+  const n = Math.round(Number(price));
+  if (!Number.isFinite(n)) return null;
+  return n.toLocaleString('cs-CZ');
+}
+
+function newOfferNotificationTemplate({ orderTitle, price, duration, date, message }) {
+  const priceStr = formatPriceKc(price);
+  const dateStr = formatDateCz(date);
+  const details = [
+    orderTitle && `<strong>Poptávka:</strong> ${escapeHtml(orderTitle)}`,
+    priceStr  && `<strong>Cena:</strong> ${escapeHtml(priceStr)} Kč`,
+    duration  && `<strong>Odhad délky práce:</strong> ${escapeHtml(duration)}`,
+    dateStr   && `<strong>Navrhovaný termín:</strong> ${escapeHtml(dateStr)}`,
+    message   && `<strong>Zpráva šikuly:</strong> ${escapeHtml(message)}`,
+  ].filter(Boolean).join('<br>');
+
+  return baseLayout({
+    title: 'Nová nabídka na vaši poptávku',
+    intro: `Dobrý den,<br><br>na vaši poptávku přišla nová nabídka od šikuly.<br><br>${details}<br><br>Přihlaste se do svého zákaznického přehledu a nabídku si zobrazte.`,
+  });
+}
+
+function newOfferNotificationTextVersion({ orderTitle, price, duration, date, message }) {
+  const priceStr = formatPriceKc(price);
+  const dateStr = formatDateCz(date);
+  const lines = [
+    'Dobrý den,',
+    '',
+    'na vaši poptávku přišla nová nabídka od šikuly.',
+    '',
+    'Poptávka:',
+    orderTitle || '—',
+    '',
+    'Cena:',
+    priceStr ? `${priceStr} Kč` : '—',
+    '',
+    'Odhad délky práce:',
+    duration || '—',
+    '',
+    'Navrhovaný termín:',
+    dateStr || '—',
+    '',
+    'Zpráva šikuly:',
+    message || '—',
+    '',
+    'Přihlaste se do svého zákaznického přehledu a nabídku si zobrazte.',
     '',
     'ŠikulaDoma',
   ];

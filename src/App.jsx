@@ -87,6 +87,7 @@ export default function App() {
   const [priority,    setPriority]     = useState(null);
   const [dashboardTab, setDashboardTab] = useState("prehled");
   const [currentOrder, setCurrentOrder] = useState(null); // pro SendOffer/OrderDetail navigaci
+  const [chatStart, setChatStart] = useState(null); // { otherUserId, orderId } pro "Napsat zprávu" u konkrétní nabídky
   const [profileId, setProfileId] = useState(() => {
     try { return new URL(window.location.href).searchParams.get('sikula'); } catch { return null; }
   });
@@ -109,10 +110,13 @@ export default function App() {
   const handleNav = (target, payload) => {
     if (target === "send-offer")   { setCurrentOrder(payload); setPage("send-offer"); window.scrollTo(0, 0); return; }
     if (target === "order-detail") { setCurrentOrder(payload); setPage("order-detail"); window.scrollTo(0, 0); return; }
-    if (target === "chat")         { setPage("chat"); window.scrollTo(0, 0); return; }
+    if (target === "chat")         { setChatStart(payload || null); setPage("chat"); window.scrollTo(0, 0); return; }
     if (target === "dash-sikula" || target === "dash-customer") { setPage("dashboard"); window.scrollTo(0, 0); return; }
     if (target === "new-order")    { openOrder(); return; }
-    if (target === "back" || target === "home") { setPage("home"); window.scrollTo(0, 0); return; }
+    // "back" = z podstránky pro přihlášené (nabídka/detail poptávky apod.) —
+    // přihlášeného uživatele vrací do jeho dashboardu, ne na homepage.
+    if (target === "back")         { setPage(sikulaUser ? "dashboard" : "home"); window.scrollTo(0, 0); return; }
+    if (target === "home")         { setPage("home"); window.scrollTo(0, 0); return; }
     if (target === "logout")       { logoutSikula(); return; }
     // fallback: setPage napřímo (musí být známá stránka)
     setPage(target);
@@ -247,7 +251,7 @@ export default function App() {
         <OrderDetailPage order={currentOrder} currentUser={sikulaUser} onNav={handleNav}
           onAcceptOffer={() => { /* refresh dashboard po accept */ }} />
       ) : page === "chat" ? (
-        <ChatPage currentUser={sikulaUser} />
+        <ChatPage currentUser={sikulaUser} startWith={chatStart} />
       ) : page === "verify-email" ? (
         <VerifyEmailPage
           onBack={() => { setPage("home"); window.history.replaceState({}, '', '/'); }}

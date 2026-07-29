@@ -22,7 +22,7 @@ function initials(name) {
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 }
 
-export default function ChatPage({ currentUser }) {
+export default function ChatPage({ currentUser, startWith }) {
   const user = currentUser
   const [conversations, setConversations] = useState([])
   const [active, setActive]   = useState(null)        // id konverzace
@@ -32,7 +32,28 @@ export default function ChatPage({ currentUser }) {
   const [msgLoading, setMsgLoading]   = useState(false)
   const [sending, setSending] = useState(false)
   const [error, setError]     = useState(null)
+  const [creating, setCreating] = useState(!!startWith?.otherUserId)
   const endRef = useRef(null)
+
+  // Přišli jsme sem přes "Napsat zprávu" u konkrétní nabídky/poptávky —
+  // konverzace mezi zákazníkem a šikulou možná ještě neexistuje, tak ji
+  // (idempotentně) založíme/otevřeme, než necháme běžet obvyklý seznam+poll.
+  useEffect(() => {
+    if (!user || !startWith?.otherUserId) { setCreating(false); return }
+    let alive = true
+    setCreating(true)
+    conversationsApi.create({ other_user_id: startWith.otherUserId, order_id: startWith.orderId || null })
+      .then(({ conversation }) => {
+        if (!alive) return
+        setActive(conversation.id)
+        return conversationsApi.list()
+      })
+      .then(res => { if (alive && res) setConversations(res.conversations) })
+      .catch(e => { if (alive) setError(e.message) })
+      .finally(() => { if (alive) setCreating(false) })
+    return () => { alive = false }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, startWith?.otherUserId, startWith?.orderId])
 
   // Načti konverzace + poll každých POLL_MS.
   useEffect(() => {
@@ -42,7 +63,9 @@ export default function ChatPage({ currentUser }) {
       .then(({ conversations }) => {
         if (!alive) return
         setConversations(conversations)
-        if (active == null && conversations.length > 0) setActive(conversations[0].id)
+        // Pokud právě zakládáme/otevíráme konkrétní konverzaci (startWith), nechceme
+        // mezitím přeskočit na jinou — počkáme, až se dokončí.
+        if (active == null && conversations.length > 0 && !startWith?.otherUserId) setActive(conversations[0].id)
       })
       .catch(e => alive && setError(e.message))
       .finally(() => alive && setConvLoading(false))
@@ -100,10 +123,10 @@ export default function ChatPage({ currentUser }) {
     <div className="page-enter" style={{ padding: '32px 24px', maxWidth: 900, margin: '0 auto' }}>
       <h2 style={{ marginBottom: 24 }}>Zprávy</h2>
 
-      {convLoading && <div style={{ color: 'var(--text3)' }}>Načítám konverzace…</div>}
+      {(convLoading || creating) && <div style={{ color: 'var(--text3)' }}>{creating ? 'Otevírám konverzaci…' : 'Načítám konverzace…'}</div>}
       {error && <div style={{ color: '#B91C1C' }}>{error}</div>}
 
-      {!convLoading && conversations.length === 0 && (
+      {!convLoading && !creating && conversations.length === 0 && (
         <div className="empty-state" style={{ padding: 60 }}>
           <div className="empty-icon">💬</div>
           <h3>Zatím nemáte žádné zprávy.</h3>

@@ -751,7 +751,10 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                 </div>
               )}
               {!ordersLoading && !ordersError && orders.slice(0, 3).map(o => (
-                <div key={o.id} className="order-card" style={{ margin: 0, borderRadius: 0, border: 'none', borderBottom: '1px solid var(--border)' }}>
+                <div key={o.id} className="order-card" style={{
+                  margin: 0, borderRadius: 0, border: 'none', borderBottom: '1px solid var(--border)',
+                  background: o.has_my_offer ? '#F0FDF4' : undefined,
+                }}>
                   <div className="order-cat-icon">{CAT_ICON[o.category] || '🔧'}</div>
                   <div className="order-info">
                     <div className="order-title">{o.title}</div>
@@ -760,6 +763,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                       {o.budget && <span><Icon name="wallet" size={13} /> {o.budget}</span>}
                       <span><Icon name="clock" size={13} /> {relativni(o.created_at)}</span>
                       {o.urgent && <span style={{ color: 'var(--red)' }}>🚨 Urgentní</span>}
+                      {o.has_my_offer && <span className="badge badge-green" style={{ fontSize: 11 }}>✓ Nabídka odeslána</span>}
                     </div>
                     {o.description && (
                       <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>
@@ -769,9 +773,11 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                   </div>
                   <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                     <button className="btn btn-outline btn-sm" onClick={() => onNav('order-detail', o)}>Detail</button>
-                    <button className="btn btn-primary btn-sm" onClick={() => onNav('send-offer', o)}>
-                      {isActivePlan ? 'Nabídnout se' : 'Reagovat'}
-                    </button>
+                    {!o.has_my_offer && (
+                      <button className="btn btn-primary btn-sm" onClick={() => onNav('send-offer', o)}>
+                        {isActivePlan ? 'Nabídnout se' : 'Reagovat'}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -795,7 +801,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {!ordersLoading && !ordersError && orders.map(o => (
-                <div key={o.id} className="order-card">
+                <div key={o.id} className="order-card" style={{ background: o.has_my_offer ? '#F0FDF4' : undefined }}>
                   <div className="order-cat-icon">{CAT_ICON[o.category] || '🔧'}</div>
                   <div className="order-info">
                     <div className="order-title">{o.title}</div>
@@ -804,6 +810,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                       {o.budget && <span><Icon name="wallet" size={13} /> {o.budget}</span>}
                       <span><Icon name="clock" size={13} /> {relativni(o.created_at)}</span>
                       {o.urgent && <span style={{ color: 'var(--red)' }}>🚨 Urgentní</span>}
+                      {o.has_my_offer && <span className="badge badge-green" style={{ fontSize: 11 }}>✓ Nabídka odeslána</span>}
                     </div>
                     {o.description && (
                       <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>
@@ -813,9 +820,11 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                   </div>
                   <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                     <button className="btn btn-outline btn-sm" onClick={() => onNav('order-detail', o)}>Detail</button>
-                    <button className="btn btn-primary btn-sm" onClick={() => onNav('send-offer', o)}>
-                      {isActivePlan ? 'Nabídnout se' : 'Reagovat'}
-                    </button>
+                    {!o.has_my_offer && (
+                      <button className="btn btn-primary btn-sm" onClick={() => onNav('send-offer', o)}>
+                        {isActivePlan ? 'Nabídnout se' : 'Reagovat'}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

@@ -68,6 +68,13 @@ function useMyOrders() {
   return { orders, loading, error, reload: () => setRefresh(x => x + 1) }
 }
 
+// "58000.00" / 58000 -> "58 000 Kč" (celé Kč, bez desetinných míst).
+function formatKc(price) {
+  const n = Math.round(Number(price))
+  if (!Number.isFinite(n)) return `${price} Kč`
+  return `${n.toLocaleString('cs-CZ')} Kč`
+}
+
 function useAllMyOffers(myOrders) {
   const [offers, setOffers]   = useState([])
   const [loading, setLoading] = useState(true)
@@ -275,11 +282,14 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout }) {
                     <div style={{ fontSize: 13, color: 'var(--text2)' }}>Na poptávku: {offer.order_title}</div>
                     {offer.sikula_rating && <Stars n={Math.round(offer.sikula_rating)} />}
                   </div>
-                  <div className="offer-price">{offer.price} Kč</div>
+                  <div className="offer-price">{formatKc(offer.price)}</div>
                 </div>
                 {offer.message && <p style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 12 }}>{offer.message}</p>}
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                  <button className="btn btn-outline btn-sm" onClick={() => onNav('chat')}>💬 Chat</button>
+                  <button className="btn btn-outline btn-sm"
+                    onClick={() => onNav('chat', { otherUserId: offer.sikula_id, orderId: offer.order_id })}>
+                    💬 Chat
+                  </button>
                   {offer.status === 'pending' && (
                     <button className="btn btn-green btn-sm" onClick={() => handleAcceptOffer(offer.id)}>✓ Přijmout nabídku</button>
                   )}

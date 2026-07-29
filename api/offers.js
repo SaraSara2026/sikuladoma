@@ -3,6 +3,7 @@
 
 import { sql } from './_db.js';
 import { requireUser, requireVerifiedUser } from './_auth.js';
+import { sendNewOfferNotificationEmail } from './_email.js';
 
 export default async function handler(req, res) {
   try {
@@ -34,27 +35,46 @@ async function createOffer(req, res) {
   if (!order_id)                              return res.status(400).json({ error: 'Chybí order_id.' });
   if (price == null || Number(price) <= 0)    return res.status(400).json({ error: 'Zadejte platnou cenu.' });
 
-  const [order] = await sql`SELECT id, status FROM orders WHERE id = ${Number(order_id)}`;
+  const [order] = await sql`SELECT id, status, title, customer_email, customer_name FROM orders WHERE id = ${Number(order_id)}`;
   if (!order)                       return res.status(404).json({ error: 'Poptávka neexistuje.' });
   if (order.status === 'cancelled' || order.status === 'completed' || order.status === 'accepted') {
     return res.status(409).json({ error: 'Poptávka už není otevřená.' });
   }
 
+  let row;
   try {
-    const [row] = await sql`
+    [row] = await sql`
       INSERT INTO offers (order_id, sikula_id, price, message, available_date, available_time)
       VALUES (${Number(order_id)}, ${me.id}, ${Number(price)}, ${message || null},
               ${available_date || null}, ${available_time || null})
       RETURNING *
     `;
     await sql`UPDATE orders SET status = 'in_progress', updated_at = NOW() WHERE id = ${Number(order_id)} AND status = 'new'`;
-    return res.status(201).json({ offer: row });
   } catch (err) {
     if (String(err.message).includes('duplicate')) {
       return res.status(409).json({ error: 'Na tuto poptávku jste už nabídku poslal/a.' });
     }
     throw err;
   }
+
+  // Informační e-mail zákazníkovi o nové nabídce — selhání e-mailu nesmí
+  // zrušit uloženou nabídku, jen se zaloguje.
+  if (order.customer_email) {
+    try {
+      await sendNewOfferNotificationEmail({
+        to: order.customer_email,
+        orderTitle: order.title,
+        price: row.price,
+        duration: row.available_time,
+        date: row.available_date,
+        message: row.message,
+      });
+    } catch (err) {
+      console.error('[offers] new offer notification email failed:', err);
+    }
+  }
+
+  return res.status(201).json({ offer: row });
 }
 
 async function listOffers(req, res) {

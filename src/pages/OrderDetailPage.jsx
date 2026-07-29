@@ -3,6 +3,22 @@ import { ORDER_STATUS_MAP } from '../data'
 import Icon from '../components/Icon'
 import { offersApi } from '../lib/api'
 
+// "58000.00" / 58000 -> "58 000 Kč" (celé Kč, bez desetinných míst).
+function formatKc(price) {
+  const n = Math.round(Number(price))
+  if (!Number.isFinite(n)) return `${price} Kč`
+  return `${n.toLocaleString('cs-CZ')} Kč`
+}
+
+// "2026-07-31T00:00:00.000Z" -> "31. 7. 2026" (UTC getters, ať datum
+// neujede o den kvůli časové zóně serveru — DATE sloupec nemá čas dne).
+function formatDateCz(dateStr) {
+  if (!dateStr) return null
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return null
+  return `${d.getUTCDate()}. ${d.getUTCMonth() + 1}. ${d.getUTCFullYear()}`
+}
+
 export default function OrderDetailPage({ order, onNav, currentUser, onAcceptOffer }) {
   const [activeTab, setActiveTab] = useState('detail')
   const [offers, setOffers]       = useState([])
@@ -114,18 +130,21 @@ export default function OrderDetailPage({ order, onNav, currentUser, onAcceptOff
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div className="offer-price">{offer.price} Kč</div>
+                      <div className="offer-price">{formatKc(offer.price)}</div>
                       <div className="offer-price-label">celková cena</div>
                     </div>
                   </div>
                   <div style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 14, lineHeight: 1.7 }}>{offer.message}</div>
                   <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
                     <div style={{ fontSize: 13, color: 'var(--text2)' }}>
-                      {offer.available_date && <>📅 {offer.available_date}</>}
+                      {formatDateCz(offer.available_date) && <>📅 {formatDateCz(offer.available_date)}</>}
                       {offer.available_time && <> &nbsp;·&nbsp; ⏱️ {offer.available_time}</>}
                     </div>
                     <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-                      <button className="btn btn-outline btn-sm" onClick={() => onNav('chat')}>Napsat zprávu</button>
+                      <button className="btn btn-outline btn-sm"
+                        onClick={() => onNav('chat', { otherUserId: offer.sikula_id, orderId: order.id })}>
+                        Napsat zprávu
+                      </button>
                       {currentUser?.role === 'customer' && offer.status === 'pending' && (
                         <button className="btn btn-green btn-sm" disabled={acting === offer.id} onClick={() => accept(offer)}>
                           {acting === offer.id ? 'Přijímám…' : <><Icon name="check" size={14} /> Přijmout nabídku</>}

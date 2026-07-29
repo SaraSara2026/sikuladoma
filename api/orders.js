@@ -220,14 +220,17 @@ async function listOrders(req, res) {
     `;
   } else if (me.role === 'sikula') {
     rows = await sql`
-      SELECT id, title, category, subcategory, description, city, budget, urgent,
-             preferred_date, preferred_time, gender_preference, status, created_at
-      FROM orders
-      WHERE status IN ('new','in_progress')
-        AND (${category ?? null}::text IS NULL OR category = ${category ?? null})
-        AND (${city ?? null}::text IS NULL OR city ILIKE ${city ? `%${city}%` : null})
-        AND (${categoriesArr}::text[] IS NULL OR category = ANY(${categoriesArr}))
-      ORDER BY created_at DESC LIMIT 200
+      SELECT o.id, o.title, o.category, o.subcategory, o.description, o.city, o.budget, o.urgent,
+             o.preferred_date, o.preferred_time, o.gender_preference, o.status, o.created_at,
+             EXISTS (
+               SELECT 1 FROM offers off WHERE off.order_id = o.id AND off.sikula_id = ${me.id}
+             ) AS has_my_offer
+      FROM orders o
+      WHERE o.status IN ('new','in_progress')
+        AND (${category ?? null}::text IS NULL OR o.category = ${category ?? null})
+        AND (${city ?? null}::text IS NULL OR o.city ILIKE ${city ? `%${city}%` : null})
+        AND (${categoriesArr}::text[] IS NULL OR o.category = ANY(${categoriesArr}))
+      ORDER BY o.created_at DESC LIMIT 200
     `;
   } else {
     rows = await sql`
