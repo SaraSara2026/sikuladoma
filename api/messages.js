@@ -1,5 +1,6 @@
 import { sql } from './_db.js';
 import { requireUser } from './_auth.js';
+import { sendNewMessageNotificationEmail } from './_email.js';
 
 export default async function handler(req, res) {
   try {
@@ -78,5 +79,28 @@ async function sendMessage(req, res) {
     VALUES (${convId}, ${me.id}, ${body})
     RETURNING *
   `;
+
+  // Informační e-mail druhé straně o nové zprávě — selhání e-mailu nesmí
+  // zrušit uloženou zprávu, jen se zaloguje.
+  try {
+    const recipientId = conv.customer_id === me.id ? conv.sikula_id : conv.customer_id;
+    const [recipient] = await sql`SELECT email FROM users WHERE id = ${recipientId}`;
+    if (recipient?.email) {
+      let orderTitle = null;
+      if (conv.order_id) {
+        const [ord] = await sql`SELECT title FROM orders WHERE id = ${conv.order_id}`;
+        orderTitle = ord?.title || null;
+      }
+      await sendNewMessageNotificationEmail({
+        to: recipient.email,
+        senderName: me.name,
+        orderTitle,
+        messagePreview: body.length > 200 ? `${body.slice(0, 200)}…` : body,
+      });
+    }
+  } catch (err) {
+    console.error('[messages] new message notification email failed:', err);
+  }
+
   return res.status(201).json({ message: row });
 }

@@ -102,7 +102,9 @@ async function listOffers(req, res) {
     }
 
     const rows = await sql`
-      SELECT o.*, ord.title AS order_title, ord.city AS order_city
+      SELECT o.*, ord.title AS order_title, ord.city AS order_city,
+             ord.customer_id AS customer_id, ord.customer_name AS customer_name,
+             ord.status AS order_status
       FROM offers o JOIN orders ord ON ord.id = o.order_id
       WHERE o.sikula_id = ${me.id}
       ORDER BY o.created_at DESC LIMIT 100

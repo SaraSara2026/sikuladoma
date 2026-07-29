@@ -22,7 +22,7 @@ function initials(name) {
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 }
 
-export default function ChatPage({ currentUser, startWith }) {
+export default function ChatPage({ currentUser, startWith, onNav }) {
   const user = currentUser
   const [conversations, setConversations] = useState([])
   const [active, setActive]   = useState(null)        // id konverzace
@@ -121,6 +121,11 @@ export default function ChatPage({ currentUser, startWith }) {
 
   return (
     <div className="page-enter" style={{ padding: '32px 24px', maxWidth: 900, margin: '0 auto' }}>
+      {onNav && (
+        <button className="btn btn-ghost" onClick={() => onNav('back')} style={{ marginBottom: 16 }}>
+          ← {user.role === 'customer' ? 'Zpět do přehledu' : 'Zpět do dashboardu'}
+        </button>
+      )}
       <h2 style={{ marginBottom: 24 }}>Zprávy</h2>
 
       {(convLoading || creating) && <div style={{ color: 'var(--text3)' }}>{creating ? 'Otevírám konverzaci…' : 'Načítám konverzace…'}</div>}
@@ -181,12 +186,17 @@ export default function ChatPage({ currentUser, startWith }) {
               {msgLoading && messages.length === 0 && (
                 <div style={{ color: 'var(--text3)', textAlign: 'center', padding: 20 }}>Načítám…</div>
               )}
-              {messages.map(m => (
-                <div key={m.id} className={`chat-msg ${m.sender_id === user.id ? 'me' : 'them'}`}>
-                  {m.text}
-                  <div className="chat-msg-time">{timeShort(m.created_at)}</div>
-                </div>
-              ))}
+              {messages.map(m => {
+                const mine = m.sender_id === user.id
+                const senderLabel = mine ? (user.name || 'Já') : (activeConv?.other_name || 'Uživatel')
+                return (
+                  <div key={m.id} className={`chat-msg ${mine ? 'me' : 'them'}`}>
+                    <div className="chat-msg-sender" style={{ fontSize: 11, fontWeight: 700, opacity: .65, marginBottom: 2 }}>{senderLabel}</div>
+                    {m.text}
+                    <div className="chat-msg-time">{timeShort(m.created_at)}</div>
+                  </div>
+                )
+              })}
               <div ref={endRef} />
             </div>
 

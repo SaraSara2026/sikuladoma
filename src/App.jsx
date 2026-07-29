@@ -251,7 +251,7 @@ export default function App() {
         <OrderDetailPage order={currentOrder} currentUser={sikulaUser} onNav={handleNav}
           onAcceptOffer={() => { /* refresh dashboard po accept */ }} />
       ) : page === "chat" ? (
-        <ChatPage currentUser={sikulaUser} startWith={chatStart} />
+        <ChatPage currentUser={sikulaUser} startWith={chatStart} onNav={handleNav} />
       ) : page === "verify-email" ? (
         <VerifyEmailPage
           onBack={() => { setPage("home"); window.history.replaceState({}, '', '/'); }}

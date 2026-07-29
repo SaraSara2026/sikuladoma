@@ -3,12 +3,13 @@ import { CATEGORIES } from '../../data'
 import Icon from '../../components/Icon'
 import InvoicePage from '../InvoicePage'
 import ChatPage from '../ChatPage'
-import { ordersApi, offersApi, reviewsApi, usersApi } from '../../lib/api'
+import { ordersApi, offersApi, reviewsApi, usersApi, conversationsApi } from '../../lib/api'
 import { apiMe } from '../../lib/auth'
 import VerificationBanner from '../../components/VerificationBanner'
 import AvatarUpload from '../../components/AvatarUpload'
 import { SERVICES } from '../../lib/categories'
 import { formatPhoneCZ, isValidPhoneCZ } from '../../lib/phone'
+import { formatCurrencyCz, formatDateCz } from '../../lib/format.js'
 
 // Po návratu ze Stripe checkoutu webhook aktivuje tarif v DB až s malým zpožděním.
 // currentUser v appce žije v localStorage a sám se neobnoví, tak ho tu pár vteřin
@@ -134,6 +135,24 @@ function useMyOffers() {
   return { offers, loading, error, reload: () => setBump(x => x + 1) }
 }
 
+// Hook: součet nepřečtených zpráv napříč konverzacemi — pro badge u „Zprávy“.
+function useUnreadMessages() {
+  const [count, setCount] = useState(0)
+  useEffect(() => {
+    let alive = true
+    const load = () => conversationsApi.list()
+      .then(({ conversations }) => {
+        if (!alive) return
+        setCount(conversations.reduce((sum, c) => sum + (Number(c.unread_count) || 0), 0))
+      })
+      .catch(() => {})
+    load()
+    const id = setInterval(load, 30000)
+    return () => { alive = false; clearInterval(id) }
+  }, [])
+  return count
+}
+
 // lock: 'plan' = vyžaduje alespoň Aktivní šikula (199 Kč)
 // lock: 'plus'  = vyžaduje Aktivní šikula Plus (299 Kč)
 // 'new-jobs' záměrně bez zámku — náhled poptávek je zdarma, platí se až za reakci (viz SendOfferPage).
@@ -143,6 +162,7 @@ const menuItems = [
   { id: 'new-jobs',     icon: '🔔', label: 'Nové zakázky' },
   { id: 'offers-sent',  icon: '📤', label: 'Odeslané nabídky',  lock: 'plan' },
   { id: 'active',       icon: '⚡', label: 'Aktivní zakázky',   lock: 'plan' },
+  { id: 'messages',     icon: '💌', label: 'Zprávy' },
   { id: 'calendar',     icon: '📅', label: 'Kalendář',          lock: 'plus' },
   { id: 'earnings',     icon: '💰', label: 'Výdělky',           lock: 'plus' },
   { id: 'invoices',     icon: '🧾', label: 'Faktury',           lock: 'plus' },
@@ -549,6 +569,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
   const { orders, loading: ordersLoading, error: ordersError } = useOpenOrders(sikulaCity, currentUser?.services)
   const { offers: myOffers, reload: reloadMyOffers } = useMyOffers()
   const { reviews: myReviews, summary: reviewsSummary, loading: reviewsLoading } = useMyReviews(currentUser?.id)
+  const unreadMessages = useUnreadMessages()
 
   // Detekce ?stripe=success/cancel po návratu ze Stripe Checkout
   const stripeHandled = useRef(false)
@@ -615,6 +636,9 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                        : m.lock === 'plus' ? !hasPlusPlan
                        : false
           const menuLabel = m.label
+          const badgeCount = m.id === 'messages' ? unreadMessages
+                           : m.id === 'active'   ? acceptedJobs.length
+                           : 0
           return (
             <button key={m.id}
               className={`dash-nav-item ${activePage === m.id ? 'active' : ''}`}
@@ -623,6 +647,11 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
               <span>{m.icon}</span>
               {menuLabel}
               {locked && <span style={{ marginLeft: 'auto', fontSize: 11 }}>🔒</span>}
+              {!locked && badgeCount > 0 && (
+                <span style={{ marginLeft: 'auto', background: 'var(--brand, #0EA5A4)', color: '#fff', fontSize: 11, fontWeight: 700, padding: '1px 7px', borderRadius: 999 }}>
+                  {badgeCount}
+                </span>
+              )}
             </button>
           )
         })}
@@ -751,9 +780,9 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                 </div>
               )}
               {!ordersLoading && !ordersError && orders.slice(0, 3).map(o => (
-                <div key={o.id} className="order-card" style={{
+                <div key={o.id} className="order-card" onClick={() => onNav('order-detail', o)} style={{
                   margin: 0, borderRadius: 0, border: 'none', borderBottom: '1px solid var(--border)',
-                  background: o.has_my_offer ? '#F0FDF4' : undefined,
+                  background: o.has_my_offer ? '#F0FDF4' : undefined, cursor: 'pointer',
                 }}>
                   <div className="order-cat-icon">{CAT_ICON[o.category] || '🔧'}</div>
                   <div className="order-info">
@@ -772,9 +801,9 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                     )}
                   </div>
                   <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                    <button className="btn btn-outline btn-sm" onClick={() => onNav('order-detail', o)}>Detail</button>
+                    <button className="btn btn-outline btn-sm" onClick={(e) => { e.stopPropagation(); onNav('order-detail', o) }}>Detail</button>
                     {!o.has_my_offer && (
-                      <button className="btn btn-primary btn-sm" onClick={() => onNav('send-offer', o)}>
+                      <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); onNav('send-offer', o) }}>
                         {isActivePlan ? 'Nabídnout se' : 'Reagovat'}
                       </button>
                     )}
@@ -801,7 +830,8 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {!ordersLoading && !ordersError && orders.map(o => (
-                <div key={o.id} className="order-card" style={{ background: o.has_my_offer ? '#F0FDF4' : undefined }}>
+                <div key={o.id} className="order-card" onClick={() => onNav('order-detail', o)}
+                  style={{ background: o.has_my_offer ? '#F0FDF4' : undefined, cursor: 'pointer' }}>
                   <div className="order-cat-icon">{CAT_ICON[o.category] || '🔧'}</div>
                   <div className="order-info">
                     <div className="order-title">{o.title}</div>
@@ -819,9 +849,9 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                     )}
                   </div>
                   <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                    <button className="btn btn-outline btn-sm" onClick={() => onNav('order-detail', o)}>Detail</button>
+                    <button className="btn btn-outline btn-sm" onClick={(e) => { e.stopPropagation(); onNav('order-detail', o) }}>Detail</button>
                     {!o.has_my_offer && (
-                      <button className="btn btn-primary btn-sm" onClick={() => onNav('send-offer', o)}>
+                      <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); onNav('send-offer', o) }}>
                         {isActivePlan ? 'Nabídnout se' : 'Reagovat'}
                       </button>
                     )}
@@ -844,18 +874,24 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {acceptedJobs.map(o => (
-                <div key={o.id} className="order-card">
+                <div key={o.id} className="order-card" style={{ cursor: 'pointer' }}
+                  onClick={() => onNav('order-detail', { id: o.order_id, title: o.order_title, city: o.order_city, status: o.order_status })}>
                   <div className="order-info">
                     <div className="order-title">{o.order_title || 'Zakázka'}</div>
                     <div className="order-meta">
                       <span><Icon name="map" size={13} /> {o.order_city}</span>
-                      <span><Icon name="wallet" size={13} /> {o.price} Kč (dohodnutá cena)</span>
-                      {o.available_date && <span><Icon name="calendar" size={13} /> {o.available_date}</span>}
+                      <span><Icon name="wallet" size={13} /> {formatCurrencyCz(o.price)} (dohodnutá cena)</span>
+                      {formatDateCz(o.available_date) && <span><Icon name="calendar" size={13} /> {formatDateCz(o.available_date)}</span>}
                     </div>
+                    {o.customer_name && <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>Zákazník: {o.customer_name}</div>}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
                     <span className="badge badge-green">Přijato</span>
-                    <button className="btn btn-green btn-sm" onClick={() => markComplete(o.order_id)}>
+                    <button className="btn btn-outline btn-sm"
+                      onClick={(e) => { e.stopPropagation(); onNav('chat', { otherUserId: o.customer_id, orderId: o.order_id }) }}>
+                      💬 Napsat zprávu
+                    </button>
+                    <button className="btn btn-green btn-sm" onClick={(e) => { e.stopPropagation(); markComplete(o.order_id) }}>
                       ✓ Označit jako hotovou
                     </button>
                   </div>
@@ -877,20 +913,30 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {myOffers.map(o => (
-                <div key={o.id} className="order-card">
+                <div key={o.id} className="order-card" style={{ cursor: 'pointer' }}
+                  onClick={() => onNav('order-detail', { id: o.order_id, title: o.order_title, city: o.order_city, status: o.order_status })}>
                   <div className="order-info">
                     <div className="order-title">{o.order_title || 'Zakázka'}</div>
                     <div className="order-meta">
                       <span><Icon name="map" size={13} /> {o.order_city}</span>
-                      <span><Icon name="wallet" size={13} /> {o.price} Kč</span>
+                      <span><Icon name="wallet" size={13} /> {formatCurrencyCz(o.price)}</span>
+                      {o.available_time && <span><Icon name="clock" size={13} /> {o.available_time}</span>}
+                      {formatDateCz(o.available_date) && <span><Icon name="calendar" size={13} /> {formatDateCz(o.available_date)}</span>}
                     </div>
+                    {o.customer_name && <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>Zákazník: {o.customer_name}</div>}
                     {o.message && <p style={{ fontSize: 13, color: 'var(--text2)', marginTop: 6 }}>{o.message}</p>}
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-end' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
                     {o.status === 'pending'  && <span className="badge badge-orange">Čeká na odpověď</span>}
                     {o.status === 'accepted' && <span className="badge badge-green">Přijato ✓</span>}
                     {o.status === 'rejected' && <span className="badge badge-gray">Odmítnuto</span>}
                     {o.status === 'withdrawn' && <span className="badge badge-gray">Staženo</span>}
+                    {(o.status === 'pending' || o.status === 'accepted') && (
+                      <button className="btn btn-outline btn-sm"
+                        onClick={(e) => { e.stopPropagation(); onNav('chat', { otherUserId: o.customer_id, orderId: o.order_id }) }}>
+                        💬 Napsat zprávu
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

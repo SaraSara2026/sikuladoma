@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react'
 import { CATEGORIES, ORDER_STATUS_MAP } from '../../data'
 import Icon from '../../components/Icon'
 import ChatPage from '../ChatPage'
-import { ordersApi, offersApi, reviewsApi } from '../../lib/api.js'
+import { ordersApi, offersApi, reviewsApi, conversationsApi } from '../../lib/api.js'
+import { formatCurrencyCz } from '../../lib/format.js'
 import HodnoceniForm from '../../modals/HodnoceniForm.jsx'
 
 const menuItems = [
+  { id: 'profile',   icon: '👤', label: 'Profil' },
   { id: 'overview',  icon: '📊', label: 'Přehled' },
   { id: 'orders',    icon: '📋', label: 'Moje poptávky' },
   { id: 'offers',    icon: '💬', label: 'Nabídky' },
@@ -13,7 +15,6 @@ const menuItems = [
   { id: 'completed', icon: '✅', label: 'Dokončené' },
   { id: 'reviews',   icon: '⭐', label: 'Hodnocení' },
   { id: 'messages',  icon: '💌', label: 'Zprávy' },
-  { id: 'profile',   icon: '👤', label: 'Profil' },
 ]
 
 const CAT_ICON = Object.fromEntries(CATEGORIES.map(c => [c.id, c.icon]))
@@ -68,13 +69,6 @@ function useMyOrders() {
   return { orders, loading, error, reload: () => setRefresh(x => x + 1) }
 }
 
-// "58000.00" / 58000 -> "58 000 Kč" (celé Kč, bez desetinných míst).
-function formatKc(price) {
-  const n = Math.round(Number(price))
-  if (!Number.isFinite(n)) return `${price} Kč`
-  return `${n.toLocaleString('cs-CZ')} Kč`
-}
-
 function useAllMyOffers(myOrders) {
   const [offers, setOffers]   = useState([])
   const [loading, setLoading] = useState(true)
@@ -115,11 +109,31 @@ function useMyReviews() {
   return { reviews, loading, reload: () => setRefresh(x => x + 1) }
 }
 
+// Hook: součet nepřečtených zpráv napříč konverzacemi — pro badge u „Zprávy“.
+function useUnreadMessages() {
+  const [count, setCount] = useState(0)
+  useEffect(() => {
+    let alive = true
+    const load = () => conversationsApi.list()
+      .then(({ conversations }) => {
+        if (!alive) return
+        setCount(conversations.reduce((sum, c) => sum + (Number(c.unread_count) || 0), 0))
+      })
+      .catch(() => {})
+    load()
+    const id = setInterval(load, 30000)
+    return () => { alive = false; clearInterval(id) }
+  }, [])
+  return count
+}
+
 export default function CustomerDashboard({ currentUser, onNav, onLogout }) {
   const [activePage, setActivePage] = useState('overview')
   const { orders, loading, error, reload } = useMyOrders()
   const { offers: allOffers } = useAllMyOffers(orders)
   const { reviews: myReviews, loading: reviewsLoading, reload: reloadReviews } = useMyReviews()
+  const unreadMessages = useUnreadMessages()
+  const pendingOffersCount = allOffers.filter(o => o.status === 'pending').length
 
   const completedOrders  = orders.filter(o => o.status === 'completed')
   const activeOrders     = orders.filter(o => o.status === 'accepted')
@@ -145,9 +159,10 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout }) {
   }
 
   const renderOrderCard = (o, opts = {}) => (
-    <div key={o.id} className="order-card" style={{ ...(opts.flat && { margin: 0, borderRadius: 0, border: 'none', borderBottom: '1px solid var(--border)' }) }}>
+    <div key={o.id} className="order-card" onClick={() => onNav?.('order-detail', o)}
+      style={{ cursor: 'pointer', ...(opts.flat && { margin: 0, borderRadius: 0, border: 'none', borderBottom: '1px solid var(--border)' }) }}>
       <div className="order-cat-icon">{CAT_ICON[o.category] || '🔧'}</div>
-      <div className="order-info" style={{ cursor: 'pointer' }} onClick={() => onNav?.('order-detail', o)}>
+      <div className="order-info">
         <div className="order-title">{o.title}</div>
         <div className="order-meta">
           <span><Icon name="map" size={13} /> {o.city}</span>
@@ -162,7 +177,7 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout }) {
         {o.offers_count > 0 && <div className="badge badge-orange">{o.offers_count} nabídek</div>}
         {o.status === 'accepted' && (
           <button className="btn btn-green btn-sm" onClick={(e) => { e.stopPropagation(); handleCompleteOrder(o.id) }}>
-            ✓ Dokončeno
+            Označit jako dokončené
           </button>
         )}
         {o.status === 'completed' && !reviewedOrderIds.has(o.id) && (
@@ -190,11 +205,21 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout }) {
           <div className="dash-user-name">{currentUser?.name}</div>
           <div className="dash-user-role">Zákazník</div>
         </div>
-        {menuItems.map(m => (
-          <button key={m.id} className={`dash-nav-item ${activePage === m.id ? 'active' : ''}`} onClick={() => setActivePage(m.id)}>
-            <span>{m.icon}</span>{m.label}
-          </button>
-        ))}
+        {menuItems.map(m => {
+          const badgeCount = m.id === 'messages' ? unreadMessages
+                           : m.id === 'offers'   ? pendingOffersCount
+                           : 0
+          return (
+            <button key={m.id} className={`dash-nav-item ${activePage === m.id ? 'active' : ''}`} onClick={() => setActivePage(m.id)}>
+              <span>{m.icon}</span>{m.label}
+              {badgeCount > 0 && (
+                <span style={{ marginLeft: 'auto', background: 'var(--brand, #0EA5A4)', color: '#fff', fontSize: 11, fontWeight: 700, padding: '1px 7px', borderRadius: 999 }}>
+                  {badgeCount}
+                </span>
+              )}
+            </button>
+          )
+        })}
         {onLogout && (
           <button className="dash-nav-item" onClick={onLogout}
             style={{ marginTop: 'auto', color: 'var(--red, #B91C1C)' }}>
@@ -274,7 +299,8 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout }) {
               </div>
             )}
             {allOffers.map(offer => (
-              <div key={offer.id} className="offer-card">
+              <div key={offer.id} className="offer-card" style={{ cursor: 'pointer' }}
+                onClick={() => onNav('order-detail', orders.find(x => x.id === offer.order_id) || { id: offer.order_id, title: offer.order_title })}>
                 <div className="offer-header">
                   <div className="offer-avatar">{offer.sikula_avatar || offer.sikula_name?.[0] || '?'}</div>
                   <div style={{ flex: 1 }}>
@@ -282,16 +308,16 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout }) {
                     <div style={{ fontSize: 13, color: 'var(--text2)' }}>Na poptávku: {offer.order_title}</div>
                     {offer.sikula_rating && <Stars n={Math.round(offer.sikula_rating)} />}
                   </div>
-                  <div className="offer-price">{formatKc(offer.price)}</div>
+                  <div className="offer-price">{formatCurrencyCz(offer.price)}</div>
                 </div>
                 {offer.message && <p style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 12 }}>{offer.message}</p>}
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                   <button className="btn btn-outline btn-sm"
-                    onClick={() => onNav('chat', { otherUserId: offer.sikula_id, orderId: offer.order_id })}>
+                    onClick={(e) => { e.stopPropagation(); onNav('chat', { otherUserId: offer.sikula_id, orderId: offer.order_id }) }}>
                     💬 Chat
                   </button>
                   {offer.status === 'pending' && (
-                    <button className="btn btn-green btn-sm" onClick={() => handleAcceptOffer(offer.id)}>✓ Přijmout nabídku</button>
+                    <button className="btn btn-green btn-sm" onClick={(e) => { e.stopPropagation(); handleAcceptOffer(offer.id) }}>✓ Přijmout nabídku</button>
                   )}
                   {offer.status === 'accepted' && <span className="badge badge-green">✓ Přijato</span>}
                   {offer.status === 'rejected' && <span className="badge badge-gray">Odmítnuto</span>}

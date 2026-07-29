@@ -114,6 +114,25 @@ export async function sendNewOfferNotificationEmail({ to, orderTitle, price, dur
   return data;
 }
 
+// ─── Nová zpráva v chatu (zákazník i šikula) ─────────────────────────────────
+// Stejná šablona pro obě strany — CTA text je neutrální ("odpovězte"),
+// protože se posílá zákazníkovi i šikulovi podle toho, kdo zprávu dostal.
+export async function sendNewMessageNotificationEmail({ to, senderName, orderTitle, messagePreview }) {
+  const resend = getResend();
+  const { data, error } = await resend.emails.send({
+    from: getFromAddress(),
+    to,
+    subject: 'Máte novou zprávu na ŠikulaDoma',
+    html: newMessageNotificationTemplate({ senderName, orderTitle, messagePreview }),
+    text: newMessageNotificationTextVersion({ senderName, orderTitle, messagePreview }),
+  });
+  if (error) {
+    console.error('[email] new message notification send failed:', error);
+    throw new Error('Nepodařilo se odeslat e-mail o nové zprávě.');
+  }
+  return data;
+}
+
 // ─── HTML šablony ───────────────────────────────────────────────────────────
 function baseLayout({ title, intro, ctaText, ctaUrl, footer }) {
   return `<!DOCTYPE html>
@@ -337,6 +356,41 @@ function newOfferNotificationTextVersion({ orderTitle, price, duration, date, me
     message || '—',
     '',
     'Přihlaste se do svého zákaznického přehledu a nabídku si zobrazte.',
+    '',
+    'ŠikulaDoma',
+  ];
+  return lines.join('\n');
+}
+
+function newMessageNotificationTemplate({ senderName, orderTitle, messagePreview }) {
+  const details = [
+    senderName   && `<strong>Od:</strong> ${escapeHtml(senderName)}`,
+    orderTitle   && `<strong>Zakázka:</strong> ${escapeHtml(orderTitle)}`,
+    messagePreview && `<strong>Zpráva:</strong> ${escapeHtml(messagePreview)}`,
+  ].filter(Boolean).join('<br>');
+
+  return baseLayout({
+    title: 'Nová zpráva na ŠikulaDoma',
+    intro: `Dobrý den,<br><br>na ŠikulaDoma vám přišla nová zpráva.<br><br>${details}<br><br>Přihlaste se do svého profilu a odpovězte.`,
+  });
+}
+
+function newMessageNotificationTextVersion({ senderName, orderTitle, messagePreview }) {
+  const lines = [
+    'Dobrý den,',
+    '',
+    'na ŠikulaDoma vám přišla nová zpráva.',
+    '',
+    'Od:',
+    senderName || '—',
+    '',
+    'Zakázka:',
+    orderTitle || '—',
+    '',
+    'Zpráva:',
+    messagePreview || '—',
+    '',
+    'Přihlaste se do svého profilu a odpovězte.',
     '',
     'ŠikulaDoma',
   ];

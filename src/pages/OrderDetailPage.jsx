@@ -2,22 +2,10 @@ import { useEffect, useState } from 'react'
 import { ORDER_STATUS_MAP } from '../data'
 import Icon from '../components/Icon'
 import { offersApi } from '../lib/api'
+import { formatCurrencyCz, formatDateCz } from '../lib/format.js'
 
-// "58000.00" / 58000 -> "58 000 Kč" (celé Kč, bez desetinných míst).
-function formatKc(price) {
-  const n = Math.round(Number(price))
-  if (!Number.isFinite(n)) return `${price} Kč`
-  return `${n.toLocaleString('cs-CZ')} Kč`
-}
-
-// "2026-07-31T00:00:00.000Z" -> "31. 7. 2026" (UTC getters, ať datum
-// neujede o den kvůli časové zóně serveru — DATE sloupec nemá čas dne).
-function formatDateCz(dateStr) {
-  if (!dateStr) return null
-  const d = new Date(dateStr)
-  if (isNaN(d.getTime())) return null
-  return `${d.getUTCDate()}. ${d.getUTCMonth() + 1}. ${d.getUTCFullYear()}`
-}
+const fieldLabel = { fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px' }
+const fieldValue = { fontSize: 15, fontWeight: 600, marginTop: 4 }
 
 export default function OrderDetailPage({ order, onNav, currentUser, onAcceptOffer }) {
   const [activeTab, setActiveTab] = useState('detail')
@@ -117,6 +105,7 @@ export default function OrderDetailPage({ order, onNav, currentUser, onAcceptOff
                   <div className="offer-header">
                     <div className="offer-avatar">{offer.sikula_avatar || offer.sikula_name?.[0] || '?'}</div>
                     <div style={{ flex: 1 }}>
+                      <div style={fieldLabel}>Nabídka od</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontWeight: 700, fontSize: 16 }}>{offer.sikula_name}</span>
                         {offer.sikula_verified && <span className="badge badge-green" style={{ fontSize: 11 }}>✓ Ověřen</span>}
@@ -129,30 +118,46 @@ export default function OrderDetailPage({ order, onNav, currentUser, onAcceptOff
                         </>}
                       </div>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div className="offer-price">{formatKc(offer.price)}</div>
-                      <div className="offer-price-label">celková cena</div>
-                    </div>
                   </div>
-                  <div style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 14, lineHeight: 1.7 }}>{offer.message}</div>
-                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <div style={{ fontSize: 13, color: 'var(--text2)' }}>
-                      {formatDateCz(offer.available_date) && <>📅 {formatDateCz(offer.available_date)}</>}
-                      {offer.available_time && <> &nbsp;·&nbsp; ⏱️ {offer.available_time}</>}
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, margin: '14px 0' }}>
+                    <div style={{ background: 'var(--bg)', borderRadius: 10, padding: 12 }}>
+                      <div style={fieldLabel}>Cena</div>
+                      <div style={fieldValue}>{formatCurrencyCz(offer.price)}</div>
                     </div>
-                    <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-                      <button className="btn btn-outline btn-sm"
-                        onClick={() => onNav('chat', { otherUserId: offer.sikula_id, orderId: order.id })}>
-                        Napsat zprávu
+                    {offer.available_time && (
+                      <div style={{ background: 'var(--bg)', borderRadius: 10, padding: 12 }}>
+                        <div style={fieldLabel}>Odhad délky práce</div>
+                        <div style={fieldValue}>{offer.available_time}</div>
+                      </div>
+                    )}
+                    {formatDateCz(offer.available_date) && (
+                      <div style={{ background: 'var(--bg)', borderRadius: 10, padding: 12 }}>
+                        <div style={fieldLabel}>Navrhovaný termín</div>
+                        <div style={fieldValue}>{formatDateCz(offer.available_date)}</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {offer.message && (
+                    <div style={{ marginBottom: 14 }}>
+                      <div style={fieldLabel}>Zpráva šikuly</div>
+                      <div style={{ fontSize: 14, color: 'var(--text2)', lineHeight: 1.7, marginTop: 4 }}>{offer.message}</div>
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                    <button className="btn btn-outline btn-sm"
+                      onClick={() => onNav('chat', { otherUserId: offer.sikula_id, orderId: order.id })}>
+                      Napsat zprávu
+                    </button>
+                    {currentUser?.role === 'customer' && offer.status === 'pending' && (
+                      <button className="btn btn-green btn-sm" disabled={acting === offer.id} onClick={() => accept(offer)}>
+                        {acting === offer.id ? 'Přijímám…' : <><Icon name="check" size={14} /> Přijmout nabídku</>}
                       </button>
-                      {currentUser?.role === 'customer' && offer.status === 'pending' && (
-                        <button className="btn btn-green btn-sm" disabled={acting === offer.id} onClick={() => accept(offer)}>
-                          {acting === offer.id ? 'Přijímám…' : <><Icon name="check" size={14} /> Přijmout nabídku</>}
-                        </button>
-                      )}
-                      {offer.status === 'accepted' && <span className="badge badge-green">Přijato</span>}
-                      {offer.status === 'rejected' && <span className="badge badge-gray">Odmítnuto</span>}
-                    </div>
+                    )}
+                    {offer.status === 'accepted' && <span className="badge badge-green">Přijato</span>}
+                    {offer.status === 'rejected' && <span className="badge badge-gray">Odmítnuto</span>}
                   </div>
                 </div>
               ))}
