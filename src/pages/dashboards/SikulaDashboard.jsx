@@ -172,28 +172,34 @@ const menuItems = [
 ]
 
 // Obrazovka pro zamčenou funkci
-function LockedScreen({ type, onActivate }) {
+// Krátký benefit text pro jednotlivé Plus funkce — místo jednoho obecného
+// textu pro všechny tři, ať je jasné, co konkrétně Plus u dané sekce přináší.
+const PLUS_FEATURE_COPY = {
+  calendar: 'Mějte zakázky přehledně v kalendáři. Termíny, domluvy a práce na jednom místě.',
+  invoices: 'Faktury bez papírů a složité administrativy. V tarifu Plus si jednoduše vystavíte fakturu k dokončené zakázce.',
+  earnings: 'Vidíte, kolik vám zakázky přinesly. Přehled příjmů z dokončených prací bez počítání bokem.',
+}
+
+function LockedScreen({ type, feature, onActivate }) {
   const isPlus = type === 'plus'
   return (
     <div className="page-enter" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
       <div style={{ maxWidth: 420, textAlign: 'center', padding: '40px 24px' }}>
         <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
         <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1A1F2E', marginBottom: 12 }}>
-          {isPlus ? 'Tato funkce je součástí tarifu Aktivní šikula Plus' : 'Tato funkce je dostupná po aktivaci profilu'}
+          {isPlus ? 'Tato funkce je dostupná v tarifu Plus.' : 'Váš profil je připravený.'}
         </h2>
         <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.7, marginBottom: 24 }}>
           {isPlus
-            ? 'Tato funkce je dostupná v tarifu Aktivní šikula Plus za 299 Kč / měsíc.'
-            : 'Tato funkce je dostupná po aktivaci profilu. Aktivujte tarif Aktivní šikula za 199 Kč / měsíc.'}
+            ? (PLUS_FEATURE_COPY[feature] || 'Tato funkce je součástí tarifu Aktivní šikula Plus za 299 Kč / měsíc.')
+            : 'Aktivujte tarif a můžete začít reagovat na poptávky.'}
         </p>
         <button onClick={onActivate}
           style={{ height: 48, padding: '0 28px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#F97316,#EA580C)', color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 16px rgba(249,115,22,.35)', marginBottom: 14 }}>
-          {isPlus ? 'Aktivovat Plus za 299 Kč' : 'Aktivovat profil za 199 Kč'}
+          {isPlus ? 'Přejít na Plus' : 'Aktivovat tarif'}
         </button>
         <p style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.6 }}>
-          {isPlus
-            ? 'Platba probíhá bezpečně kartou online přes platební bránu. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.'
-            : 'Platba probíhá bezpečně kartou online přes platební bránu. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.'}
+          Platba probíhá bezpečně kartou online přes platební bránu. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.
         </p>
       </div>
     </div>
@@ -706,11 +712,11 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
         {/* Banner pro neaktivní tarif — registrace a náhled poptávek jsou zdarma,
             reakce na poptávky a kontakt na zákazníka vyžadují aktivní tarif. */}
         {isInactive && activePage !== 'membership' && activePage !== 'profile' && (
-          <div style={{ margin: '0 0 20px', padding: '14px 20px', borderRadius: 12, background: '#FEF2F2', border: '1px solid #FECACA', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 13, color: '#B91C1C' }}>
+          <div style={{ margin: '0 0 20px', padding: '14px 20px', borderRadius: 12, background: '#FFF7ED', border: '1px solid #FED7AA', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 13, color: '#9A3412' }}>
               {subStatus === 'payment_failed'
-                ? 'Platba za tarif selhala. Pro reakci na poptávky a kontaktování zákazníků si tarif aktivujte znovu.'
-                : 'Zatím nemáte aktivní tarif. Pro reakci na poptávky a kontaktování zákazníků si aktivujte tarif Aktivní šikula od 199 Kč / měsíc.'}
+                ? 'Platba za tarif selhala. Aktivujte si ho prosím znovu, ať můžete reagovat na poptávky.'
+                : 'Váš profil je připravený. Aktivujte tarif a můžete začít reagovat na poptávky.'}
             </span>
             <button onClick={() => setActivePage('membership')}
               style={{ height: 36, padding: '0 16px', borderRadius: 9, border: 'none', background: '#F97316', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
@@ -720,7 +726,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
         )}
 
         {/* Zamčená sekce */}
-        {lockedType && <LockedScreen type={lockedType} onActivate={() => setActivePage('membership')} />}
+        {lockedType && <LockedScreen type={lockedType} feature={activePage} onActivate={() => setActivePage('membership')} />}
 
         {!lockedType && activePage === 'overview' && (
           <div className="page-enter">
