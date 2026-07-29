@@ -218,6 +218,11 @@ async function listOrders(req, res) {
         AND (${city ?? null}::text IS NULL OR city ILIKE ${city ? `%${city}%` : null})
       ORDER BY created_at DESC LIMIT 200
     `;
+  } else if (me.role === 'sikula' && !me.email_verified_at) {
+    // Ověření e-mailu je první brána, tarif až druhá — bez ověřeného e-mailu
+    // šikula nesmí vidět ani omezený náhled poptávek. Nejde jen o skrytí ve
+    // frontendu, backend v tomto případě nevrátí žádná data.
+    rows = [];
   } else if (me.role === 'sikula') {
     // Bez aktivního tarifu smí šikula vidět jen omezený náhled poptávky —
     // název, kategorii, podslužbu, obecnou lokalitu a že poptávka existuje.

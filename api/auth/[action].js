@@ -139,7 +139,10 @@ async function doRegister(req, res) {
   }
 
   // Vytvoř verifikační token + pošli email. Pokud Resend selže (např. chybí klíč
-  // v dev prostředí), registrace nesmí spadnout — uživatel se přihlásí a vidí banner.
+  // v dev prostředí, nebo doména/from adresa problém), registrace nesmí spadnout —
+  // ale frontend musí vědět, že se e-mail neodeslal, aby to jasně řekl uživateli
+  // místo tichého "Poslali jsme vám e-mail", které by nebyla pravda.
+  let verificationEmailSent = false;
   try {
     const token = genToken();
     const expires = new Date(Date.now() + VERIFY_TOKEN_TTL_MS);
@@ -147,14 +150,15 @@ async function doRegister(req, res) {
       INSERT INTO email_verifications (token, user_id, expires_at)
       VALUES (${token}, ${user.id}, ${expires.toISOString()})
     `;
-    await sendVerificationEmail({ to: user.email, name: user.name, token });
+    await sendVerificationEmail({ to: user.email, token });
+    verificationEmailSent = true;
   } catch (err) {
     console.error('[register] verification email failed:', err);
   }
 
   const sessionToken = await signToken({ sub: String(user.id), role: user.role });
   setSessionCookie(res, sessionToken);
-  return res.status(201).json({ user });
+  return res.status(201).json({ user, verificationEmailSent });
 }
 
 // ─── logout ─────────────────────────────────────────────────────────────────

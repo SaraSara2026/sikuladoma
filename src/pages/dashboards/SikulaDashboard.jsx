@@ -4,7 +4,7 @@ import Icon from '../../components/Icon'
 import InvoicePage from '../InvoicePage'
 import ChatPage from '../ChatPage'
 import { ordersApi, offersApi, reviewsApi, usersApi, conversationsApi } from '../../lib/api'
-import { apiMe } from '../../lib/auth'
+import { apiMe, apiResendVerification } from '../../lib/auth'
 import VerificationBanner from '../../components/VerificationBanner'
 import AvatarUpload from '../../components/AvatarUpload'
 import { SERVICES } from '../../lib/categories'
@@ -200,6 +200,51 @@ function LockedScreen({ type, feature, onActivate }) {
         </button>
         <p style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.6 }}>
           Platba probíhá bezpečně kartou online přes platební bránu. Tarif se obnovuje měsíčně a lze ho kdykoliv zrušit.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// Neověřený šikula nesmí vidět žádný pracovní obsah (Nové zakázky, nabídky,
+// zprávy…) — ověření e-mailu je první brána, tarif až druhá.
+function VerifyGate({ user }) {
+  const [state, setState] = useState('idle') // idle | sending | sent | error
+  const [msg, setMsg] = useState('')
+
+  const resend = async () => {
+    setState('sending')
+    setMsg('')
+    try {
+      await apiResendVerification()
+      setState('sent')
+      setMsg('Poslali jsme vám ověřovací e-mail znovu.')
+    } catch (e) {
+      setState('error')
+      setMsg(e.message || 'Ověřovací e-mail se nepodařilo odeslat. Zkuste to znovu.')
+    }
+  }
+
+  return (
+    <div className="page-enter" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
+      <div style={{ maxWidth: 440, textAlign: 'center', padding: '40px 24px' }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>✉️</div>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1A1F2E', marginBottom: 12 }}>Ověřte svůj e-mail</h2>
+        <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.7, marginBottom: 20 }}>
+          Poslali jsme vám ověřovací odkaz na <strong>{user?.email}</strong>.<br />
+          Bez ověření e-mailu nemůžete používat profil šikuly.
+        </p>
+        {msg && (
+          <div style={{ marginBottom: 16, fontSize: 13, color: state === 'error' ? '#B91C1C' : '#166534' }}>
+            {msg}
+          </div>
+        )}
+        <button onClick={resend} disabled={state === 'sending' || state === 'sent'}
+          style={{ height: 46, padding: '0 26px', borderRadius: 12, border: 'none', background: state === 'sent' ? '#D1FAE5' : 'linear-gradient(135deg,#F97316,#EA580C)', color: state === 'sent' ? '#065F46' : '#fff', fontWeight: 700, fontSize: 15, cursor: state === 'sending' || state === 'sent' ? 'default' : 'pointer', marginBottom: 16 }}>
+          {state === 'sending' ? 'Posílám…' : state === 'sent' ? '✓ Odesláno' : 'Poslat ověřovací e-mail znovu'}
+        </button>
+        <p style={{ fontSize: 13, color: '#9CA3AF', lineHeight: 1.6 }}>
+          Po ověření e-mailu se vraťte zpět a pokračujte v nastavení profilu.
         </p>
       </div>
     </div>
@@ -641,6 +686,11 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                    : activeItem?.lock === 'plus' && !hasPlusPlan ? 'plus'
                    : null
 
+  // Ověření e-mailu je první brána, tarif až druhá — bez ověřeného e-mailu
+  // šikula nesmí vidět žádný pracovní obsah (Nové zakázky, nabídky, zprávy…),
+  // jen hlavičku profilu, odhlásit a výzvu k ověření.
+  const emailUnverified = !currentUser?.email_verified_at
+
   return (
     <div className="dash-layout">
       <div className="dash-sidebar">
@@ -652,7 +702,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             {available ? 'Dostupný' : 'Nedostupný'}
           </div>
         </div>
-        {menuItems.map(m => {
+        {!emailUnverified && menuItems.map(m => {
           const locked = m.lock === 'plan' ? !isActivePlan
                        : m.lock === 'plus' ? !hasPlusPlan
                        : false
@@ -687,6 +737,8 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
 
       <div className="dash-content">
 
+        {emailUnverified ? <VerifyGate user={currentUser} /> : (
+        <>
         <VerificationBanner user={currentUser} />
 
         {/* Stripe Checkout — zprávy po návratu */}
@@ -1222,6 +1274,8 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
               })}
             </div>
           </div>
+        )}
+        </>
         )}
       </div>
     </div>

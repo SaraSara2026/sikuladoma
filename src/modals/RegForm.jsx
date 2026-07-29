@@ -6,7 +6,7 @@ import { T, S, inp, lbl, hint } from "../ui/theme";
 import { IconBtn, BtnGhost, BtnBlue } from "../ui/Button";
 import { IcX, IcArrow } from "../ui/icons/UIIcons";
 import { SERVICES } from "../lib/categories";
-import { apiRegister, apiCheckEmail } from "../lib/auth.js";
+import { apiRegister, apiCheckEmail, apiResendVerification } from "../lib/auth.js";
 import PasswordField from "../components/PasswordField";
 
 export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot }) {
@@ -20,6 +20,11 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
   const [err, setErr] = useState(null);
   const [emailTaken, setEmailTaken] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
+  // Po dokončení registrace ukážeme, jestli se ověřovací e-mail opravdu
+  // odeslal — "Poslali jsme vám e-mail" nesmí tvrdit něco, co se nestalo.
+  const [regResult, setRegResult] = useState(null); // { user, verificationEmailSent }
+  const [resendState, setResendState] = useState('idle'); // idle | sending | sent | error
+  const [resendMsg, setResendMsg] = useState('');
 
   const continueFromStep0 = async () => {
     setErr(null);
@@ -54,7 +59,7 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
     try {
       // Registrace je zdarma — žádný Stripe checkout. Šikula se rovnou dostane
       // do dashboardu a tarif (aktivaci reakcí na poptávky) si vybere později sám.
-      const { user } = await apiRegister({
+      const { user, verificationEmailSent } = await apiRegister({
         email:    form.email,
         password: form.password,
         name:     form.name,
@@ -62,14 +67,58 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
         city:     [form.street, form.psc, form.city].filter(Boolean).join(", ") || form.city,
         services: form.services,
       });
-      onRegistered({ ...user, ico: form.ico });
-      onClose();
+      setRegResult({ user: { ...user, ico: form.ico }, verificationEmailSent: !!verificationEmailSent });
     } catch (e) {
       setErr(e.message || "Registrace selhala.");
     } finally {
       setBusy(false);
     }
   };
+
+  const resendVerification = async () => {
+    setResendState('sending');
+    setResendMsg('');
+    try {
+      await apiResendVerification();
+      setResendState('sent');
+      setResendMsg('Poslali jsme vám ověřovací e-mail znovu.');
+    } catch (e) {
+      setResendState('error');
+      setResendMsg(e.message || 'Ověřovací e-mail se nepodařilo odeslat. Zkuste to znovu.');
+    }
+  };
+
+  if (regResult) return (
+    <div style={S.overlay}>
+      <div style={{ ...S.modal, maxWidth: 440 }} onClick={e => e.stopPropagation()}>
+        <div style={{ padding: "8px 32px 32px", textAlign: "center", paddingTop: 32 }}>
+          <h2 style={{ fontSize: 19, fontWeight: 700, color: T.ink, marginBottom: 10 }}>Registrace dokončena</h2>
+          <p style={{ color: T.ink3, fontSize: 14, lineHeight: 1.7, marginBottom: 18 }}>
+            {regResult.verificationEmailSent
+              ? "Poslali jsme vám ověřovací e-mail."
+              : "Ověřovací e-mail se nepodařilo odeslat. Zkuste to znovu."}
+          </p>
+          {!regResult.verificationEmailSent && (
+            <>
+              {resendMsg && (
+                <div style={{ marginBottom: 14, fontSize: 13, color: resendState === 'error' ? '#B91C1C' : '#166534' }}>
+                  {resendMsg}
+                </div>
+              )}
+              <button onClick={resendVerification} disabled={resendState === 'sending' || resendState === 'sent'}
+                style={{ width: "100%", height: 46, borderRadius: 10, border: "none", background: resendState === 'sent' ? '#D1FAE5' : T.blue, color: resendState === 'sent' ? '#065F46' : "#fff", fontWeight: 700, fontSize: 14, cursor: resendState === 'sending' || resendState === 'sent' ? 'default' : "pointer", fontFamily: "inherit", marginBottom: 10 }}>
+                {resendState === 'sending' ? 'Posílám…' : resendState === 'sent' ? '✓ Odesláno' : 'Poslat ověřovací e-mail znovu'}
+              </button>
+            </>
+          )}
+          <button onClick={() => { onRegistered(regResult.user); onClose(); }}
+            style={{ width: "100%", height: 46, borderRadius: 10, border: `1.5px solid ${T.border}`, background: "#fff", color: T.ink, fontWeight: 600, fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>
+            Pokračovat do profilu
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   if (emailTaken) return (
     <div style={S.overlay} onClick={onClose}>
