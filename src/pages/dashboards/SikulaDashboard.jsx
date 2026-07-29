@@ -162,12 +162,12 @@ const menuItems = [
   { id: 'new-jobs',     icon: '🔔', label: 'Nové zakázky' },
   { id: 'offers-sent',  icon: '📤', label: 'Odeslané nabídky',  lock: 'plan' },
   { id: 'active',       icon: '⚡', label: 'Aktivní zakázky',   lock: 'plan' },
-  { id: 'messages',     icon: '💌', label: 'Zprávy' },
+  { id: 'messages',     icon: '💌', label: 'Zprávy',            lock: 'plan' },
   { id: 'calendar',     icon: '📅', label: 'Kalendář',          lock: 'plus' },
   { id: 'earnings',     icon: '💰', label: 'Výdělky',           lock: 'plus' },
   { id: 'invoices',     icon: '🧾', label: 'Faktury',           lock: 'plus' },
   { id: 'reviews',      icon: '⭐', label: 'Recenze',           lock: 'plan' },
-  { id: 'history',      icon: '📁', label: 'Historie',          lock: 'plus' },
+  { id: 'history',      icon: '📁', label: 'Historie',          lock: 'plan' },
   { id: 'membership',   icon: '👑', label: 'Aktivace tarifu' },
 ]
 
@@ -970,7 +970,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
         {!lockedType && activePage === 'invoices' && <InvoicePage />}
         {!lockedType && activePage === 'calendar' && <CalendarSection />}
         {activePage === 'membership' && <VylepseniProfilu currentUser={currentUser} onLogout={onLogout} />}
-        {activePage === 'messages' && <ChatPage currentUser={currentUser} />}
+        {!lockedType && activePage === 'messages' && <ChatPage currentUser={currentUser} />}
 
         {!lockedType && activePage === 'earnings' && (
           <div className="page-enter">
