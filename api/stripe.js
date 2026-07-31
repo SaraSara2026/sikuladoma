@@ -102,6 +102,13 @@ const PLAN_NAMES = {
   top:          'Přednostní zobrazení',
 };
 
+// Očekávaná cena v Kč pro aktiv/aktiv-plus — použije se jen jako bezpečnostní
+// pojistka (viz handleCheckout), nikde neurčuje/nemění skutečnou cenu ve Stripe.
+const EXPECTED_AMOUNT_CZK = {
+  aktiv:        { monthly: 199, yearly: 2240 },
+  'aktiv-plus': { monthly: 299, yearly: 3300 },
+};
+
 // ── Raw body ze streamu (pro webhook) ─────────────────────────────────────────
 
 function getRawBody(req) {
@@ -164,6 +171,33 @@ async function handleCheckout(req, res, me, sql) {
   const priceId = PRICE_IDS[plan](billing);
   if (!priceId) {
     return res.status(503).json({ error: `${ENV_NAMES[plan]?.(billing) || 'STRIPE_PRICE_?'} není nastaven v env.` });
+  }
+
+  // Bezpečnostní pojistka: ověříme u Stripe, že cena za priceId skutečně
+  // odpovídá tarifu, který si zákazník vybral — jinak by špatně nastavená
+  // env proměnná (např. STRIPE_PRICE_PLUS ukazující na cenu 199 Kč místo
+  // 299 Kč) tiše poslala zákazníka na checkout se špatnou částkou.
+  const expectedKc = EXPECTED_AMOUNT_CZK[plan]?.[billing];
+  if (expectedKc != null) {
+    let priceObj;
+    try {
+      priceObj = await stripeRequest('GET', `/prices/${priceId}`);
+    } catch (e) {
+      console.error('[stripe/checkout] nepodařilo se ověřit cenu u Stripe:', e.message);
+      return res.status(500).json({ error: 'Nepodařilo se ověřit cenu tarifu u Stripe. Zkuste to prosím znovu.' });
+    }
+    const actualKc = priceObj.unit_amount != null ? priceObj.unit_amount / 100 : null;
+    if (priceObj.currency !== 'czk' || actualKc !== expectedKc) {
+      console.error('[stripe/checkout] PRICE MISMATCH — checkout zastaven:', {
+        plan, billing,
+        envVar: ENV_NAMES[plan]?.(billing),
+        priceIdPrefix: priceId.slice(0, 12),
+        expectedKc, actualKc, currency: priceObj.currency,
+      });
+      return res.status(500).json({
+        error: `Nastavení ceny pro tarif ${PLAN_NAMES[plan] || plan} (${billing === 'yearly' ? 'ročně' : 'měsíčně'}) neodpovídá očekávané částce — checkout byl kvůli bezpečnosti zastaven. Kontaktujte prosím podporu.`,
+      });
+    }
   }
 
   // Bezpečný diagnostický log — nikdy nevypisuje celý klíč, jen režim (live/test),
