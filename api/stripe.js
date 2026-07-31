@@ -246,8 +246,11 @@ async function handleCheckout(req, res, me, sql) {
   const sessionData = {
     mode: isSubscription ? 'subscription' : 'payment',
     line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${origin}/?stripe=success&plan=${plan}&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${origin}/?stripe=cancel`,
+    // page=dashboard — bez toho App.jsx při startu neví, že se má vrátit do
+    // dashboardu (řídí se jen ?page= URL parametrem), a přihlášeného uživatele
+    // by to poslalo na homepage místo zpět do jeho dashboardu.
+    success_url: `${origin}/?page=dashboard&stripe=success&plan=${plan}&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${origin}/?page=dashboard&stripe=cancel`,
     metadata: { user_id: String(me.id), plan },
     payment_method_types: ['card'],
     locale: 'cs',

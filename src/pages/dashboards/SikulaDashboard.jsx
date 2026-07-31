@@ -534,7 +534,14 @@ function VylepseniProfilu({ currentUser, onLogout }) {
 }
 
 export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdateUser }) {
-  const [activePage, setActivePage] = useState('overview')
+  // Návrat ze Stripe checkoutu (success i cancel) míří rovnou na Aktivaci
+  // tarifu, ať je tam vidět stavová hláška a šikula nemusí nikam přecházet sám.
+  const [activePage, setActivePage] = useState(() => {
+    try {
+      if (new URLSearchParams(window.location.search).get('stripe')) return 'membership'
+    } catch {}
+    return 'overview'
+  })
   const [available, setAvailable] = useState(true)
   const [stripeMsg, setStripeMsg] = useState(null)   // { type: 'success'|'cancel', plan? }
 
