@@ -16,3 +16,15 @@ export function formatDateCz(dateStr) {
   if (isNaN(d.getTime())) return null;
   return `${d.getUTCDate()}. ${d.getUTCMonth() + 1}. ${d.getUTCFullYear()}`;
 }
+
+// Termín poptávky (Do 48 hodin / Do 7 dní / Flexibilně) — orders.preferred_time
+// nese přesný štítek. Starší poptávky (před zavedením tříúrovňového termínu)
+// preferred_time nemají, jen orders.urgent — u nich termín dopočítáme z něj.
+const TIMING_BY_LABEL = { 'Do 48 hodin': 'urgent', 'Do 7 dní': 'soon', 'Flexibilně': 'flexible' };
+
+export function getOrderTiming(order) {
+  if (!order) return null;
+  const tone = TIMING_BY_LABEL[order.preferred_time];
+  if (tone) return { label: order.preferred_time, tone };
+  return order.urgent ? { label: 'Do 48 hodin', tone: 'urgent' } : { label: 'Flexibilně', tone: 'flexible' };
+}

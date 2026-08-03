@@ -9,7 +9,7 @@ import VerificationBanner from '../../components/VerificationBanner'
 import AvatarUpload from '../../components/AvatarUpload'
 import { SERVICES } from '../../lib/categories'
 import { formatPhoneCZ, isValidPhoneCZ } from '../../lib/phone'
-import { formatCurrencyCz, formatDateCz } from '../../lib/format.js'
+import { formatCurrencyCz, formatDateCz, getOrderTiming } from '../../lib/format.js'
 
 // Po návratu ze Stripe checkoutu webhook aktivuje tarif v DB až s malým zpožděním.
 // currentUser v appce žije v localStorage a sám se neobnoví, tak ho tu pár vteřin
@@ -580,7 +580,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
       return
     }
     if (profileForm.services.length === 0) {
-      setProfileMsg({ type: 'error', text: 'Vyber alespoň jednu službu, kterou nabízíš.' })
+      setProfileMsg({ type: 'error', text: 'Vyberte alespoň jednu službu, aby se vám zobrazovaly relevantní poptávky.' })
       return
     }
     if (!isValidPhoneCZ(profileForm.phone)) {
@@ -636,6 +636,16 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
     return (
       <span className={`badge ${unread > 0 ? 'badge-orange' : 'badge-gray'}`} style={{ fontSize: 11 }}>
         {unread > 0 ? `✉️ Nová zpráva (${unread})` : '💬 Zprávy'}
+      </span>
+    )
+  }
+  const TIMING_ICON = { urgent: '🚨', soon: '⚡', flexible: '🕊️' }
+  const renderTiming = (o) => {
+    const t = getOrderTiming(o)
+    if (!t) return null
+    return (
+      <span style={{ color: t.tone === 'urgent' ? 'var(--red)' : t.tone === 'soon' ? '#C2410C' : 'var(--text3)' }}>
+        {TIMING_ICON[t.tone]} Termín: {t.label}
       </span>
     )
   }
@@ -872,7 +882,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                       <span><Icon name="map" size={13} /> {o.city}</span>
                       {o.budget && <span><Icon name="wallet" size={13} /> {o.budget}</span>}
                       <span><Icon name="clock" size={13} /> {relativni(o.created_at)}</span>
-                      {o.urgent && <span style={{ color: 'var(--red)' }}>🚨 Urgentní</span>}
+                      {renderTiming(o)}
                       {o.has_my_offer && <span className="badge badge-green" style={{ fontSize: 11 }}>✓ Nabídka odeslána</span>}
                       {renderMsgBadge(o.id)}
                     </div>
@@ -932,7 +942,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                       <span><Icon name="map" size={13} /> {o.city}</span>
                       {o.budget && <span><Icon name="wallet" size={13} /> {o.budget}</span>}
                       <span><Icon name="clock" size={13} /> {relativni(o.created_at)}</span>
-                      {o.urgent && <span style={{ color: 'var(--red)' }}>🚨 Urgentní</span>}
+                      {renderTiming(o)}
                       {o.has_my_offer && <span className="badge badge-green" style={{ fontSize: 11 }}>✓ Nabídka odeslána</span>}
                       {renderMsgBadge(o.id)}
                     </div>
@@ -1161,23 +1171,36 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                 </div>
                 <div className="form-group">
                   <label className="form-label">Moje služby</label>
+                  <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 8 }}>
+                    Klikněte na službu, kterou nabízíte — vybraná se zvýrazní. Opětovným kliknutím ji odeberete.
+                    Podle vybraných služeb se vám budou zobrazovat poptávky zákazníků.
+                  </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
                     {SERVICES.map(s => {
                       const sel = profileForm.services.includes(s.id)
                       return (
                         <button key={s.id} type="button" onClick={() => toggleService(s.id)}
+                          aria-pressed={sel}
                           style={{
                             display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px',
                             borderRadius: 8, border: `1.5px solid ${sel ? '#0EA5A4' : 'var(--border)'}`,
                             background: sel ? '#F0FDFA' : '#fff', cursor: 'pointer',
-                            fontSize: 12, fontWeight: 600, color: sel ? '#0F766E' : 'var(--text2)',
+                            fontSize: 12, fontWeight: sel ? 700 : 500, color: sel ? '#0F766E' : 'var(--text3)',
+                            opacity: sel ? 1 : 0.7,
                             transition: 'all .14s', fontFamily: 'inherit',
                           }}>
+                          {sel && <span aria-hidden="true">✓</span>}
                           {s.label}
                         </button>
                       )
                     })}
                   </div>
+                  {profileForm.services.length === 0 && (
+                    <div style={{ marginTop: 8, padding: '10px 14px', borderRadius: 10,
+                      background: '#FFF7ED', border: '1px solid #FED7AA', color: '#9A3412', fontSize: 13 }}>
+                      Vyberte alespoň jednu službu, aby se vám zobrazovaly relevantní poptávky.
+                    </div>
+                  )}
                 </div>
                 <div className="form-row">
                   <div className="form-group"><label className="form-label">IČO</label>

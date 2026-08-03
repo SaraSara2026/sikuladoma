@@ -107,6 +107,9 @@ export default function SendOfferPage({ order, onNav, onSend, currentUser, onUpd
     setErr(null)
     const priceNum = Number(price)
     if (!priceNum || priceNum <= 0) return setErr('Zadejte platnou cenu.')
+    if (time.trim() && /^\d+([.,]\d+)?$/.test(time.trim())) {
+      return setErr('U odhadu délky práce napište i jednotku, například "5 hodin" nebo "2 dny".')
+    }
     if (msg.trim().length < 10)     return setErr('Napište aspoň krátkou zprávu (min. 10 znaků).')
 
     setBusy(true)
@@ -144,7 +147,10 @@ export default function SendOfferPage({ order, onNav, onSend, currentUser, onUpd
           </div>
           <div className="form-group">
             <label className="form-label">Odhad délky práce</label>
-            <input className="form-input" value={time} onChange={e => setTime(e.target.value)} placeholder="Např. 2 hodiny, 1 den, 14 dní nebo dle domluvy" />
+            <input className="form-input" value={time} onChange={e => setTime(e.target.value)} placeholder="např. 5 hodin, 2 dny, 1 týden" />
+            <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 4 }}>
+              Napište odhad včetně jednotky, například 5 hodin nebo 2 dny.
+            </div>
           </div>
         </div>
         <div className="form-group">

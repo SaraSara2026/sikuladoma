@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react'
 import { ORDER_STATUS_MAP } from '../data'
 import Icon from '../components/Icon'
 import { offersApi } from '../lib/api'
-import { formatCurrencyCz, formatDateCz } from '../lib/format.js'
+import { formatCurrencyCz, formatDateCz, getOrderTiming } from '../lib/format.js'
 import ChatPage from './ChatPage.jsx'
+
+const TIMING_COLOR = { urgent: '#B91C1C', soon: '#C2410C', flexible: 'var(--text2)' }
+const TIMING_ICON  = { urgent: '🚨', soon: '⚡', flexible: '🕊️' }
 
 const fieldLabel = { fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px' }
 const fieldValue = { fontSize: 15, fontWeight: 600, marginTop: 4 }
@@ -49,6 +52,7 @@ export default function OrderDetailPage({ order, onNav, currentUser, onAcceptOff
   // "Zprávy k zakázce" má smysl jen když je jasné, s kým — u přijaté/dokončené
   // zakázky je to jednoznačně buď přijatý šikula, nebo zadavatel poptávky.
   const isResolved = order.status === 'accepted' || order.status === 'completed'
+  const timing = getOrderTiming(order)
   const acceptedOffer = offers.find(o => o.status === 'accepted')
   const chatOtherUserId = currentUser?.role === 'customer' ? acceptedOffer?.sikula_id : order.customer_id
 
@@ -106,8 +110,10 @@ export default function OrderDetailPage({ order, onNav, currentUser, onAcceptOff
                 {[
                   ['Patro / přístup', order.floor || order.access],
                   ['Parkování',       order.parking],
-                  ['Urgentní',        order.urgent ? '🚨 Ano' : 'Ne'],
-                  ['Preferovaný termín', order.preferred_date],
+                  ['Termín', timing && (
+                    <span style={{ color: TIMING_COLOR[timing.tone] }}>{TIMING_ICON[timing.tone]} {timing.label}</span>
+                  )],
+                  ['Preferovaný termín', formatDateCz(order.preferred_date)],
                 ].filter(([, v]) => v).map(([k, v]) => (
                   <div key={k} style={{ background: 'var(--bg)', borderRadius: 10, padding: 14 }}>
                     <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>{k}</div>

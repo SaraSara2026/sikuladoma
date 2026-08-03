@@ -16,6 +16,8 @@ import PasswordField from "../components/PasswordField";
 
 const STEP_LABELS = ["Kategorie", "Služba", "Upřesnění", "Místo", "Čas", "Kontakt"];
 const TOTAL = 6;
+// priority (krok "Čas") -> přesný termín uložený do orders.preferred_time.
+const TIMING_LABEL = { urgent: "Do 48 hodin", soon: "Do 7 dní", flexible: "Flexibilně" };
 
 export default function OrderForm({ initialService, initialCategory, initialCity, onClose, onHome, onDashboard, onLoggedIn, currentUser }) {
   // Přihlášený zákazník už má účet i heslo hotové — poptávka se zadává pod
@@ -80,6 +82,7 @@ export default function OrderForm({ initialService, initialCategory, initialCity
           city: fullCity,
           floor,
           urgent: priority === 'urgent',
+          preferred_time: TIMING_LABEL[priority] || null,
           customer_name: name.trim(),
           customer_email: email.trim().toLowerCase(),
           customer_phone: phone,
@@ -134,7 +137,7 @@ export default function OrderForm({ initialService, initialCategory, initialCity
               [<IcTag />,    "Kategorie", category?.label],
               [<IcTag />,    "Služba",    subSvc],
               [<IcMapPin />, "Místo",     city],
-              [<IcClock />,  "Čas",       { urgent:"Do 48 hodin", soon:"Do 7 dní", flexible:"Flexibilně" }[priority]],
+              [<IcClock />,  "Čas",       TIMING_LABEL[priority]],
             ].filter(([,, v]) => v).map(([ic, k, v]) => (
               <div key={k} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, fontSize: 13 }}>
                 <span style={{ color: T.ink4, flexShrink: 0 }}>{ic}</span>
