@@ -22,7 +22,7 @@ function initials(name) {
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 }
 
-export default function ChatPage({ currentUser, startWith, onNav }) {
+export default function ChatPage({ currentUser, startWith, onNav, embedded = false }) {
   const user = currentUser
   const [conversations, setConversations] = useState([])
   const [active, setActive]   = useState(null)        // id konverzace
@@ -126,13 +126,13 @@ export default function ChatPage({ currentUser, startWith, onNav }) {
   const activeConv = conversations.find(c => c.id === active)
 
   return (
-    <div className="page-enter" style={{ padding: '32px 24px', maxWidth: 900, margin: '0 auto' }}>
+    <div className="page-enter" style={{ padding: embedded ? 0 : '32px 24px', maxWidth: 900, margin: '0 auto' }}>
       {onNav && (
         <button className="btn btn-ghost" onClick={() => onNav('back')} style={{ marginBottom: 16 }}>
           ← {user.role === 'customer' ? 'Zpět do přehledu' : 'Zpět do dashboardu'}
         </button>
       )}
-      <h2 style={{ marginBottom: 24 }}>Zprávy</h2>
+      {!embedded && <h2 style={{ marginBottom: 24 }}>Zprávy</h2>}
 
       {(convLoading || creating) && <div style={{ color: 'var(--text3)' }}>{creating ? 'Otevírám konverzaci…' : 'Načítám konverzace…'}</div>}
       {error && <div style={{ color: '#B91C1C' }}>{error}</div>}
@@ -151,7 +151,7 @@ export default function ChatPage({ currentUser, startWith, onNav }) {
             {conversations.map(c => (
               <div key={c.id} className={`chat-list-item ${active === c.id ? 'active' : ''}`} onClick={() => setActive(c.id)}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--brand)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Syne', fontWeight: 800, fontSize: 13, flexShrink: 0 }}>
+                  <div className="chat-avatar">
                     {c.other_avatar || initials(c.other_name)}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -164,7 +164,7 @@ export default function ChatPage({ currentUser, startWith, onNav }) {
                         {c.last_message || (c.order_title ? `Zakázka: ${c.order_title}` : 'Nová konverzace')}
                       </span>
                       {Number(c.unread_count) > 0 && (
-                        <span style={{ background: 'var(--brand)', color: 'white', fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 999, marginLeft: 6 }}>
+                        <span style={{ background: 'var(--orange)', color: 'white', fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 999, marginLeft: 6 }}>
                           {c.unread_count}
                         </span>
                       )}
@@ -177,17 +177,15 @@ export default function ChatPage({ currentUser, startWith, onNav }) {
 
           <div className="chat-main">
             <div className="chat-header-bar">
-              <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--brand)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Syne', fontWeight: 800, fontSize: 13 }}>
+              <div className="chat-avatar">
                 {activeConv?.other_avatar || initials(activeConv?.other_name)}
               </div>
-              <div>
-                <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.3px' }}>
-                  {user.role === 'customer' ? 'Šikula' : 'Zákazník'}
+              <div style={{ minWidth: 0 }}>
+                <div className="chat-header-label">{activeConv?.order_title ? 'Zprávy k zakázce' : 'Zprávy'}</div>
+                {activeConv?.order_title && <div className="chat-header-order">{activeConv.order_title}</div>}
+                <div className="chat-header-sub">
+                  Komunikace {user.role === 'customer' ? 'se šikulou' : 'se zákazníkem'} {activeConv?.other_name}
                 </div>
-                <div style={{ fontWeight: 700, fontSize: 15 }}>{activeConv?.other_name}</div>
-                {activeConv?.order_title && (
-                  <div style={{ fontSize: 12, color: 'var(--text3)' }}>Zakázka: {activeConv.order_title}</div>
-                )}
               </div>
             </div>
 
@@ -197,10 +195,10 @@ export default function ChatPage({ currentUser, startWith, onNav }) {
               )}
               {messages.map(m => {
                 const mine = m.sender_id === user.id
-                const senderLabel = mine ? (user.name || 'Já') : (activeConv?.other_name || 'Uživatel')
+                const senderLabel = mine ? 'Vy' : (activeConv?.other_name || 'Uživatel')
                 return (
                   <div key={m.id} className={`chat-msg ${mine ? 'me' : 'them'}`}>
-                    <div className="chat-msg-sender" style={{ fontSize: 11, fontWeight: 700, opacity: .65, marginBottom: 2 }}>{senderLabel}</div>
+                    <div className="chat-msg-sender">{senderLabel}</div>
                     {m.text}
                     <div className="chat-msg-time">{timeShort(m.created_at)}</div>
                   </div>

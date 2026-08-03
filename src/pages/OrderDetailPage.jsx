@@ -201,7 +201,7 @@ export default function OrderDetailPage({ order, onNav, currentUser, onAcceptOff
 
           {activeTab === 'messages' && isResolved && chatOtherUserId && (
             <div style={{ margin: '-24px' }}>
-              <ChatPage currentUser={currentUser} startWith={{ otherUserId: chatOtherUserId, orderId: order.id }} />
+              <ChatPage currentUser={currentUser} startWith={{ otherUserId: chatOtherUserId, orderId: order.id }} embedded />
             </div>
           )}
         </div>
