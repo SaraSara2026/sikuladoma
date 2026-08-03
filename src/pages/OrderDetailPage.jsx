@@ -96,7 +96,7 @@ export default function OrderDetailPage({ order, onNav, currentUser, onAcceptOff
             ['offers', `💬 Nabídky (${offers.length})`],
             ...(isResolved && chatOtherUserId ? [['messages', '✉️ Zprávy k zakázce']] : []),
           ].map(([t, label]) => (
-            <button key={t} className={`tab-btn ${activeTab === t ? 'active' : ''}`} onClick={() => setActiveTab(t)}>{label}</button>
+            <button key={t} className={`tab ${activeTab === t ? 'active' : ''}`} onClick={() => setActiveTab(t)}>{label}</button>
           ))}
         </div>
 

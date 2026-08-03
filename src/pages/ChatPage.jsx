@@ -153,33 +153,37 @@ export default function ChatPage({ currentUser, startWith, onNav, embedded = fal
 
       {conversations.length > 0 && (
         <div className="chat-wrap">
-          <div className="chat-list">
-            {conversations.map(c => (
-              <div key={c.id} className={`chat-list-item ${active === c.id ? 'active' : ''}`} onClick={() => setActive(c.id)}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div className="chat-avatar">
-                    {c.other_avatar || initials(c.other_name)}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div className="chat-list-name">{c.other_name || 'Uživatel'}</div>
-                      <div className="chat-list-time">{timeShort(c.last_message_at || c.created_at)}</div>
+          {/* V embedded módu (detail zakázky) je konverzace jednoznačně daná
+              order_id — nenabízet přepínání na jiné konverzace zákazníka. */}
+          {!embedded && (
+            <div className="chat-list">
+              {conversations.map(c => (
+                <div key={c.id} className={`chat-list-item ${active === c.id ? 'active' : ''}`} onClick={() => setActive(c.id)}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div className="chat-avatar">
+                      {c.other_avatar || initials(c.other_name)}
                     </div>
-                    <div className="chat-list-preview" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
-                        {c.last_message || (c.order_title ? `Zakázka: ${c.order_title}` : 'Nová konverzace')}
-                      </span>
-                      {Number(c.unread_count) > 0 && (
-                        <span style={{ background: 'var(--orange)', color: 'white', fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 999, marginLeft: 6 }}>
-                          {c.unread_count}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div className="chat-list-name">{c.other_name || 'Uživatel'}</div>
+                        <div className="chat-list-time">{timeShort(c.last_message_at || c.created_at)}</div>
+                      </div>
+                      <div className="chat-list-preview" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                          {c.last_message || (c.order_title ? `Zakázka: ${c.order_title}` : 'Nová konverzace')}
                         </span>
-                      )}
+                        {Number(c.unread_count) > 0 && (
+                          <span style={{ background: 'var(--orange)', color: 'white', fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 999, marginLeft: 6 }}>
+                            {c.unread_count}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           <div className="chat-main">
             <div className="chat-header-bar">

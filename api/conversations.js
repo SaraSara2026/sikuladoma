@@ -31,7 +31,8 @@ async function listConversations(req, res) {
       CASE WHEN c.customer_id = ${me.id} THEN s.avatar ELSE cu.avatar END AS other_avatar,
       lm.text       AS last_message,
       lm.created_at AS last_message_at,
-      COALESCE(uc.unread_count, 0) AS unread_count
+      COALESCE(uc.unread_count, 0) AS unread_count,
+      COALESCE(tc.total_count, 0)  AS total_count
     FROM conversations c
     LEFT JOIN users  cu  ON cu.id  = c.customer_id
     LEFT JOIN users  s   ON s.id   = c.sikula_id
@@ -50,6 +51,11 @@ async function listConversations(req, res) {
         AND m.sender_id != ${me.id}
         AND m.read_at IS NULL
     ) uc ON TRUE
+    LEFT JOIN LATERAL (
+      SELECT COUNT(*)::int AS total_count
+      FROM messages m
+      WHERE m.conversation_id = c.id
+    ) tc ON TRUE
     WHERE c.customer_id = ${me.id} OR c.sikula_id = ${me.id}
     ORDER BY COALESCE(lm.created_at, c.created_at) DESC
   `;

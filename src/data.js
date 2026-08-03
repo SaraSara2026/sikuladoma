@@ -22,8 +22,8 @@ export const ORDER_STATUS_MAP = {
   offers:      { label: 'Nabídky',       color: 'badge-orange' },
   in_progress: { label: 'V řešení',      color: 'badge-orange' },
   accepted:    { label: 'Přijato',       color: 'badge-green'  },
-  completed:   { label: 'Dokončeno',     color: 'badge-green'  },
-  cancelled:   { label: 'Zrušeno',       color: 'badge-gray'   },
+  completed:   { label: 'Dokončeno',     color: 'badge-gray'   },
+  cancelled:   { label: 'Zrušeno',       color: 'badge-red'    },
 }
 
 // ─── CATEGORIES ─────────────────────────────────────────────────────────────

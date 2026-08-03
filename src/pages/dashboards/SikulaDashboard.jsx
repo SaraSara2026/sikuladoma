@@ -669,11 +669,14 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
     const conv = conversationForOrder(orderId)
     if (!conv) return null
     const unread = Number(conv.unread_count) || 0
-    return (
-      <span className={`badge ${unread > 0 ? 'badge-orange' : 'badge-gray'}`} style={{ fontSize: 11 }}>
-        {unread > 0 ? `✉️ Nová zpráva (${unread})` : '💬 Zprávy'}
-      </span>
-    )
+    const total  = Number(conv.total_count) || 0
+    if (unread > 0) {
+      return <span className="badge badge-orange" style={{ fontSize: 11 }}>✉️ Nová zpráva ({unread})</span>
+    }
+    if (total > 0) {
+      return <span className="badge badge-gray" style={{ fontSize: 11 }}>💬 Zprávy ({total})</span>
+    }
+    return null
   }
   const TIMING_ICON = { urgent: '🚨', soon: '⚡', flexible: '🕊️' }
   const renderTiming = (o) => {
@@ -711,6 +714,10 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
   // (ord.status z listOffers), ne podle offer.status.
   const acceptedJobs  = myOffers.filter(o => o.status === 'accepted' && o.order_status === 'accepted')
   const completedJobs = myOffers.filter(o => o.status === 'accepted' && o.order_status === 'completed')
+  // "Odeslané nabídky" = jen nabídky čekající na rozhodnutí zákazníka. Jakmile
+  // ji zákazník přijme/odmítne (nebo ji šikula stáhne), patří do jiné sekce
+  // (Aktivní zakázky / Historie) a odsud zmizí.
+  const pendingOffers = myOffers.filter(o => o.status === 'pending')
 
   const markComplete = async (orderId) => {
     if (!confirm('Označit zakázku jako hotovou?')) return
@@ -762,7 +769,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
           const menuLabel = m.label
           const badgeCount = m.id === 'messages'    ? unreadMessages
                            : m.id === 'active'      ? acceptedJobs.length
-                           : m.id === 'offers-sent' ? acceptedJobs.length
+                           : m.id === 'offers-sent' ? pendingOffers.length
                            : 0
           return (
             <button key={m.id}
@@ -867,7 +874,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
               </div>
               <div className="stat-card">
                 <div className="stat-icon">📤</div>
-                <div className="stat-val">{myOffers.length}</div>
+                <div className="stat-val">{pendingOffers.length}</div>
                 <div className="stat-label">Odeslané nabídky</div>
               </div>
             </div>
@@ -1057,7 +1064,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
         {!lockedType && activePage === 'offers-sent' && (
           <div className="page-enter">
             <div className="dash-title" style={{ marginBottom: 24 }}>Odeslané nabídky</div>
-            {myOffers.length === 0 && (
+            {pendingOffers.length === 0 && (
               <div className="empty-state" style={{ padding: 40 }}>
                 <div className="empty-icon">📤</div>
                 <h3>Žádné odeslané nabídky</h3>
@@ -1065,7 +1072,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
               </div>
             )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {myOffers.map(o => (
+              {pendingOffers.map(o => (
                 <div key={o.id} className="order-card" style={{ cursor: 'pointer' }}
                   onClick={() => onNav('order-detail', { id: o.order_id, title: o.order_title, city: o.order_city, status: o.order_status, customer_id: o.customer_id, customer_name: o.customer_name })}>
                   <div className="order-info">
@@ -1082,17 +1089,11 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                     {o.message && <p style={{ fontSize: 13, color: 'var(--text2)', marginTop: 6 }}>{o.message}</p>}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
-                    {o.status === 'pending'  && <span className="badge badge-orange">Čeká na odpověď</span>}
-                    {o.status === 'accepted' && o.order_status === 'completed' && <span className="badge badge-green">Dokončeno</span>}
-                    {o.status === 'accepted' && o.order_status !== 'completed' && <span className="badge badge-green">Přijato ✓</span>}
-                    {o.status === 'rejected' && <span className="badge badge-gray">Odmítnuto</span>}
-                    {o.status === 'withdrawn' && <span className="badge badge-gray">Staženo</span>}
-                    {(o.status === 'pending' || o.status === 'accepted') && (
-                      <button className="btn btn-outline btn-sm"
-                        onClick={(e) => { e.stopPropagation(); onNav('chat', { otherUserId: o.customer_id, orderId: o.order_id }) }}>
-                        💬 Napsat zprávu
-                      </button>
-                    )}
+                    <span className="badge badge-blue">Čeká na odpověď</span>
+                    <button className="btn btn-outline btn-sm"
+                      onClick={(e) => { e.stopPropagation(); onNav('chat', { otherUserId: o.customer_id, orderId: o.order_id }) }}>
+                      💬 Napsat zprávu
+                    </button>
                   </div>
                 </div>
               ))}
@@ -1362,7 +1363,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                       {o.customer_name && <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>Zákazník: {o.customer_name}</div>}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
-                      <span className="badge badge-green">Dokončeno</span>
+                      <span className="badge badge-gray">Dokončeno</span>
                       {review ? (
                         <div style={{ textAlign: 'right' }}>
                           <div className="stars" style={{ fontSize: 13 }}>{'★'.repeat(review.stars)}</div>

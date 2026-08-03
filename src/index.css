@@ -416,7 +416,7 @@ a { text-decoration:none; color:inherit; }
 .role-sel { display:flex; background:var(--surface2); border-radius:var(--r-sm); padding:3px; }
 .role-btn { flex:1; padding:7px 14px; border-radius:var(--r-sm); border:none; font-size:13px; font-weight:600; cursor:pointer; background:transparent; color:var(--ink3); transition:all .14s; }
 .role-btn.active { background:var(--surface); color:var(--ink); box-shadow:var(--sh-sm); }
-.tabs { display:flex; gap:4px; background:var(--surface2); border-radius:var(--r-sm); padding:3px; margin-bottom:20px; flex-wrap:wrap; }
+.tabs { display:flex; gap:6px; background:var(--surface2); border-radius:var(--r-sm); padding:4px; margin-bottom:20px; flex-wrap:wrap; }
 .tab { flex:1; min-width:fit-content; padding:7px 12px; border-radius:var(--r-sm); border:none; font-size:13px; font-weight:600; cursor:pointer; background:transparent; color:var(--ink3); transition:all .14s; white-space:nowrap; }
 .tab.active { background:var(--surface); color:var(--ink); box-shadow:var(--sh-sm); }
 .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
