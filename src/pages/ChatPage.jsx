@@ -22,6 +22,12 @@ function initials(name) {
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 }
 
+// Úsporný podpis nad bublinou — jen křestní jméno, ne celé "Jana Nováková".
+function firstName(name) {
+  if (!name) return 'Uživatel'
+  return name.trim().split(/\s+/)[0]
+}
+
 export default function ChatPage({ currentUser, startWith, onNav, embedded = false }) {
   const user = currentUser
   const [conversations, setConversations] = useState([])
@@ -193,9 +199,11 @@ export default function ChatPage({ currentUser, startWith, onNav, embedded = fal
               {msgLoading && messages.length === 0 && (
                 <div style={{ color: 'var(--text3)', textAlign: 'center', padding: 20 }}>Načítám…</div>
               )}
+              {/* Přesně chronologický seznam — jedna zpráva = jedna bublina,
+                  žádné seskupování po odesílateli, pořadí jde 1:1 podle API. */}
               {messages.map(m => {
                 const mine = m.sender_id === user.id
-                const senderLabel = mine ? 'Vy' : (activeConv?.other_name || 'Uživatel')
+                const senderLabel = mine ? 'Vy' : firstName(activeConv?.other_name)
                 return (
                   <div key={m.id} className={`chat-msg ${mine ? 'me' : 'them'}`}>
                     <div className="chat-msg-sender">{senderLabel}</div>
