@@ -1038,7 +1038,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                     <div className="order-title">{o.order_title || 'Zakázka'}</div>
                     <div className="order-meta">
                       <span><Icon name="map" size={13} /> {o.order_city}</span>
-                      <span><Icon name="wallet" size={13} /> {formatCurrencyCz(o.price)} (dohodnutá cena)</span>
+                      <span><Icon name="wallet" size={13} /> {formatCurrencyCz(o.price)} (předběžná nabídka)</span>
                       {formatDateCz(o.available_date) && <span><Icon name="calendar" size={13} /> {formatDateCz(o.available_date)}</span>}
                       {renderMsgBadge(o.order_id)}
                     </div>
