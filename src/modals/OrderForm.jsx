@@ -13,6 +13,7 @@ import {
 } from "../ui/icons/UIIcons";
 import { CATEGORIES, SUBCATEGORIES, CAT_COLORS } from "../lib/categories";
 import PasswordField from "../components/PasswordField";
+import { isValidPhoneCZ } from "../lib/phone";
 
 const STEP_LABELS = ["Kategorie", "Služba", "Upřesnění", "Místo", "Čas", "Kontakt"];
 const TOTAL = 6;
@@ -58,7 +59,8 @@ export default function OrderForm({ initialService, initialCategory, initialCity
     if (step === 4) return !!priority;
     if (step === 5) {
       const fullName = name.trim();
-      const baseOk = /^\S+\s+\S+/.test(fullName) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && gdprOk;
+      const phoneOk = phone.trim().length > 0 && isValidPhoneCZ(phone);
+      const baseOk = /^\S+\s+\S+/.test(fullName) && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && phoneOk && gdprOk;
       return isLoggedInCustomer ? baseOk : (baseOk && password.length >= 8);
     }
     return false;
@@ -352,7 +354,7 @@ export default function OrderForm({ initialService, initialCategory, initialCity
                 {!isLoggedInCustomer && (
                   <div><label style={lbl}>Heslo * (min. 8 znaků)</label><PasswordField value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" /></div>
                 )}
-                <div><label style={lbl}>Telefon</label><input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+420 777 000 000" type="tel" autoComplete="tel" style={inp} /></div>
+                <div><label style={lbl}>Telefon *</label><input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+420 777 000 000" type="tel" autoComplete="tel" style={inp} /></div>
               </div>
               <label style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 16, padding: "12px 14px", background: T.bg, border: `1px solid ${T.border}`, borderRadius: 10, cursor: "pointer", fontSize: 13, color: T.ink2, lineHeight: 1.55 }}>
                 <input type="checkbox" checked={gdprOk} onChange={e => setGdprOk(e.target.checked)}

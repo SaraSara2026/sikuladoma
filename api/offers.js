@@ -30,6 +30,13 @@ async function createOffer(req, res) {
       code: 'activate_required',
     });
   }
+  // Bez telefonu se zákazník se šikulou nemůže domluvit na detailech zakázky.
+  if (!me.phone) {
+    return res.status(403).json({
+      error: 'Doplňte si telefon v profilu, než budete posílat nabídky.',
+      code: 'phone_required',
+    });
+  }
 
   const { order_id, price, message, available_date, available_time } = req.body ?? {};
   if (!order_id)                              return res.status(400).json({ error: 'Chybí order_id.' });

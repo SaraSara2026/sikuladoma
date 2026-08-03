@@ -139,6 +139,23 @@ export async function sendNewMessageNotificationEmail({ to, senderName, orderTit
   return data;
 }
 
+// ─── Výzva k hodnocení šikuly (zákazník, po dokončení zakázky) ─────────────
+export async function sendReviewRequestEmail({ to, name, orderTitle, url }) {
+  const resend = getResend();
+  const { data, error } = await resend.emails.send({
+    from: getFromAddress(),
+    to,
+    subject: 'Ohodnoťte šikulu na ŠikulaDoma',
+    html: reviewRequestTemplate({ name, orderTitle, url }),
+    text: reviewRequestTextVersion({ name, orderTitle, url }),
+  });
+  if (error) {
+    console.error('[email] review request send failed:', error);
+    throw new Error('Nepodařilo se odeslat e-mail s výzvou k hodnocení.');
+  }
+  return data;
+}
+
 // ─── HTML šablony ───────────────────────────────────────────────────────────
 // box = předrenderované řádky (viz fieldRows) — oddělený zvýrazněný blok
 // s hlavní informací, ať e-mail není jen dlouhý odstavec textu.
@@ -428,6 +445,35 @@ function newMessageNotificationTextVersion({ senderName, orderTitle, messagePrev
     '',
     'Po přihlášení můžete rovnou odpovědět.',
     '',
+    'ŠikulaDoma',
+  ];
+  return lines.join('\n');
+}
+
+function reviewRequestTemplate({ name, orderTitle, url }) {
+  const first = firstName(name);
+  return baseLayout({
+    title: 'Ohodnoťte šikulu',
+    intro: `${first ? `Dobrý den, ${escapeHtml(first)},` : 'Dobrý den,'} zakázka „${escapeHtml(orderTitle || '')}" byla označena jako dokončená.<br><br>Pomozte prosím dalším zákazníkům a ohodnoťte šikulu, který zakázku provedl.`,
+    ctaText: 'Ohodnotit šikulu',
+    ctaUrl: url,
+    footer: 'Děkujeme, ŠikulaDoma',
+  });
+}
+
+function reviewRequestTextVersion({ name, orderTitle, url }) {
+  const first = firstName(name);
+  const greeting = first ? `Dobrý den, ${first},` : 'Dobrý den,';
+  const lines = [
+    greeting,
+    '',
+    `zakázka „${orderTitle || ''}" byla označena jako dokončená.`,
+    '',
+    'Pomozte prosím dalším zákazníkům a ohodnoťte šikulu, který zakázku provedl.',
+    '',
+    `Ohodnotit šikulu: ${url}`,
+    '',
+    'Děkujeme,',
     'ŠikulaDoma',
   ];
   return lines.join('\n');

@@ -103,6 +103,18 @@ export default function App() {
   const [profileId, setProfileId] = useState(() => {
     try { return new URL(window.location.href).searchParams.get('sikula'); } catch { return null; }
   });
+  // orderId z e-mailového odkazu "Ohodnotit šikulu" (?page=dashboard&review=) —
+  // po přihlášení rovnou otevře formulář hodnocení k té zakázce.
+  const [reviewOrderStart, setReviewOrderStart] = useState(() => {
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('page') === 'dashboard') {
+        const r = url.searchParams.get('review');
+        if (r) return Number(r);
+      }
+    } catch {}
+    return null;
+  });
   const [sikulaUser,  setSikulaUser]   = useState(() => {
     try { const s = localStorage.getItem("sd_user"); return s ? JSON.parse(s) : null; } catch { return null; }
   });
@@ -244,7 +256,7 @@ export default function App() {
         sikulaUser?.role === "admin"
           ? <AdminDashboard     currentUser={sikulaUser} onLogout={logoutSikula} />
           : sikulaUser?.role === "customer"
-            ? <CustomerDashboard currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} onUpdateUser={updateSikula} />
+            ? <CustomerDashboard currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} onUpdateUser={updateSikula} initialReviewOrderId={reviewOrderStart} />
             : sikulaUser?.role === "sikula"
               ? <SikulaDashboard currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} onUpdateUser={updateSikula} />
               : (

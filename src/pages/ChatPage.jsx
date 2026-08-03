@@ -107,7 +107,7 @@ export default function ChatPage({ currentUser, startWith, onNav, embedded = fal
 
   const send = async () => {
     const text = input.trim()
-    if (!text || !active) return
+    if (!text || !active || phoneRequired) return
     setSending(true)
     try {
       const { message } = await messagesApi.send({ conversation_id: active, text })
@@ -130,6 +130,8 @@ export default function ChatPage({ currentUser, startWith, onNav, embedded = fal
   }
 
   const activeConv = conversations.find(c => c.id === active)
+  // Bez telefonu se zákazník se šikulou nemůže domluvit na detailech zakázky.
+  const phoneRequired = user.role === 'sikula' && !user.phone
 
   return (
     <div className="page-enter" style={{ padding: embedded ? 0 : '32px 24px', maxWidth: 1120, margin: '0 auto' }}>
@@ -168,9 +170,13 @@ export default function ChatPage({ currentUser, startWith, onNav, embedded = fal
                         <div className="chat-list-name">{c.other_name || 'Uživatel'}</div>
                         <div className="chat-list-time">{timeShort(c.last_message_at || c.created_at)}</div>
                       </div>
+                      {/* Název zakázky musí být vidět u každé konverzace, ne jen
+                          dokud v ní není žádná zpráva — jinak nejde rozeznat dvě
+                          konverzace se stejným člověkem k různým zakázkám. */}
+                      {c.order_title && <div className="chat-list-order">{c.order_title}</div>}
                       <div className="chat-list-preview" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
-                          {c.last_message || (c.order_title ? `Zakázka: ${c.order_title}` : 'Nová konverzace')}
+                          {c.last_message || 'Nová konverzace'}
                         </span>
                         {Number(c.unread_count) > 0 && (
                           <span style={{ background: 'var(--orange)', color: 'white', fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 999, marginLeft: 6 }}>
@@ -214,19 +220,25 @@ export default function ChatPage({ currentUser, startWith, onNav, embedded = fal
               <div ref={endRef} />
             </div>
 
-            <div className="chat-input-bar">
-              <input
-                className="chat-input"
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && !sending && send()}
-                placeholder="Napište zprávu..."
-                disabled={!active || sending}
-              />
-              <button className="btn btn-primary btn-sm" onClick={send} disabled={!active || sending || !input.trim()}>
-                <Icon name="send" size={15} />
-              </button>
-            </div>
+            {phoneRequired ? (
+              <div className="chat-input-bar" style={{ color: '#B91C1C', fontSize: 13 }}>
+                📞 Doplňte si telefon v profilu, než budete moct posílat zprávy.
+              </div>
+            ) : (
+              <div className="chat-input-bar">
+                <input
+                  className="chat-input"
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && !sending && send()}
+                  placeholder="Napište zprávu..."
+                  disabled={!active || sending}
+                />
+                <button className="btn btn-primary btn-sm" onClick={send} disabled={!active || sending || !input.trim()}>
+                  <Icon name="send" size={15} />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

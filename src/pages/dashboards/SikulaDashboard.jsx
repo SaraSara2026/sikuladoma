@@ -585,6 +585,11 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
       setProfileMsg({ type: 'error', text: 'Vyberte alespoň jednu službu, aby se vám zobrazovaly relevantní poptávky.' })
       return
     }
+    if (!profileForm.phone.trim()) {
+      setProfileMsg({ type: 'error', text: 'Zadejte telefonní číslo — zákazník se s vámi jinak nemůže domluvit.' })
+      setPhoneError('Zadejte telefonní číslo.')
+      return
+    }
     if (!isValidPhoneCZ(profileForm.phone)) {
       setProfileMsg({ type: 'error', text: 'Zadejte platné české telefonní číslo.' })
       setPhoneError('Zadejte platné české telefonní číslo.')
@@ -729,8 +734,10 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
     }
   }
 
-  // Field-name kompatibilita: nový backend vrací `jobs_count`, demo data místy `jobs`.
-  const jobsCount = currentUser?.jobs_count ?? currentUser?.jobs ?? 0
+  // Počítáno živě z myOffers, ne z currentUser.jobs_count — ten sloupec se
+  // po "Označit jako hotovou" na frontendu neobnoví (jen se přenačtou
+  // nabídky), takže by ukazoval starý počet, dokud se stránka znovu nenačte.
+  const jobsCount = completedJobs.length
   const initials = (currentUser?.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
   const avatar = currentUser?.avatar || initials
 
@@ -1176,6 +1183,12 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
         {activePage === 'profile' && (
           <div className="page-enter">
             <div className="dash-title" style={{ marginBottom: 24 }}>Profil šikuly</div>
+            {!currentUser?.phone && (
+              <div style={{ marginBottom: 16, padding: '12px 16px', borderRadius: 10,
+                background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C', fontSize: 13 }}>
+                📞 Chybí vám telefon — doplňte ho níže. Bez telefonu nejde poslat nabídku ani zprávu, zákazník se s vámi jinak nedomluví.
+              </div>
+            )}
             <div className="card" style={{ marginBottom: 16 }}>
               <div className="profile-hero">
                 <AvatarUpload
@@ -1189,7 +1202,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                   <div className="profile-badges">
                     {currentUser?.email_verified_at && <span className="badge badge-green">✓ Ověřený e-mail</span>}
                     {currentUser?.plan && <span className="badge badge-blue">👑 {currentUser.plan}</span>}
-                    {currentUser?.rating && <span className="badge badge-orange">⭐ {currentUser.rating} ({jobsCount} recenzí)</span>}
+                    {currentUser?.rating && <span className="badge badge-orange">⭐ {currentUser.rating} ({reviewsSummary?.total ?? 0} recenzí)</span>}
                   </div>
                 </div>
               </div>

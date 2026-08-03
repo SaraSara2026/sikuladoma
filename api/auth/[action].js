@@ -108,6 +108,8 @@ async function doRegister(req, res) {
   if (!name || name.trim().length < 2)         return res.status(400).json({ error: 'Zadejte jméno.' });
   if (!/^\S+\s+\S+/.test((name || '').trim())) return res.status(400).json({ error: 'Zadejte jméno i příjmení.' });
   if (!ALLOWED_ROLES.has(role))                return res.status(400).json({ error: 'Neplatná role.' });
+  // Telefon je pro šikulu povinný — bez něj se s ním zákazník nedomluví.
+  if (role === 'sikula' && !String(phone || '').trim()) return res.status(400).json({ error: 'Zadejte telefonní číslo.' });
 
   const svc = Array.isArray(services) ? services.filter(s => typeof s === 'string').slice(0, 30) : [];
 

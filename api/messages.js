@@ -62,6 +62,13 @@ async function sendMessage(req, res) {
       code: 'verify_required',
     });
   }
+  // Bez telefonu se zákazník se šikulou nemůže domluvit na detailech zakázky.
+  if (me.role === 'sikula' && !me.phone) {
+    return res.status(403).json({
+      error: 'Doplňte si telefon v profilu, než budete posílat zprávy.',
+      code: 'phone_required',
+    });
+  }
 
   const { conversation_id, text } = req.body ?? {};
   const convId = Number(conversation_id);

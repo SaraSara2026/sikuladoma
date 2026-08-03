@@ -103,6 +103,23 @@ export default function SendOfferPage({ order, onNav, onSend, currentUser, onUpd
     )
   }
 
+  // Bez telefonu se zákazník se šikulou nemůže domluvit na detailech zakázky.
+  if (!freshUser?.phone) {
+    return (
+      <div className="page-enter" style={{ padding: '32px 24px', maxWidth: 640, margin: '0 auto' }}>
+        <button className="btn btn-ghost" onClick={() => onNav('back')} style={{ marginBottom: 16 }}>← Zpět</button>
+        <div className="card card-pad" style={{ textAlign: 'center', padding: '40px 24px' }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>📞</div>
+          <h2 style={{ marginBottom: 10 }}>Doplňte telefon, abyste mohli posílat nabídky.</h2>
+          <p style={{ color: 'var(--text2)', lineHeight: 1.7, marginBottom: 22 }}>
+            Zákazník potřebuje mít na vás telefonní kontakt, aby se s vámi mohl domluvit na detailech zakázky.
+          </p>
+          <button className="btn btn-primary" onClick={() => onNav('dash-sikula')}>Doplnit telefon v profilu</button>
+        </div>
+      </div>
+    )
+  }
+
   const submit = async () => {
     setErr(null)
     const priceNum = Number(price)

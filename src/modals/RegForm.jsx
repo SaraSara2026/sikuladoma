@@ -7,12 +7,13 @@ import { IconBtn, BtnGhost, BtnBlue } from "../ui/Button";
 import { IcX, IcArrow } from "../ui/icons/UIIcons";
 import { SERVICES } from "../lib/categories";
 import { apiRegister, apiCheckEmail, apiResendVerification } from "../lib/auth.js";
+import { isValidPhoneCZ } from "../lib/phone";
 import PasswordField from "../components/PasswordField";
 
 export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot }) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
-    name: "", ico: "", email: "", password: "",
+    name: "", ico: "", email: "", password: "", phone: "",
     street: "", city: "", psc: "",
     services: [], plan: plan?.id || "start",
   });
@@ -33,6 +34,8 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
     if (!/^\S+\s+\S+/.test(fullName))      return setErr("Zadejte jméno i příjmení.");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return setErr("Zadejte platný e-mail.");
     if ((form.password || "").length < 8) return setErr("Heslo musí mít alespoň 8 znaků.");
+    if (!form.phone?.trim())              return setErr("Zadejte telefonní číslo.");
+    if (!isValidPhoneCZ(form.phone))      return setErr("Zadejte platné telefonní číslo.");
     if (!form.city?.trim())               return setErr("Zadejte město.");
 
     setCheckingEmail(true);
@@ -64,6 +67,7 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
         password: form.password,
         name:     form.name,
         role:     "sikula",
+        phone:    form.phone,
         city:     [form.street, form.psc, form.city].filter(Boolean).join(", ") || form.city,
         services: form.services,
       });
@@ -168,6 +172,7 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
               <div><label style={lbl}>IČO (volitelné)</label><input value={form.ico} onChange={e => upd("ico", e.target.value)} placeholder="12345678" style={inp} /></div>
               <div><label style={lbl}>E-mail *</label><input value={form.email} onChange={e => upd("email", e.target.value)} placeholder="vas@email.cz" type="email" autoComplete="email" style={inp} /></div>
               <div><label style={lbl}>Heslo * (min. 8 znaků)</label><PasswordField value={form.password} onChange={e => upd("password", e.target.value)} autoComplete="new-password" /></div>
+              <div><label style={lbl}>Telefon *</label><input value={form.phone} onChange={e => upd("phone", e.target.value)} placeholder="+420 777 000 000" type="tel" autoComplete="tel" style={inp} /></div>
               <div><label style={lbl}>Ulice a číslo popisné</label><input value={form.street || ""} onChange={e => upd("street", e.target.value)} placeholder="Hlavní 42" style={inp} /></div>
               <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
                 <div><label style={lbl}>Město / oblast *</label><input value={form.city} onChange={e => upd("city", e.target.value)} placeholder="Praha a okolí" style={inp} /></div>

@@ -2,6 +2,11 @@
 
 import { sql } from '../_db.js';
 import { requireUser } from '../_auth.js';
+import { sendReviewRequestEmail } from '../_email.js';
+
+function getAppUrl() {
+  return process.env.APP_URL || 'https://sikuladoma.vercel.app';
+}
 
 export default async function handler(req, res) {
   try {
@@ -51,6 +56,22 @@ export default async function handler(req, res) {
           WHERE id = ${order.accepted_sikula_id}
         `;
       }
+
+      // Výzva zákazníkovi k ohodnocení šikuly — informační, selhání e-mailu
+      // nesmí zrušit dokončení zakázky, jen se zaloguje.
+      if (order.customer_email) {
+        try {
+          await sendReviewRequestEmail({
+            to: order.customer_email,
+            name: order.customer_name,
+            orderTitle: order.title,
+            url: `${getAppUrl()}/?page=dashboard&review=${orderId}`,
+          });
+        } catch (err) {
+          console.error('[orders] review request email failed:', err);
+        }
+      }
+
       return res.status(200).json({ order: row });
     }
 

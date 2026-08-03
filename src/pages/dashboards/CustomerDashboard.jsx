@@ -80,7 +80,7 @@ function useAllMyOffers(myOrders) {
     Promise.all(
       myOrders.map(o =>
         offersApi.listByOrder(o.id)
-          .then(({ offers }) => offers.map(off => ({ ...off, order_title: o.title, order_id: o.id })))
+          .then(({ offers }) => offers.map(off => ({ ...off, order_title: o.title, order_id: o.id, order_status: o.status })))
           .catch(() => [])
       )
     )
@@ -127,7 +127,7 @@ function useConversations() {
   return { conversations, unreadTotal }
 }
 
-export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpdateUser }) {
+export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpdateUser, initialReviewOrderId }) {
   const [activePage, setActivePage] = useState('overview')
   const { orders, loading, error, reload } = useMyOrders()
   const { offers: allOffers } = useAllMyOffers(orders)
@@ -182,6 +182,13 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
   const initials = (currentUser?.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
   const avatar   = currentUser?.avatar || initials
   const [reviewOrderId, setReviewOrderId] = useState(null)
+  // E-mailový odkaz "Ohodnotit šikulu" (?page=dashboard&review=<id>) rovnou
+  // otevře formulář hodnocení k té zakázce, ať se zákazník neztrácí v menu.
+  useEffect(() => {
+    if (!initialReviewOrderId) return
+    setActivePage('completed')
+    setReviewOrderId(initialReviewOrderId)
+  }, [initialReviewOrderId])
 
   const handleAcceptOffer = async (offerId) => {
     try { await offersApi.patch(offerId, 'accept'); reload() } catch (e) { alert(e.message) }
@@ -374,7 +381,8 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
                   {offer.status === 'pending' && (
                     <button className="btn btn-green btn-sm" onClick={(e) => { e.stopPropagation(); handleAcceptOffer(offer.id) }}>✓ Přijmout nabídku</button>
                   )}
-                  {offer.status === 'accepted' && <span className="badge badge-green">✓ Přijato</span>}
+                  {offer.status === 'accepted' && offer.order_status === 'completed' && <span className="badge badge-gray">Dokončeno</span>}
+                  {offer.status === 'accepted' && offer.order_status !== 'completed' && <span className="badge badge-green">✓ Přijato</span>}
                   {offer.status === 'rejected' && <span className="badge badge-gray">Odmítnuto</span>}
                 </div>
               </div>

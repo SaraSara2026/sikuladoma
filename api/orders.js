@@ -66,6 +66,7 @@ async function createOrder(req, res) {
   if (!customer_name)                                return res.status(400).json({ error: 'Zadejte své jméno.' });
   if (!/^\S+\s+\S+/.test(customer_name))             return res.status(400).json({ error: 'Zadejte jméno i příjmení.' });
   if (!EMAIL_RE.test(customer_email))                return res.status(400).json({ error: 'Zadejte platný e-mail.' });
+  if (!customer_phone)                               return res.status(400).json({ error: 'Zadejte telefonní číslo.' });
   if (!useExistingSession && (!password || password.length < 8)) return res.status(400).json({ error: 'Zadejte heslo (min. 8 znaků).' });
 
   // Anonymní / cizí poptávka: klient si zadal vlastní heslo rovnou ve formuláři —
@@ -98,6 +99,14 @@ async function createOrder(req, res) {
       customerId = newUser.id;
       loggedIn = true;
     }
+  }
+
+  // Telefon zadaný v poptávce doplníme do profilu, pokud tam ještě chybí —
+  // ať ho má zákazník po ruce i mimo tuto konkrétní poptávku. Jen když jsme
+  // si jistí, že jde opravdu o jeho účet (loggedIn), a nepřepisujeme telefon,
+  // který už na profilu má.
+  if (loggedIn) {
+    await sql`UPDATE users SET phone = COALESCE(phone, ${customer_phone}), updated_at = NOW() WHERE id = ${customerId}`;
   }
 
   // Kdokoliv projde touto cestou (nový účet, ověřený existující účet, i šikula
