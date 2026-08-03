@@ -29,6 +29,8 @@ async function pollUserAfterCheckout(onUpdateUser, attempt = 0) {
 
 // Mapování id kategorie → emoji ikona (pro hezké zobrazení v dashboardu).
 const CAT_ICON = Object.fromEntries(CATEGORIES.map(c => [c.id, c.icon]))
+// Mapování id služby (hlavní kategorie) → čitelný název, pro sekci "Moje služby".
+const SVC_LABEL = Object.fromEntries(SERVICES.map(s => [s.id, s.label]))
 
 const PLAN_LABELS = {
   start: 'Start', plus: 'Plus', profi: 'Profi', top: 'Top Šikula',
@@ -616,10 +618,44 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
     }
   }
 
-  const toggleService = (id) => setProfileForm(p => ({
-    ...p,
-    services: p.services.includes(id) ? p.services.filter(s => s !== id) : [...p.services, id],
-  }))
+  // "Moje služby" se editují odděleně od zbytku profilu — v běžném zobrazení
+  // vidí šikula jen svoje aktuálně vybrané služby, úprava (výběr ze všech
+  // kategorií + vlastní uložení) se otevírá tlačítkem "Upravit služby".
+  const [editingServices, setEditingServices] = useState(false)
+  const [servicesDraft, setServicesDraft]     = useState([])
+  const [servicesErr, setServicesErr]         = useState(null)
+  const [servicesSaving, setServicesSaving]   = useState(false)
+
+  const openServicesEditor = () => {
+    setServicesDraft(profileForm.services)
+    setServicesErr(null)
+    setEditingServices(true)
+  }
+  const cancelServicesEdit = () => {
+    setEditingServices(false)
+    setServicesErr(null)
+  }
+  const toggleDraftService = (id) => setServicesDraft(d => (
+    d.includes(id) ? d.filter(s => s !== id) : [...d, id]
+  ))
+  const saveServices = async () => {
+    if (servicesDraft.length === 0) {
+      setServicesErr('Vyberte alespoň jednu službu.')
+      return
+    }
+    setServicesErr(null)
+    setServicesSaving(true)
+    try {
+      const { user } = await usersApi.updateMe({ services: servicesDraft })
+      onUpdateUser?.({ ...currentUser, ...user })
+      setProfileForm(p => ({ ...p, services: servicesDraft }))
+      setEditingServices(false)
+    } catch (e) {
+      setServicesErr(e.message || 'Nepodařilo se uložit.')
+    } finally {
+      setServicesSaving(false)
+    }
+  }
   // users.city se ukládá jako "ulice, PSČ, město" — město je poslední segment,
   // ne první (dřív se bral první segment, což byla u víceslovných adres ulice,
   // takže se poptávky v okolí prakticky nikdy nenašly).
@@ -1171,34 +1207,71 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                 </div>
                 <div className="form-group">
                   <label className="form-label">Moje služby</label>
-                  <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 8 }}>
-                    Klikněte na službu, kterou nabízíte — vybraná se zvýrazní. Opětovným kliknutím ji odeberete.
-                    Podle vybraných služeb se vám budou zobrazovat poptávky zákazníků.
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
-                    {SERVICES.map(s => {
-                      const sel = profileForm.services.includes(s.id)
-                      return (
-                        <button key={s.id} type="button" onClick={() => toggleService(s.id)}
-                          aria-pressed={sel}
-                          style={{
-                            display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px',
-                            borderRadius: 8, border: `1.5px solid ${sel ? '#0EA5A4' : 'var(--border)'}`,
-                            background: sel ? '#F0FDFA' : '#fff', cursor: 'pointer',
-                            fontSize: 12, fontWeight: sel ? 700 : 500, color: sel ? '#0F766E' : 'var(--text3)',
-                            opacity: sel ? 1 : 0.7,
-                            transition: 'all .14s', fontFamily: 'inherit',
-                          }}>
-                          {sel && <span aria-hidden="true">✓</span>}
-                          {s.label}
+                  {editingServices ? (
+                    <div>
+                      <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 8 }}>
+                        Klikněte na službu pro přidání, opětovným kliknutím ji odeberete.
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
+                        {SERVICES.map(s => {
+                          const sel = servicesDraft.includes(s.id)
+                          return (
+                            <button key={s.id} type="button" onClick={() => toggleDraftService(s.id)}
+                              aria-pressed={sel}
+                              style={{
+                                display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+                                borderRadius: 8, border: `1.5px solid ${sel ? '#0EA5A4' : 'var(--border)'}`,
+                                background: sel ? '#F0FDFA' : '#fff', cursor: 'pointer',
+                                fontSize: 12, fontWeight: sel ? 700 : 500, color: sel ? '#0F766E' : 'var(--text3)',
+                                opacity: sel ? 1 : 0.7,
+                                transition: 'all .14s', fontFamily: 'inherit',
+                              }}>
+                              {sel && <span aria-hidden="true">✓</span>}
+                              {s.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                      {servicesErr && (
+                        <div style={{ marginTop: 8, padding: '10px 14px', borderRadius: 10,
+                          background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C', fontSize: 13 }}>
+                          {servicesErr}
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                        <button type="button" className="btn btn-primary btn-sm" onClick={saveServices} disabled={servicesSaving}>
+                          {servicesSaving ? 'Ukládám…' : 'Uložit služby'}
                         </button>
-                      )
-                    })}
-                  </div>
-                  {profileForm.services.length === 0 && (
-                    <div style={{ marginTop: 8, padding: '10px 14px', borderRadius: 10,
+                        <button type="button" className="btn btn-ghost btn-sm" onClick={cancelServicesEdit} disabled={servicesSaving}>
+                          Zrušit
+                        </button>
+                      </div>
+                    </div>
+                  ) : profileForm.services.length > 0 ? (
+                    <div>
+                      <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 8 }}>
+                        Tyto služby nabízíte zákazníkům. Podle nich se vám zobrazují relevantní poptávky.
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                        {profileForm.services.map(id => (
+                          <span key={id} className="badge badge-blue" style={{ fontSize: 12 }}>
+                            {SVC_LABEL[id] || id}
+                          </span>
+                        ))}
+                      </div>
+                      <button type="button" className="btn btn-outline btn-sm" onClick={openServicesEditor}>
+                        Upravit služby
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ padding: '10px 14px', borderRadius: 10,
                       background: '#FFF7ED', border: '1px solid #FED7AA', color: '#9A3412', fontSize: 13 }}>
-                      Vyberte alespoň jednu službu, aby se vám zobrazovaly relevantní poptávky.
+                      <div style={{ marginBottom: 8 }}>
+                        Nemáte vybranou žádnou službu. Vyberte alespoň jednu službu, aby se vám zobrazovaly relevantní poptávky.
+                      </div>
+                      <button type="button" className="btn btn-primary btn-sm" onClick={openServicesEditor}>
+                        Vybrat službu
+                      </button>
                     </div>
                   )}
                 </div>
