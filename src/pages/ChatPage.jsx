@@ -132,7 +132,7 @@ export default function ChatPage({ currentUser, startWith, onNav, embedded = fal
   const activeConv = conversations.find(c => c.id === active)
 
   return (
-    <div className="page-enter" style={{ padding: embedded ? 0 : '32px 24px', maxWidth: 900, margin: '0 auto' }}>
+    <div className="page-enter" style={{ padding: embedded ? 0 : '32px 24px', maxWidth: 1120, margin: '0 auto' }}>
       {onNav && (
         <button className="btn btn-ghost" onClick={() => onNav('back')} style={{ marginBottom: 16 }}>
           ← {user.role === 'customer' ? 'Zpět do přehledu' : 'Zpět do dashboardu'}
@@ -183,15 +183,10 @@ export default function ChatPage({ currentUser, startWith, onNav, embedded = fal
 
           <div className="chat-main">
             <div className="chat-header-bar">
-              <div className="chat-avatar">
-                {activeConv?.other_avatar || initials(activeConv?.other_name)}
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <div className="chat-header-label">{activeConv?.order_title ? 'Zprávy k zakázce' : 'Zprávy'}</div>
-                {activeConv?.order_title && <div className="chat-header-order">{activeConv.order_title}</div>}
-                <div className="chat-header-sub">
-                  Komunikace {user.role === 'customer' ? 'se šikulou' : 'se zákazníkem'} {activeConv?.other_name}
-                </div>
+              <div className="chat-header-label">{activeConv?.order_title ? 'Zprávy k zakázce' : 'Zprávy'}</div>
+              {activeConv?.order_title && <div className="chat-header-order">{activeConv.order_title}</div>}
+              <div className="chat-header-sub">
+                Komunikace {user.role === 'customer' ? 'se šikulou' : 'se zákazníkem'} {activeConv?.other_name}
               </div>
             </div>
 
