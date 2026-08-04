@@ -137,11 +137,12 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
     const conv = conversations.find(c => c.order_id === orderId)
     if (!conv) return null
     const unread = Number(conv.unread_count) || 0
-    return (
-      <span className={`badge ${unread > 0 ? 'badge-orange' : 'badge-gray'}`} style={{ fontSize: 11 }}>
-        {unread > 0 ? `✉️ Nová zpráva (${unread})` : '💬 Zprávy'}
-      </span>
-    )
+    const total  = Number(conv.total_count) || 0
+    if (unread === 0 && total === 0) return null
+    const openChat = (e) => { e.stopPropagation(); onNav('chat', { otherUserId: conv.sikula_id, orderId }) }
+    return unread > 0
+      ? <span className="badge badge-orange" style={{ fontSize: 11, cursor: 'pointer' }} onClick={openChat}>✉️ Nová zpráva ({unread})</span>
+      : <span className="badge badge-gray" style={{ fontSize: 11, cursor: 'pointer' }} onClick={openChat}>💬 Zprávy ({total})</span>
   }
   const pendingOffersCount = allOffers.filter(o => o.status === 'pending').length
 

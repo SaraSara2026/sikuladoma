@@ -675,13 +675,11 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
     if (!conv) return null
     const unread = Number(conv.unread_count) || 0
     const total  = Number(conv.total_count) || 0
-    if (unread > 0) {
-      return <span className="badge badge-orange" style={{ fontSize: 11 }}>✉️ Nová zpráva ({unread})</span>
-    }
-    if (total > 0) {
-      return <span className="badge badge-gray" style={{ fontSize: 11 }}>💬 Zprávy ({total})</span>
-    }
-    return null
+    if (unread === 0 && total === 0) return null
+    const openChat = (e) => { e.stopPropagation(); onNav('chat', { otherUserId: conv.customer_id, orderId }) }
+    return unread > 0
+      ? <span className="badge badge-orange" style={{ fontSize: 11, cursor: 'pointer' }} onClick={openChat}>✉️ Nová zpráva ({unread})</span>
+      : <span className="badge badge-gray" style={{ fontSize: 11, cursor: 'pointer' }} onClick={openChat}>💬 Zprávy ({total})</span>
   }
   const TIMING_ICON = { urgent: '🚨', soon: '⚡', flexible: '🕊️' }
   const renderTiming = (o) => {
@@ -907,8 +905,8 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
 
             <div className="table-wrap">
               <div className="table-header">
-                <span className="table-title">Nové zakázky v okolí</span>
-                <button className="btn btn-ghost btn-sm" onClick={() => setActivePage('new-jobs')}>Zobrazit vše →</button>
+                <span className="table-title">Poslední poptávky v okolí {orders.length > 0 && <span style={{ fontWeight: 400, color: 'var(--text3)' }}>({Math.min(orders.length, 3)} z {orders.length})</span>}</span>
+                <button className="btn btn-ghost btn-sm" onClick={() => setActivePage('new-jobs')}>Zobrazit všechny poptávky →</button>
               </div>
               {ordersLoading && <div style={{ padding: 16, color: 'var(--text3)', fontSize: 14 }}>Načítám…</div>}
               {ordersError && !ordersLoading && (
@@ -1372,6 +1370,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                         <span><Icon name="map" size={13} /> {o.order_city}</span>
                         <span><Icon name="wallet" size={13} /> {formatCurrencyCz(o.price)}</span>
                         {formatDateCz(o.available_date) && <span><Icon name="calendar" size={13} /> {formatDateCz(o.available_date)}</span>}
+                        {renderMsgBadge(o.order_id)}
                       </div>
                       {o.customer_name && <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>Zákazník: {o.customer_name}</div>}
                     </div>
