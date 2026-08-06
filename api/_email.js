@@ -156,6 +156,25 @@ export async function sendReviewRequestEmail({ to, name, orderTitle, url }) {
   return data;
 }
 
+// ─── Zrušení tarifu (šikula) ────────────────────────────────────────────────
+// expiresAt = konec už zaplaceného období (ISO string nebo null) — do té doby
+// zůstává profil plně funkční, zrušení není okamžité.
+export async function sendPlanCancelledEmail({ to, name, expiresAt }) {
+  const resend = getResend();
+  const { data, error } = await resend.emails.send({
+    from: getFromAddress(),
+    to,
+    subject: 'Zrušení tarifu na ŠikulaDoma',
+    html: planCancelledTemplate({ name, expiresAt }),
+    text: planCancelledTextVersion({ name, expiresAt }),
+  });
+  if (error) {
+    console.error('[email] plan cancelled send failed:', error);
+    throw new Error('Nepodařilo se odeslat e-mail o zrušení tarifu.');
+  }
+  return data;
+}
+
 // ─── HTML šablony ───────────────────────────────────────────────────────────
 // box = předrenderované řádky (viz fieldRows) — oddělený zvýrazněný blok
 // s hlavní informací, ať e-mail není jen dlouhý odstavec textu.
@@ -474,6 +493,48 @@ function reviewRequestTextVersion({ name, orderTitle, url }) {
     `Ohodnotit šikulu: ${url}`,
     '',
     'Děkujeme,',
+    'ŠikulaDoma',
+  ];
+  return lines.join('\n');
+}
+
+function planCancelledTemplate({ name, expiresAt }) {
+  const first = firstName(name);
+  const dateStr = formatDateCz(expiresAt);
+  const url = `${getAppUrl()}/?page=dashboard`;
+  return baseLayout({
+    title: 'Zrušení tarifu',
+    intro: `${first ? `Dobrý den, ${escapeHtml(first)},` : 'Dobrý den,'} váš tarif na ŠikulaDoma byl zrušen.<br><br>` +
+      (dateStr
+        ? `Váš profil a zaplacené funkce zůstávají aktivní do <strong>${dateStr}</strong>.`
+        : 'Váš profil a zaplacené funkce zůstávají aktivní do konce už zaplaceného období.') +
+      ` Po tomto datu se profil přepne do neaktivního režimu.<br><br>Profil zůstane zachovaný, ale bez aktivního tarifu nebudete moci reagovat na poptávky ani komunikovat se zákazníky.<br><br>Tarif si můžete kdykoliv znovu aktivovat ve svém profilu.`,
+    ctaText: 'Aktivovat tarif',
+    ctaUrl: url,
+    footer: 'ŠikulaDoma',
+  });
+}
+
+function planCancelledTextVersion({ name, expiresAt }) {
+  const first = firstName(name);
+  const greeting = first ? `Dobrý den, ${first},` : 'Dobrý den,';
+  const dateStr = formatDateCz(expiresAt);
+  const url = `${getAppUrl()}/?page=dashboard`;
+  const lines = [
+    greeting,
+    '',
+    'váš tarif na ŠikulaDoma byl zrušen.',
+    '',
+    dateStr
+      ? `Váš profil a zaplacené funkce zůstávají aktivní do ${dateStr}.`
+      : 'Váš profil a zaplacené funkce zůstávají aktivní do konce už zaplaceného období.',
+    '',
+    'Po tomto datu se profil přepne do neaktivního režimu. Profil zůstane zachovaný, ale bez aktivního tarifu nebudete moci reagovat na poptávky ani komunikovat se zákazníky.',
+    '',
+    'Tarif si můžete kdykoliv znovu aktivovat ve svém profilu.',
+    '',
+    `Aktivovat tarif: ${url}`,
+    '',
     'ŠikulaDoma',
   ];
   return lines.join('\n');

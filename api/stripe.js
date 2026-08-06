@@ -6,6 +6,7 @@
 // POST /api/stripe?action=webhook   → Stripe webhook handler (podpis přes STRIPE_WEBHOOK_SECRET)
 
 import crypto from 'node:crypto';
+import { sendPlanCancelledEmail } from './_email.js';
 
 // ── Stripe REST helpers ────────────────────────────────────────────────────────
 
@@ -334,6 +335,20 @@ async function handleWebhook(req, res, sql) {
   return res.status(200).json({ received: true });
 }
 
+// Informační e-mail o zrušení tarifu — selhání e-mailu nesmí shodit
+// zpracování webhooku, jen se zaloguje. Oznámení v profilu ("Oznámení")
+// se odvozuje přímo z subscription_status/plan_expires_at při načtení
+// profilu, nic se tu zvlášť neukládá.
+async function notifyPlanCancelled(sql, userId, expiresAt) {
+  try {
+    const [user] = await sql`SELECT email, name FROM users WHERE id = ${userId}`;
+    if (!user?.email) return;
+    await sendPlanCancelledEmail({ to: user.email, name: user.name, expiresAt });
+  } catch (err) {
+    console.error('[stripe] plan cancelled email failed:', err);
+  }
+}
+
 // ── Zpracování Stripe eventů ───────────────────────────────────────────────────
 
 async function processEvent(event, sql) {
@@ -392,9 +407,15 @@ async function processEvent(event, sql) {
       const expiresAt = sub.current_period_end
         ? new Date(sub.current_period_end * 1000).toISOString() : null;
 
-      const subStatus = ['active', 'trialing'].includes(sub.status) ? 'active'
+      // cancel_at_period_end = zákazník tarif zrušil, ale Stripe subscripci
+      // ukončí až na konci už zaplaceného období — do té doby (plan_expires_at)
+      // zůstává profil plně funkční, žádné okamžité zamčení.
+      const subStatus = sub.cancel_at_period_end ? 'cancelled'
+                       : ['active', 'trialing'].includes(sub.status) ? 'active'
                        : sub.status === 'past_due' ? 'payment_failed'
                        : 'inactive';
+
+      const [prev] = await sql`SELECT subscription_status FROM users WHERE id = ${userId}`;
 
       await sql`
         UPDATE users
@@ -406,6 +427,13 @@ async function processEvent(event, sql) {
         WHERE id = ${userId}
       `;
       console.log(`[stripe] User ${userId} subscription updated: ${subStatus}`);
+
+      // E-mail + zdroj pro "Oznámení" jen při skutečném přechodu do
+      // 'cancelled' — Stripe posílá 'updated' i opakovaně/idempotentně,
+      // tohle zajistí, že se nepošle víckrát za sebou.
+      if (subStatus === 'cancelled' && prev?.subscription_status !== 'cancelled') {
+        await notifyPlanCancelled(sql, userId, expiresAt);
+      }
       break;
     }
 
@@ -414,16 +442,30 @@ async function processEvent(event, sql) {
       const userId = Number(sub.metadata?.user_id);
       if (!userId) break;
 
+      // current_period_end na deleted eventu je poslední známý konec
+      // zaplaceného období — pokud je v budoucnu (např. okamžité zrušení
+      // uprostřed období), profil zůstává funkční až do něj (viz
+      // api/_plan.js), ne hned teď. plan a plan_expires_at se NEnulují —
+      // auto-expiry v _auth.js je stáhne na 'start' samo, jakmile
+      // plan_expires_at skutečně uplyne.
+      const expiresAt = sub.current_period_end
+        ? new Date(sub.current_period_end * 1000).toISOString() : null;
+
+      const [prev] = await sql`SELECT subscription_status, plan_expires_at FROM users WHERE id = ${userId}`;
+
       await sql`
         UPDATE users
-        SET plan                   = 'start',
-            stripe_subscription_id = NULL,
-            plan_expires_at        = NULL,
-            subscription_status    = 'inactive',
+        SET stripe_subscription_id = NULL,
+            plan_expires_at        = COALESCE(${expiresAt}, plan_expires_at),
+            subscription_status    = 'cancelled',
             updated_at             = NOW()
         WHERE id = ${userId}
       `;
-      console.log(`[stripe] User ${userId} zrušil předplatné → inactive`);
+      console.log(`[stripe] User ${userId} subscription deleted -> cancelled`);
+
+      if (prev?.subscription_status !== 'cancelled') {
+        await notifyPlanCancelled(sql, userId, expiresAt || prev?.plan_expires_at || null);
+      }
       break;
     }
 

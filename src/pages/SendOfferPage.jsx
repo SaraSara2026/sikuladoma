@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Icon from '../components/Icon'
 import { offersApi } from '../lib/api'
 import { apiResendVerification, apiMe } from '../lib/auth.js'
+import { isSikulaPlanActive } from '../lib/plan.js'
 
 export default function SendOfferPage({ order, onNav, onSend, currentUser, onUpdateUser }) {
   const [price, setPrice] = useState('')
@@ -42,8 +43,8 @@ export default function SendOfferPage({ order, onNav, onSend, currentUser, onUpd
   }
 
   // Reakce na poptávku vyžaduje aktivní placený tarif — žádné reakce zdarma.
-  const hasActivePlan = freshUser?.subscription_status === 'active'
-    && (freshUser?.plan === 'aktiv' || freshUser?.plan === 'aktiv-plus')
+  // Zrušený tarif zůstává funkční až do konce zaplaceného období.
+  const hasActivePlan = isSikulaPlanActive(freshUser)
 
   if (!hasActivePlan) {
     return (

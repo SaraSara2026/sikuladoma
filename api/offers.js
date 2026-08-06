@@ -4,6 +4,7 @@
 import { sql } from './_db.js';
 import { requireUser, requireVerifiedUser } from './_auth.js';
 import { sendNewOfferNotificationEmail } from './_email.js';
+import { isSikulaPlanActive } from './_plan.js';
 
 export default async function handler(req, res) {
   try {
@@ -23,7 +24,8 @@ async function createOffer(req, res) {
   if (me.role !== 'sikula') return res.status(403).json({ error: 'Nabídku může poslat jen šikula.' });
 
   // Reakce na poptávku vyžaduje aktivní placený tarif — žádné reakce zdarma, žádné kredity.
-  const hasActivePlan = me.subscription_status === 'active' && (me.plan === 'aktiv' || me.plan === 'aktiv-plus');
+  // Zrušený tarif zůstává funkční až do konce zaplaceného období (viz _plan.js).
+  const hasActivePlan = isSikulaPlanActive(me);
   if (!hasActivePlan) {
     return res.status(402).json({
       error: 'Pro reakci na poptávku a kontaktování zákazníka si aktivujte tarif Aktivní šikula od 199 Kč / měsíc. Neplatíte žádné kredity ani provizi ze zakázky.',

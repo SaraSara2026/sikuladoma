@@ -9,6 +9,7 @@ import AvatarUpload from '../../components/AvatarUpload'
 import { SERVICES } from '../../lib/categories'
 import { formatPhoneCZ, isValidPhoneCZ } from '../../lib/phone'
 import { formatCurrencyCz, formatDateCz, getOrderTiming } from '../../lib/format.js'
+import { isSikulaPlanActive } from '../../lib/plan.js'
 
 // Po návratu ze Stripe checkoutu webhook aktivuje tarif v DB až s malým zpožděním.
 // currentUser v appce žije v localStorage a sám se neobnoví, tak ho tu pár vteřin
@@ -163,7 +164,7 @@ const menuItems = [
   { id: 'new-jobs',     icon: '🔔', label: 'Nové zakázky' },
   { id: 'offers-sent',  icon: '📤', label: 'Odeslané nabídky',  lock: 'plan' },
   { id: 'active',       icon: '⚡', label: 'Aktivní zakázky',   lock: 'plan' },
-  { id: 'oznameni',     icon: '📣', label: 'Oznámení',          lock: 'plan' },
+  { id: 'oznameni',     icon: '📣', label: 'Oznámení' },
   { id: 'calendar',     icon: '📅', label: 'Kalendář',          lock: 'plus' },
   { id: 'earnings',     icon: '💰', label: 'Výdělky',           lock: 'plus' },
   { id: 'invoices',     icon: '🧾', label: 'Faktury',           lock: 'plus' },
@@ -300,9 +301,14 @@ function CalendarSection() {
 function VylepseniProfilu({ currentUser, onLogout }) {
   const subStatus = currentUser?.subscription_status || 'inactive'
   const currentPlan = currentUser?.plan || 'start'
-  const isActive = subStatus === 'active' && (currentPlan === 'aktiv' || currentPlan === 'aktiv-plus')
   const renewalEnd = currentUser?.plan_expires_at
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' }) : null
+  // Tarif se obnoví (skutečně "aktivní") vs. byl zrušený, ale zaplacené
+  // období ještě neuplynulo (grace period — profil je pořád plně funkční,
+  // jen se nebude obnovovat).
+  const isTrulyActive   = subStatus === 'active' && (currentPlan === 'aktiv' || currentPlan === 'aktiv-plus')
+  const isCancelledGrace = subStatus === 'cancelled' && isSikulaPlanActive(currentUser)
+  const isActive = isTrulyActive || isCancelledGrace
   const [billing, setBilling] = useState('monthly') // 'monthly' | 'yearly'
   const [busyPlan, setBusyPlan] = useState(null)   // null | 'aktiv' | 'aktiv-plus' | 'top'
   const [errPlan, setErrPlan] = useState(null)
@@ -402,7 +408,7 @@ function VylepseniProfilu({ currentUser, onLogout }) {
       <div className="dash-title" style={{ marginBottom: 8 }}>Aktivace tarifu</div>
 
       {/* Aktuální stav */}
-      {isActive && (
+      {isTrulyActive && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, padding: '12px 16px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, marginBottom: 20 }}>
           <span style={{ fontSize: 13, color: '#166534' }}>
             ✓ Váš tarif je aktivní{renewalEnd ? ` — obnoví se ${fmtDate(renewalEnd)}` : ''}
@@ -413,6 +419,13 @@ function VylepseniProfilu({ currentUser, onLogout }) {
           }} style={{ background: 'none', border: 'none', color: '#DC2626', fontSize: 13, fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
             Spravovat / zrušit
           </button>
+        </div>
+      )}
+      {isCancelledGrace && (
+        <div style={{ padding: '12px 16px', background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 10, marginBottom: 20 }}>
+          <span style={{ fontSize: 13, color: '#9A3412' }}>
+            Tarif je zrušený, ale zůstává aktivní do <strong>{fmtDate(renewalEnd)}</strong>. Po tomto datu se profil přepne do neaktivního režimu.
+          </span>
         </div>
       )}
 
@@ -738,11 +751,12 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
   const initials = (currentUser?.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
   const avatar = currentUser?.avatar || initials
 
-  // Zamčenost dle tarifu — aktivní je jen subscription_status='active' NA tarifu
+  // Zamčenost dle tarifu — aktivní je subscription_status='active', nebo
+  // 'cancelled' dokud neuplyne zaplacené období (plan_expires_at), NA tarifu
   // aktiv/aktiv-plus (samotné 'top' zvýraznění za 99 Kč dashboard neodemyká).
   const subStatus = currentUser?.subscription_status || 'inactive'
   const currentPlanId = currentUser?.plan || 'start'
-  const isActivePlan = subStatus === 'active' && (currentPlanId === 'aktiv' || currentPlanId === 'aktiv-plus')
+  const isActivePlan = isSikulaPlanActive(currentUser)
   const isInactive = !isActivePlan
   const hasPlusPlan = isActivePlan && currentPlanId === 'aktiv-plus'
   const activeItem = menuItems.find(m => m.id === activePage)
@@ -831,7 +845,9 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             <span style={{ fontSize: 13, color: '#9A3412' }}>
               {subStatus === 'payment_failed'
                 ? 'Platba za tarif selhala. Aktivujte si ho prosím znovu, ať můžete reagovat na poptávky.'
-                : 'Váš profil je připravený. Aktivujte tarif a můžete začít reagovat na poptávky.'}
+                : subStatus === 'cancelled'
+                  ? 'Váš tarif byl zrušen a platnost vypršela. Aktivujte si ho prosím znovu, ať můžete reagovat na poptávky.'
+                  : 'Váš profil je připravený. Aktivujte tarif a můžete začít reagovat na poptávky.'}
             </span>
             <button onClick={() => setActivePage('membership')}
               style={{ height: 36, padding: '0 16px', borderRadius: 9, border: 'none', background: '#F97316', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
@@ -1107,13 +1123,28 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
         {!lockedType && activePage === 'invoices' && <InvoicePage />}
         {!lockedType && activePage === 'calendar' && <CalendarSection />}
         {activePage === 'membership' && <VylepseniProfilu currentUser={currentUser} onLogout={onLogout} />}
-        {!lockedType && activePage === 'oznameni' && (
+        {activePage === 'oznameni' && (
           <div className="page-enter">
             <div className="dash-title" style={{ marginBottom: 24 }}>Oznámení</div>
-            <div className="empty-state" style={{ padding: 40 }}>
-              <div className="empty-icon">📣</div>
-              <p>Zatím nemáte žádná oznámení.</p>
-            </div>
+            {/* Zatím jediný typ oznámení — odvozený přímo z aktuálního
+                subscription_status/plan_expires_at, nic se neukládá zvlášť. */}
+            {currentUser?.subscription_status === 'cancelled' ? (
+              <div style={{ padding: '16px 20px', borderRadius: 10, background: '#FFF7ED', border: '1px solid #FED7AA', color: '#9A3412' }}>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>📣 Váš tarif byl zrušen.</div>
+                <p style={{ fontSize: 14, lineHeight: 1.6, margin: 0 }}>
+                  {isActivePlan ? (
+                    <>Zůstává aktivní do <strong>{formatDateCz(currentUser.plan_expires_at)}</strong>. Po tomto datu se profil přepne do neaktivního režimu.</>
+                  ) : (
+                    <>Profil zůstává zachovaný, ale bez aktivního tarifu nemůžete reagovat na poptávky ani komunikovat se zákazníky. Tarif si můžete kdykoliv znovu aktivovat.</>
+                  )}
+                </p>
+              </div>
+            ) : (
+              <div className="empty-state" style={{ padding: 40 }}>
+                <div className="empty-icon">📣</div>
+                <p>Zatím nemáte žádná oznámení.</p>
+              </div>
+            )}
           </div>
         )}
 

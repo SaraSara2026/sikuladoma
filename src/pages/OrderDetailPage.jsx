@@ -3,6 +3,7 @@ import { ORDER_STATUS_MAP } from '../data'
 import Icon from '../components/Icon'
 import { offersApi } from '../lib/api'
 import { formatCurrencyCz, formatDateCz, getOrderTiming } from '../lib/format.js'
+import { isSikulaPlanActive } from '../lib/plan.js'
 import ChatPage from './ChatPage.jsx'
 
 const TIMING_COLOR = { urgent: '#B91C1C', soon: '#C2410C', flexible: 'var(--text2)' }
@@ -19,8 +20,8 @@ export default function OrderDetailPage({ order, onNav, currentUser, onAcceptOff
   const [acting, setActing]       = useState(null) // id právě akceptované nabídky
 
   // Bez aktivního tarifu šikula nesmí vidět detail poptávky ani nabídky/zprávy k ní.
-  const sikulaHasActivePlan = currentUser?.subscription_status === 'active'
-    && (currentUser?.plan === 'aktiv' || currentUser?.plan === 'aktiv-plus')
+  // Zrušený tarif zůstává funkční až do konce zaplaceného období.
+  const sikulaHasActivePlan = isSikulaPlanActive(currentUser)
   const gateForSikula = currentUser?.role === 'sikula' && !sikulaHasActivePlan
 
   useEffect(() => {

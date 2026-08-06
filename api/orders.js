@@ -5,6 +5,7 @@ import { sql } from './_db.js';
 import { getCurrentUser, hashPassword, verifyPassword, signToken, setSessionCookie } from './_auth.js';
 import { sendOrderConfirmationEmail, sendNewOrderNotificationEmail } from './_email.js';
 import { expandCategories, CATEGORY_LABELS } from './_relatedCategories.js';
+import { isSikulaPlanActive } from './_plan.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const STATUS_NEW = 'new';
@@ -238,7 +239,7 @@ async function listOrders(req, res) {
     // Popis práce, termín a urgentnost jsou "detail poptávky" a odemyká je
     // až aktivní tarif (199/299 Kč). Přesná adresa se navíc odemyká zvlášť
     // až u přijaté zakázky (viz api/offers.js) — bez ohledu na tarif.
-    const hasActivePlan = me.subscription_status === 'active' && (me.plan === 'aktiv' || me.plan === 'aktiv-plus');
+    const hasActivePlan = isSikulaPlanActive(me);
     rows = await sql`
       SELECT o.id, o.title, o.category, o.subcategory,
              trim(reverse(split_part(reverse(o.city), ',', 1))) AS city,
