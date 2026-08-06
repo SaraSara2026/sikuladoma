@@ -169,7 +169,7 @@ const menuItems = [
   { id: 'earnings',     icon: '💰', label: 'Výdělky',           lock: 'plus' },
   { id: 'invoices',     icon: '🧾', label: 'Faktury',           lock: 'plus' },
   { id: 'reviews',      icon: '⭐', label: 'Recenze',           lock: 'plan' },
-  { id: 'history',      icon: '📁', label: 'Historie',          lock: 'plan' },
+  { id: 'history',      icon: '📁', label: 'Dokončené zakázky',  lock: 'plan' },
   { id: 'membership',   icon: '👑', label: 'Aktivace tarifu' },
 ]
 
@@ -1387,7 +1387,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
         )}
         {!lockedType && activePage === 'history' && (
           <div className="page-enter">
-            <div className="dash-title" style={{ marginBottom: 24 }}>Historie — dokončené zakázky</div>
+            <div className="dash-title" style={{ marginBottom: 24 }}>Dokončené zakázky</div>
             {completedJobs.length === 0 && (
               <div className="empty-state" style={{ padding: 40 }}>
                 <div className="empty-icon">📚</div>
