@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { CATEGORIES } from '../../data'
 import Icon from '../../components/Icon'
 import InvoicePage from '../InvoicePage'
-import ChatPage from '../ChatPage'
 import { ordersApi, offersApi, reviewsApi, usersApi, conversationsApi } from '../../lib/api'
 import { apiMe, apiResendVerification } from '../../lib/auth'
 import VerificationBanner from '../../components/VerificationBanner'
@@ -164,7 +163,7 @@ const menuItems = [
   { id: 'new-jobs',     icon: '🔔', label: 'Nové zakázky' },
   { id: 'offers-sent',  icon: '📤', label: 'Odeslané nabídky',  lock: 'plan' },
   { id: 'active',       icon: '⚡', label: 'Aktivní zakázky',   lock: 'plan' },
-  { id: 'messages',     icon: '💌', label: 'Zprávy',            lock: 'plan' },
+  { id: 'oznameni',     icon: '📣', label: 'Oznámení',          lock: 'plan' },
   { id: 'calendar',     icon: '📅', label: 'Kalendář',          lock: 'plus' },
   { id: 'earnings',     icon: '💰', label: 'Výdělky',           lock: 'plus' },
   { id: 'invoices',     icon: '🧾', label: 'Faktury',           lock: 'plus' },
@@ -668,7 +667,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
   const { orders, loading: ordersLoading, error: ordersError } = useOpenOrders(sikulaCity, currentUser?.services)
   const { offers: myOffers, reload: reloadMyOffers } = useMyOffers()
   const { reviews: myReviews, summary: reviewsSummary, loading: reviewsLoading } = useMyReviews(currentUser?.id)
-  const { conversations, unreadTotal: unreadMessages } = useConversations()
+  const { conversations } = useConversations()
   const conversationForOrder = (orderId) => conversations.find(c => c.order_id === orderId)
   const renderMsgBadge = (orderId) => {
     const conv = conversationForOrder(orderId)
@@ -772,8 +771,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                        : m.lock === 'plus' ? !hasPlusPlan
                        : false
           const menuLabel = m.label
-          const badgeCount = m.id === 'messages'    ? unreadMessages
-                           : m.id === 'active'      ? acceptedJobs.length
+          const badgeCount = m.id === 'active'      ? acceptedJobs.length
                            : m.id === 'offers-sent' ? pendingOffers.length
                            : 0
           return (
@@ -1109,7 +1107,15 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
         {!lockedType && activePage === 'invoices' && <InvoicePage />}
         {!lockedType && activePage === 'calendar' && <CalendarSection />}
         {activePage === 'membership' && <VylepseniProfilu currentUser={currentUser} onLogout={onLogout} />}
-        {!lockedType && activePage === 'messages' && <ChatPage currentUser={currentUser} />}
+        {!lockedType && activePage === 'oznameni' && (
+          <div className="page-enter">
+            <div className="dash-title" style={{ marginBottom: 24 }}>Oznámení</div>
+            <div className="empty-state" style={{ padding: 40 }}>
+              <div className="empty-icon">📣</div>
+              <p>Zatím nemáte žádná oznámení.</p>
+            </div>
+          </div>
+        )}
 
         {!lockedType && activePage === 'earnings' && (
           <div className="page-enter">
@@ -1341,7 +1347,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
           </div>
         )}
 
-        {!['overview','new-jobs','invoices','earnings','calendar','profile','membership','reviews','messages','offers-sent','active','history'].includes(activePage) && (
+        {!['overview','new-jobs','invoices','earnings','calendar','profile','membership','reviews','oznameni','offers-sent','active','history'].includes(activePage) && (
           <div className="empty-state">
             <div className="empty-icon">🚧</div>
             <h3>Tato sekce se připravuje</h3>

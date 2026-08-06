@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { CATEGORIES, ORDER_STATUS_MAP } from '../../data'
 import Icon from '../../components/Icon'
-import ChatPage from '../ChatPage'
 import { ordersApi, offersApi, reviewsApi, conversationsApi, usersApi } from '../../lib/api.js'
 import { formatCurrencyCz } from '../../lib/format.js'
 import HodnoceniForm from '../../modals/HodnoceniForm.jsx'
@@ -14,7 +13,7 @@ const menuItems = [
   { id: 'active',    icon: '⚡', label: 'Aktivní zakázky' },
   { id: 'completed', icon: '✅', label: 'Dokončené' },
   { id: 'reviews',   icon: '⭐', label: 'Hodnocení' },
-  { id: 'messages',  icon: '💌', label: 'Zprávy' },
+  { id: 'oznameni',  icon: '📣', label: 'Oznámení' },
 ]
 
 const CAT_ICON = Object.fromEntries(CATEGORIES.map(c => [c.id, c.icon]))
@@ -132,7 +131,7 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
   const { orders, loading, error, reload } = useMyOrders()
   const { offers: allOffers } = useAllMyOffers(orders)
   const { reviews: myReviews, loading: reviewsLoading, reload: reloadReviews } = useMyReviews()
-  const { conversations, unreadTotal: unreadMessages } = useConversations()
+  const { conversations } = useConversations()
   const renderMsgBadge = (orderId) => {
     const conv = conversations.find(c => c.order_id === orderId)
     if (!conv) return null
@@ -266,9 +265,7 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
           <div className="dash-user-role">Zákazník</div>
         </div>
         {menuItems.map(m => {
-          const badgeCount = m.id === 'messages' ? unreadMessages
-                           : m.id === 'offers'   ? pendingOffersCount
-                           : 0
+          const badgeCount = m.id === 'offers' ? pendingOffersCount : 0
           return (
             <button key={m.id} className={`dash-nav-item ${activePage === m.id ? 'active' : ''}`} onClick={() => setActivePage(m.id)}>
               <span>{m.icon}</span>{m.label}
@@ -495,8 +492,16 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
           </div>
         )}
 
-        {/* ── ZPRÁVY ────────────────────────────────────────────────────────── */}
-        {activePage === 'messages' && <ChatPage currentUser={currentUser} />}
+        {/* ── OZNÁMENÍ ──────────────────────────────────────────────────────── */}
+        {activePage === 'oznameni' && (
+          <div className="page-enter">
+            <div className="dash-title" style={{ marginBottom: 24 }}>Oznámení</div>
+            <div className="empty-state" style={{ padding: 40 }}>
+              <div className="empty-icon">📣</div>
+              <p>Zatím nemáte žádná oznámení.</p>
+            </div>
+          </div>
+        )}
 
         {/* ── PROFIL ────────────────────────────────────────────────────────── */}
         {activePage === 'profile' && (
