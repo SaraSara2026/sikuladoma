@@ -52,7 +52,7 @@ export default function SendOfferPage({ order, onNav, onSend, currentUser, onUpd
         <button className="btn btn-ghost" onClick={() => onNav('back')} style={{ marginBottom: 16 }}>← Zpět</button>
         <div className="card card-pad" style={{ textAlign: 'center', padding: '40px 24px' }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>🔒</div>
-          <h2 style={{ marginBottom: 10 }}>Pro odeslání nabídky si aktivujte tarif.</h2>
+          <h2 style={{ marginBottom: 10 }}>Pro odeslání nabídky a komunikaci se zákazníkem si aktivujte tarif.</h2>
           <p style={{ color: 'var(--text2)', lineHeight: 1.7, marginBottom: 22 }}>
             Tarif Aktivní šikula od 199 Kč / měsíc odemyká odesílání nabídek i kontakt se zákazníkem. Neplatíte žádné kredity ani provizi ze zakázky.
           </p>

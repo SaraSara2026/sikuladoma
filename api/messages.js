@@ -1,6 +1,7 @@
 import { sql } from './_db.js';
 import { requireUser } from './_auth.js';
 import { sendNewMessageNotificationEmail } from './_email.js';
+import { isSikulaPlanActive } from './_plan.js';
 
 export default async function handler(req, res) {
   try {
@@ -67,6 +68,14 @@ async function sendMessage(req, res) {
     return res.status(403).json({
       error: 'Doplňte si telefon v profilu, než budete posílat zprávy.',
       code: 'phone_required',
+    });
+  }
+  // Komunikace se zákazníkem vyžaduje aktivní tarif (zrušený tarif zůstává
+  // funkční až do konce zaplaceného období — viz _plan.js).
+  if (me.role === 'sikula' && !isSikulaPlanActive(me)) {
+    return res.status(402).json({
+      error: 'Pro odeslání nabídky a komunikaci se zákazníkem si aktivujte tarif.',
+      code: 'plan_required',
     });
   }
 

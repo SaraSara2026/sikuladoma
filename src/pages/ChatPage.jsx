@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Icon from '../components/Icon'
 import { conversationsApi, messagesApi } from '../lib/api'
+import { isSikulaPlanActive } from '../lib/plan.js'
 
 const POLL_MS = 5000
 
@@ -107,7 +108,7 @@ export default function ChatPage({ currentUser, startWith, onNav, embedded = fal
 
   const send = async () => {
     const text = input.trim()
-    if (!text || !active || phoneRequired) return
+    if (!text || !active || phoneRequired || planRequired) return
     setSending(true)
     try {
       const { message } = await messagesApi.send({ conversation_id: active, text })
@@ -132,6 +133,9 @@ export default function ChatPage({ currentUser, startWith, onNav, embedded = fal
   const activeConv = conversations.find(c => c.id === active)
   // Bez telefonu se zákazník se šikulou nemůže domluvit na detailech zakázky.
   const phoneRequired = user.role === 'sikula' && !user.phone
+  // Komunikace se zákazníkem vyžaduje aktivní tarif (zrušený tarif zůstává
+  // funkční až do konce zaplaceného období).
+  const planRequired = user.role === 'sikula' && !isSikulaPlanActive(user)
 
   return (
     <div className="page-enter" style={{ padding: embedded ? 0 : '32px 24px', maxWidth: 1120, margin: '0 auto' }}>
@@ -223,6 +227,15 @@ export default function ChatPage({ currentUser, startWith, onNav, embedded = fal
             {phoneRequired ? (
               <div className="chat-input-bar" style={{ color: '#B91C1C', fontSize: 13 }}>
                 📞 Doplňte si telefon v profilu, než budete moct posílat zprávy.
+              </div>
+            ) : planRequired ? (
+              <div className="chat-input-bar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                <span style={{ color: '#B91C1C', fontSize: 13 }}>
+                  Pro odeslání nabídky a komunikaci se zákazníkem si aktivujte tarif.
+                </span>
+                <button className="btn btn-primary btn-sm" onClick={() => onNav?.('dash-sikula')}>
+                  Aktivovat tarif
+                </button>
               </div>
             ) : (
               <div className="chat-input-bar">
