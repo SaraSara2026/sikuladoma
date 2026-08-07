@@ -72,23 +72,31 @@ async function createOrder(req, res) {
 
   // Anonymní / cizí poptávka: klient si zadal vlastní heslo rovnou ve formuláři —
   // žádný reset-link, žádné čekání na e-mail.
-  // Pokud e-mail už v DB existuje, heslo jen OVĚŘÍME (nikdy nepřepisujeme cizí
-  // password_hash) — sedí-li, přihlásíme; nesedí-li, poptávku přesto uložíme,
-  // ale bez přihlášení (ochrana před převzetím cizího účtu).
+  // Pokud e-mail už v DB existuje, poptávku smíme přiřadit k tomu účtu JEN
+  // když je to zákaznický účet A heslo sedí. Dřív se `customerId` nastavil
+  // na existující účet ještě PŘED ověřením hesla a bez ohledu na roli — takže
+  // se poptávka tiše přiřadila cizímu (nebo dokonce šikulovu) účtu, i když
+  // heslo nesedělo nebo ten účet vůbec nebyl zákaznický. To je bezpečnostní/
+  // datová chyba (viz incident 2026-08-07: poptávka info.dave@seznam.cz se
+  // přiřadila k existujícímu šikulovi Davidu Sýkorovi na tom e-mailu) —
+  // teď se v takovém případě poptávka vůbec neuloží, jen jasná chyba.
   let customerId = useExistingSession ? me.id : null;
   const isAnonymous = !useExistingSession;
   let loggedIn = useExistingSession;
-  let accountConflict = false;
+  const accountConflict = false;
 
   if (!customerId) {
-    const [existing] = await sql`SELECT id, password_hash FROM users WHERE email = ${customer_email}`;
+    const [existing] = await sql`SELECT id, role, password_hash FROM users WHERE email = ${customer_email}`;
     if (existing) {
-      customerId = existing.id;
-      const matches = await verifyPassword(password, existing.password_hash);
+      const matches = existing.role === 'customer' && await verifyPassword(password, existing.password_hash);
       if (matches) {
+        customerId = existing.id;
         loggedIn = true;
       } else {
-        accountConflict = true;
+        return res.status(409).json({
+          error: 'Tento e-mail už je u nás zaregistrovaný. Přihlaste se prosím svým heslem, nebo poptávku zadejte pod jiným e-mailem.',
+          code: 'email_taken',
+        });
       }
     } else {
       const password_hash = await hashPassword(password);
