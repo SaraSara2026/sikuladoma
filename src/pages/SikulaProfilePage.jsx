@@ -7,6 +7,11 @@ import { CATEGORIES } from '../lib/categories';
 
 const SVC_LABEL = Object.fromEntries(CATEGORIES.map(c => [c.id, c.label]));
 
+const WORKER_TYPE_LABEL = {
+  zivnostnik_firma: 'Živnostník / firma',
+  prilezitostna_vypomoc: 'Příležitostná výpomoc',
+};
+
 function timeAgo(iso) {
   if (!iso) return '';
   const d = new Date(iso);
@@ -66,15 +71,19 @@ export default function SikulaProfilePage({ id, onBack, onOrder }) {
             )}
             <div style={{ flex: 1, minWidth: 220 }}>
               <h1 style={{ fontSize: 28, fontWeight: 700, color: '#1A1F2E', letterSpacing: '-.02em', marginBottom: 6 }}>{user.name}</h1>
-              <p style={{ fontSize: 14, color: '#6B7280', marginBottom: 12 }}>📍 {user.city || 'Česká republika'}</p>
+              {/* Jen city_area je veřejná — pokud chybí, radši žádná lokalita
+                  než dřívější (potenciálně přesná) adresa. */}
+              {user.city_area && <p style={{ fontSize: 14, color: '#6B7280', marginBottom: 12 }}>📍 {user.city_area}</p>}
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
-                {user.verified && <span style={{ background: '#F0FDF4', color: '#16A34A', padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>✓ Ověřený šikula</span>}
-                {user.plan && user.plan !== 'start' && (
-                  <span style={{ background: '#EFF6FF', color: '#1D4ED8', padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>
-                    👑 {{ 'aktiv': 'Aktivní šikula', 'aktiv-plus': 'Aktivní šikula Plus', profi: 'Profi', top: 'Top Šikula', plus: 'Plus' }[user.plan] || user.plan}
+                {WORKER_TYPE_LABEL[user.worker_type] && (
+                  <span style={{ background: '#F8FAFC', color: '#334155', padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>
+                    {WORKER_TYPE_LABEL[user.worker_type]}
                   </span>
                 )}
+                {user.email_verified && <span style={{ background: '#EFF6FF', color: '#1D4ED8', padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>✓ Ověřený e-mail</span>}
+                {user.verified && <span style={{ background: '#F0FDF4', color: '#16A34A', padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>✓ Ověřený šikula</span>}
+                {/* Tarif/plán je interní údaj — nezobrazuje se veřejně. */}
                 {summary?.total > 0 && (
                   <span style={{ background: '#FFF7ED', color: '#C2410C', padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>
                     ⭐ {summary.avg_stars} ({summary.total} recenzí)

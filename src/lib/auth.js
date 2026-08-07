@@ -24,11 +24,11 @@ export async function apiCheckEmail(email) {
   return res.json(); // { exists: boolean }
 }
 
-export async function apiRegister({ email, password, name, role, phone, city, services }) {
+export async function apiRegister({ email, password, name, role, phone, city, services, worker_type, street, zip, city_area, ico }) {
   const res = await fetch('/api/auth/register', opts({
     method: 'POST',
     headers: j,
-    body: JSON.stringify({ email, password, name, role, phone, city, services }),
+    body: JSON.stringify({ email, password, name, role, phone, city, services, worker_type, street, zip, city_area, ico }),
   }));
   if (!res.ok) throw new Error(await parseError(res));
   return res.json();

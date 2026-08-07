@@ -54,11 +54,34 @@ async function updateMe(req, res) {
   const services = Array.isArray(b.services) ? b.services.filter(s => typeof s === 'string').slice(0, 30) : null;
   const avatar = b.avatar != null ? String(b.avatar).slice(0, 500000) : null;  // base64 do ~500KB
   const platce_dph = b.platce_dph != null ? Boolean(b.platce_dph) : null;
+  const worker_type = b.worker_type != null ? String(b.worker_type).trim() : null;
+  const street       = b.street    != null ? String(b.street).trim()    : null;
+  const zip          = b.zip       != null ? String(b.zip).trim()       : null;
+  const city_area    = b.city_area != null ? String(b.city_area).trim() : null;
 
   // Validace jména pokud je posláno
   if (name !== null && name.length > 0 && !/^\S+\s+\S+/.test(name)) {
     return res.status(400).json({ error: 'Zadej jméno i příjmení.' });
   }
+
+  const WORKER_TYPES = new Set(['zivnostnik_firma', 'prilezitostna_vypomoc']);
+  if (worker_type !== null && !WORKER_TYPES.has(worker_type)) {
+    return res.status(400).json({ error: 'Neplatný typ šikuly.' });
+  }
+  // Pokud je (nebo se tímto požadavkem stává) typ „Živnostník / firma", IČO
+  // musí být vyplněné — buď právě teď, nebo už dřív na profilu.
+  const effectiveWorkerType = worker_type ?? me.worker_type;
+  if (effectiveWorkerType === 'zivnostnik_firma') {
+    const effectiveIco = ico !== null ? ico : me.ico;
+    if (!effectiveIco) {
+      return res.status(400).json({ error: 'Zadejte IČO — je povinné pro typ Živnostník / firma.' });
+    }
+  }
+
+  // Legacy `city` sloupec se veřejně už nepoužívá, ale drží ho dál pro
+  // interní vyhledávání poptávek v okolí a admin přehled — při uložení
+  // nové city_area ho jen udržujeme synchronizovaný, ne prázdný.
+  const finalCity = city_area ?? city;
 
   const [row] = await sql`
     UPDATE users SET
@@ -66,17 +89,22 @@ async function updateMe(req, res) {
       bio          = COALESCE(${bio},    bio),
       ico          = COALESCE(${ico},    ico),
       phone        = COALESCE(${phone},  phone),
-      city         = COALESCE(${city},   city),
+      city         = COALESCE(${finalCity}, city),
       hourly_rate  = COALESCE(${hourly_rate}, hourly_rate),
       services     = COALESCE(${services}, services),
       avatar       = COALESCE(${avatar}, avatar),
       platce_dph   = COALESCE(${platce_dph}, platce_dph),
+      worker_type  = COALESCE(${worker_type}, worker_type),
+      street       = COALESCE(${street}, street),
+      zip          = COALESCE(${zip}, zip),
+      city_area    = COALESCE(${city_area}, city_area),
       updated_at   = NOW()
     WHERE id = ${me.id}
     RETURNING id, email, role, name, phone, city, avatar, ico, services, plan,
               stripe_customer_id, stripe_subscription_id, plan_expires_at,
               verified, email_verified_at, rating, jobs_count, bio,
-              hourly_rate, platce_dph, subscription_status, trial_ends_at
+              hourly_rate, platce_dph, subscription_status, trial_ends_at,
+              worker_type, street, zip, city_area
   `;
   return res.status(200).json({ user: row });
 }
@@ -87,12 +115,12 @@ async function getList(req, res) {
   const minR = minRating ? Math.max(0, Math.min(5, Number(minRating) || 0)) : null;
 
   const rows = await sql`
-    SELECT id, name, avatar, city, plan, verified, rating, jobs_count, bio, services,
+    SELECT id, name, avatar, city_area, verified, rating, jobs_count, bio, services, worker_type,
            email_verified_at IS NOT NULL AS email_verified
     FROM users
     WHERE role = 'sikula'
       AND (${category ?? null}::text IS NULL OR ${category ?? null} = ANY(services))
-      AND (${city ?? null}::text IS NULL OR city ILIKE ${city ? `%${city}%` : null})
+      AND (${city ?? null}::text IS NULL OR city_area ILIKE ${city ? `%${city}%` : null})
       AND (${search ?? null}::text IS NULL
            OR name ILIKE ${search ? `%${search}%` : null}
            OR bio  ILIKE ${search ? `%${search}%` : null})
@@ -118,7 +146,8 @@ async function getList(req, res) {
 // ─── Single šikula + recenze + summary ──────────────────────────────────────
 async function getSingle(id, res) {
   const [user] = await sql`
-    SELECT id, name, role, avatar, city, plan, verified, rating, jobs_count, bio, services
+    SELECT id, name, role, avatar, city_area, verified, rating, jobs_count, bio, services, worker_type,
+           email_verified_at IS NOT NULL AS email_verified
     FROM users WHERE id = ${id} AND role = 'sikula'
   `;
   if (!user) return res.status(404).json({ error: 'Šikula nenalezen.' });

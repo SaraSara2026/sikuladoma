@@ -61,7 +61,8 @@ async function doLogin(req, res) {
     SELECT id, email, password_hash, role, name, phone, city, avatar,
            ico, services, plan, stripe_customer_id, stripe_subscription_id,
            plan_expires_at, verified, email_verified_at, rating, jobs_count,
-           bio, hourly_rate, platce_dph, subscription_status, trial_ends_at
+           bio, hourly_rate, platce_dph, subscription_status, trial_ends_at,
+           worker_type, street, zip, city_area
     FROM users WHERE email = ${String(email).toLowerCase()}
   `;
   if (!user) return res.status(401).json({ error: 'Nesprávný e-mail nebo heslo.' });
@@ -101,7 +102,10 @@ async function doRegister(req, res) {
   }
   if (rateLimit(req, res, { key: 'register', limit: 3, windowMs: 10 * 60 * 1000 })) return;
 
-  const { email, password, name, role = 'customer', phone, city, services } = req.body ?? {};
+  const {
+    email, password, name, role = 'customer', phone, city, services,
+    worker_type, street, zip, city_area, ico,
+  } = req.body ?? {};
 
   if (!email || !EMAIL_RE.test(email))         return res.status(400).json({ error: 'Neplatný e-mail.' });
   if (!password || password.length < 8)        return res.status(400).json({ error: 'Heslo musí mít alespoň 8 znaků.' });
@@ -111,17 +115,48 @@ async function doRegister(req, res) {
   // Telefon je pro šikulu povinný — bez něj se s ním zákazník nedomluví.
   if (role === 'sikula' && !String(phone || '').trim()) return res.status(400).json({ error: 'Zadejte telefonní číslo.' });
 
+  const WORKER_TYPES = new Set(['zivnostnik_firma', 'prilezitostna_vypomoc']);
+  // Typ šikuly, strukturovaná adresa (nikdy veřejná kromě city_area) a IČO
+  // (jen pro živnostníka/firmu) — všechno povinné jen pro roli sikula.
+  if (role === 'sikula') {
+    if (!WORKER_TYPES.has(worker_type))          return res.status(400).json({ error: 'Vyberte typ šikuly.' });
+    if (!String(street || '').trim())            return res.status(400).json({ error: 'Zadejte ulici a číslo.' });
+    if (!String(zip || '').trim())               return res.status(400).json({ error: 'Zadejte PSČ.' });
+    if (!String(city_area || '').trim())         return res.status(400).json({ error: 'Zadejte město / oblast.' });
+    if (worker_type === 'zivnostnik_firma' && !String(ico || '').trim()) {
+      return res.status(400).json({ error: 'Zadejte IČO.' });
+    }
+  }
+
   const svc = Array.isArray(services) ? services.filter(s => typeof s === 'string').slice(0, 30) : [];
 
   const [existing] = await sql`SELECT id FROM users WHERE email = ${email.toLowerCase()}`;
   if (existing) return res.status(409).json({ error: 'E-mail je již zaregistrován.' });
 
+  const isSikula        = role === 'sikula';
+  const finalWorkerType = isSikula ? worker_type : null;
+  const finalStreet     = isSikula ? String(street || '').trim() : null;
+  const finalZip        = isSikula ? String(zip || '').trim() : null;
+  const finalCityArea   = isSikula ? String(city_area || '').trim() : null;
+  const finalIco        = isSikula && worker_type === 'zivnostnik_firma' ? String(ico || '').trim() : null;
+  // `city` (legacy) necháváme dál naplněné — jen veřejně bezpečnou hodnotou
+  // (city_area), ne celou adresou. Používá ho např. dohledání poptávek v
+  // okolí a admin přehled; veřejné profily už ho nečtou vůbec.
+  const finalCity = finalCityArea || (city || null);
+
   const password_hash = await hashPassword(password);
   const [user] = await sql`
-    INSERT INTO users (email, password_hash, role, name, phone, city, services)
-    VALUES (${email.toLowerCase()}, ${password_hash}, ${role}, ${name.trim()}, ${phone || null}, ${city || null}, ${svc})
+    INSERT INTO users (
+      email, password_hash, role, name, phone, city, services,
+      worker_type, street, zip, city_area, ico
+    )
+    VALUES (
+      ${email.toLowerCase()}, ${password_hash}, ${role}, ${name.trim()}, ${phone || null}, ${finalCity}, ${svc},
+      ${finalWorkerType}, ${finalStreet}, ${finalZip}, ${finalCityArea}, ${finalIco}
+    )
     RETURNING id, email, role, name, phone, city, avatar, plan, verified, email_verified_at, services,
-              jobs_count, subscription_status, plan_expires_at, stripe_customer_id, stripe_subscription_id
+              jobs_count, subscription_status, plan_expires_at, stripe_customer_id, stripe_subscription_id,
+              worker_type, street, zip, city_area, ico
   `;
 
   // Nový účet dostane odpovídající profil rovnou při vzniku, ať profilové

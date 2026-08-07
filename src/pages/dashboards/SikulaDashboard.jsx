@@ -561,7 +561,8 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
 
   // Profil edit state
   const [profileForm, setProfileForm] = useState({
-    name: '', bio: '', ico: '', phone: '', city: '', hourly_rate: '', services: [], avatar: '', platce_dph: false,
+    name: '', bio: '', ico: '', phone: '', hourly_rate: '', services: [], avatar: '', platce_dph: false,
+    worker_type: '', street: '', zip: '', city_area: '',
   })
   const [profileSaving, setProfileSaving] = useState(false)
   const [profileMsg, setProfileMsg] = useState(null)
@@ -573,11 +574,14 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
       bio: currentUser.bio || '',
       ico: currentUser.ico || '',
       phone: currentUser.phone || '',
-      city: currentUser.city || '',
       hourly_rate: currentUser.hourly_rate ?? '',
       services: currentUser.services || [],
       avatar: currentUser.avatar || '',
       platce_dph: currentUser.platce_dph || false,
+      worker_type: currentUser.worker_type || '',
+      street: currentUser.street || '',
+      zip: currentUser.zip || '',
+      city_area: currentUser.city_area || '',
     })
   }, [currentUser?.id])
 
@@ -607,20 +611,47 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
       setPhoneError('Zadejte platné české telefonní číslo.')
       return
     }
+    if (!['zivnostnik_firma', 'prilezitostna_vypomoc'].includes(profileForm.worker_type)) {
+      setProfileMsg({ type: 'error', text: 'Vyberte typ šikuly.' })
+      return
+    }
+    if (!profileForm.street.trim()) {
+      setProfileMsg({ type: 'error', text: 'Zadejte ulici a číslo.' })
+      return
+    }
+    if (!profileForm.zip.trim()) {
+      setProfileMsg({ type: 'error', text: 'Zadejte PSČ.' })
+      return
+    }
+    if (!profileForm.city_area.trim()) {
+      setProfileMsg({ type: 'error', text: 'Zadejte město / oblast.' })
+      return
+    }
+    if (profileForm.worker_type === 'zivnostnik_firma' && !profileForm.ico.trim()) {
+      setProfileMsg({ type: 'error', text: 'Zadejte IČO — je povinné pro typ Živnostník / firma.' })
+      return
+    }
     const formattedPhone = formatPhoneCZ(profileForm.phone)
     setProfileSaving(true)
     try {
-      const { user } = await usersApi.updateMe({
+      // IČO se posílá jen pro Živnostník/firma — jinak se v payloadu vůbec
+      // neuvádí (COALESCE na backendu tak ponechá stávající hodnotu, místo
+      // jejího smazání prázdným řetězcem).
+      const payload = {
         name: trimmedName,
         bio: profileForm.bio,
-        ico: profileForm.ico,
         phone: formattedPhone,
-        city: profileForm.city,
         hourly_rate: profileForm.hourly_rate === '' ? null : Number(profileForm.hourly_rate),
         services: profileForm.services,
         avatar: profileForm.avatar,
         platce_dph: profileForm.platce_dph,
-      })
+        worker_type: profileForm.worker_type,
+        street: profileForm.street,
+        zip: profileForm.zip,
+        city_area: profileForm.city_area,
+      }
+      if (profileForm.worker_type === 'zivnostnik_firma') payload.ico = profileForm.ico
+      const { user } = await usersApi.updateMe(payload)
       // PATCH /api/users/me nevrací celý řádek (např. subscription_status chybí) —
       // sloučíme s dosavadním currentUser, ať se plný přepis nesmaže tarifní stav.
       onUpdateUser?.({ ...currentUser, ...user })
@@ -673,10 +704,11 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
       setServicesSaving(false)
     }
   }
-  // users.city se ukládá jako "ulice, PSČ, město" — město je poslední segment,
-  // ne první (dřív se bral první segment, což byla u víceslovných adres ulice,
-  // takže se poptávky v okolí prakticky nikdy nenašly).
-  const sikulaCity = (currentUser?.city || '').split(',').pop().trim()
+  // city_area je nové, čisté pole pro veřejnou oblast — preferuje se. Starší
+  // účty bez vyplněné city_area (před touto migrací) mají adresu ještě
+  // slepenou v legacy `city` ("ulice, PSČ, město") — tam bereme poslední
+  // segment, protože je to město, ne ulice.
+  const sikulaCity = currentUser?.city_area || (currentUser?.city || '').split(',').pop().trim()
   const { orders, loading: ordersLoading, error: ordersError } = useOpenOrders(sikulaCity, currentUser?.services)
   const { offers: myOffers, reload: reloadMyOffers } = useMyOffers()
   const { reviews: myReviews, summary: reviewsSummary, loading: reviewsLoading } = useMyReviews(currentUser?.id)
@@ -1233,7 +1265,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                 />
                 <div className="profile-info">
                   <h2>{profileForm.name || '—'}</h2>
-                  <p>📍 {profileForm.city || '—'}</p>
+                  <p>📍 {profileForm.city_area || '—'}</p>
                   <div className="profile-badges">
                     {currentUser?.email_verified_at && <span className="badge badge-green">✓ Ověřený e-mail</span>}
                     {currentUser?.plan && <span className="badge badge-blue">👑 {currentUser.plan}</span>}
@@ -1324,11 +1356,36 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                     </div>
                   )}
                 </div>
+                <div className="form-group">
+                  <label className="form-label">Typ šikuly</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    {[
+                      { id: 'zivnostnik_firma', label: 'Živnostník / firma', desc: 'Mám nebo budu mít IČO' },
+                      { id: 'prilezitostna_vypomoc', label: 'Příležitostná výpomoc', desc: 'Bez IČO' },
+                    ].map(t => {
+                      const sel = profileForm.worker_type === t.id
+                      return (
+                        <button key={t.id} type="button" onClick={() => setProfileForm(p => ({ ...p, worker_type: t.id }))}
+                          style={{
+                            textAlign: 'left', padding: '12px 14px', borderRadius: 10,
+                            border: `1.5px solid ${sel ? '#0EA5A4' : 'var(--border)'}`,
+                            background: sel ? '#F0FDFA' : '#fff', cursor: 'pointer',
+                            fontFamily: 'inherit', transition: 'all .14s',
+                          }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: sel ? '#0F766E' : 'var(--text)', marginBottom: 2 }}>{t.label}</div>
+                          <div style={{ fontSize: 12, color: 'var(--text3)' }}>{t.desc}</div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
                 <div className="form-row">
-                  <div className="form-group"><label className="form-label">IČO</label>
-                    <input className="form-input" value={profileForm.ico}
-                      onChange={e => setProfileForm(p => ({ ...p, ico: e.target.value.replace(/\D/g,'').slice(0,8) }))}
-                      placeholder="12345678" inputMode="numeric" /></div>
+                  {profileForm.worker_type === 'zivnostnik_firma' && (
+                    <div className="form-group"><label className="form-label">IČO</label>
+                      <input className="form-input" value={profileForm.ico}
+                        onChange={e => setProfileForm(p => ({ ...p, ico: e.target.value.replace(/\D/g,'').slice(0,8) }))}
+                        placeholder="12345678" inputMode="numeric" /></div>
+                  )}
                   <div className="form-group"><label className="form-label">Hodinová sazba (Kč)</label>
                     <input className="form-input" type="number" min="0" value={profileForm.hourly_rate}
                       onChange={e => setProfileForm(p => ({ ...p, hourly_rate: e.target.value }))}
@@ -1344,22 +1401,33 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                     <div style={{ fontSize:12, color:'#6B7280' }}>Fakturám přidáš sazbu DPH 12 % nebo 21 %</div>
                   </div>
                 </div>
+                <div className="form-group">
+                  <label className="form-label">Telefon</label>
+                  <input className="form-input" value={profileForm.phone}
+                    onChange={e => { setProfileForm(p => ({ ...p, phone: e.target.value })); if (phoneError) setPhoneError(null) }}
+                    onBlur={e => {
+                      const formatted = formatPhoneCZ(e.target.value)
+                      setProfileForm(p => ({ ...p, phone: formatted }))
+                      setPhoneError(isValidPhoneCZ(formatted) ? null : 'Zadejte platné české telefonní číslo.')
+                    }}
+                    placeholder="+420 777 123 456" />
+                  {phoneError && <div style={{ color: '#B91C1C', fontSize: 12, marginTop: 4 }}>{phoneError}</div>}
+                </div>
+                {/* Ulice a PSČ jsou vždy neveřejné — jen city_area se ukazuje
+                    zákazníkovi na veřejném profilu. */}
+                <div className="form-group"><label className="form-label">Ulice a číslo</label>
+                  <input className="form-input" value={profileForm.street}
+                    onChange={e => setProfileForm(p => ({ ...p, street: e.target.value }))}
+                    placeholder="Hlavní 42" /></div>
                 <div className="form-row">
-                  <div className="form-group"><label className="form-label">Telefon</label>
-                    <input className="form-input" value={profileForm.phone}
-                      onChange={e => { setProfileForm(p => ({ ...p, phone: e.target.value })); if (phoneError) setPhoneError(null) }}
-                      onBlur={e => {
-                        const formatted = formatPhoneCZ(e.target.value)
-                        setProfileForm(p => ({ ...p, phone: formatted }))
-                        setPhoneError(isValidPhoneCZ(formatted) ? null : 'Zadejte platné české telefonní číslo.')
-                      }}
-                      placeholder="+420 777 123 456" />
-                    {phoneError && <div style={{ color: '#B91C1C', fontSize: 12, marginTop: 4 }}>{phoneError}</div>}
-                  </div>
                   <div className="form-group"><label className="form-label">Město / oblast</label>
-                    <input className="form-input" value={profileForm.city}
-                      onChange={e => setProfileForm(p => ({ ...p, city: e.target.value }))}
+                    <input className="form-input" value={profileForm.city_area}
+                      onChange={e => setProfileForm(p => ({ ...p, city_area: e.target.value }))}
                       placeholder="Praha a okolí" /></div>
+                  <div className="form-group"><label className="form-label">PSČ</label>
+                    <input className="form-input" value={profileForm.zip}
+                      onChange={e => setProfileForm(p => ({ ...p, zip: e.target.value }))}
+                      placeholder="110 00" /></div>
                 </div>
                 {profileMsg && (
                   <div style={{ marginBottom: 12, padding: '10px 14px', borderRadius: 10,

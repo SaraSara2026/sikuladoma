@@ -13,8 +13,9 @@ import PasswordField from "../components/PasswordField";
 export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot }) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
+    workerType: "", // 'zivnostnik_firma' | 'prilezitostna_vypomoc'
     name: "", ico: "", email: "", password: "", phone: "",
-    street: "", city: "", psc: "",
+    street: "", zip: "", cityArea: "",
     services: [], plan: plan?.id || "start",
   });
   const [busy, setBusy] = useState(false);
@@ -29,6 +30,7 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
 
   const continueFromStep0 = async () => {
     setErr(null);
+    if (!form.workerType)                 return setErr("Vyberte typ šikuly.");
     const fullName = (form.name || "").trim();
     if (!fullName)                         return setErr("Zadejte jméno.");
     if (!/^\S+\s+\S+/.test(fullName))      return setErr("Zadejte jméno i příjmení.");
@@ -36,7 +38,10 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
     if ((form.password || "").length < 8) return setErr("Heslo musí mít alespoň 8 znaků.");
     if (!form.phone?.trim())              return setErr("Zadejte telefonní číslo.");
     if (!isValidPhoneCZ(form.phone))      return setErr("Zadejte platné telefonní číslo.");
-    if (!form.city?.trim())               return setErr("Zadejte město.");
+    if (!form.street?.trim())             return setErr("Zadejte ulici a číslo.");
+    if (!form.zip?.trim())                return setErr("Zadejte PSČ.");
+    if (!form.cityArea?.trim())           return setErr("Zadejte město / oblast.");
+    if (form.workerType === "zivnostnik_firma" && !form.ico?.trim()) return setErr("Zadejte IČO.");
 
     setCheckingEmail(true);
     try {
@@ -63,15 +68,19 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
       // Registrace je zdarma — žádný Stripe checkout. Šikula se rovnou dostane
       // do dashboardu a tarif (aktivaci reakcí na poptávky) si vybere později sám.
       const { user, verificationEmailSent } = await apiRegister({
-        email:    form.email,
-        password: form.password,
-        name:     form.name,
-        role:     "sikula",
-        phone:    form.phone,
-        city:     [form.street, form.psc, form.city].filter(Boolean).join(", ") || form.city,
-        services: form.services,
+        email:      form.email,
+        password:   form.password,
+        name:       form.name,
+        role:       "sikula",
+        phone:      form.phone,
+        worker_type: form.workerType,
+        street:     form.street,
+        zip:        form.zip,
+        city_area:  form.cityArea,
+        ico:        form.workerType === "zivnostnik_firma" ? form.ico : undefined,
+        services:   form.services,
       });
-      setRegResult({ user: { ...user, ico: form.ico }, verificationEmailSent: !!verificationEmailSent });
+      setRegResult({ user, verificationEmailSent: !!verificationEmailSent });
     } catch (e) {
       setErr(e.message || "Registrace selhala.");
     } finally {
@@ -168,15 +177,39 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
         <div style={{ padding: "20px" }}>
           {step === 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
-              <div><label style={lbl}>Jméno / název *</label><input value={form.name} onChange={e => upd("name", e.target.value)} placeholder="Pavel Šikovný" style={inp} autoFocus /></div>
-              <div><label style={lbl}>IČO (volitelné)</label><input value={form.ico} onChange={e => upd("ico", e.target.value)} placeholder="12345678" style={inp} /></div>
+              <div>
+                <label style={lbl}>Typ šikuly *</label>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  {[
+                    { id: "zivnostnik_firma", label: "Živnostník / firma", desc: "Mám nebo budu mít IČO" },
+                    { id: "prilezitostna_vypomoc", label: "Příležitostná výpomoc", desc: "Bez IČO" },
+                  ].map(t => {
+                    const sel = form.workerType === t.id;
+                    return (
+                      <button key={t.id} type="button" onClick={() => upd("workerType", t.id)} style={{
+                        textAlign: "left", padding: "12px 14px", borderRadius: 10,
+                        border: `1.5px solid ${sel ? T.blue : T.border}`,
+                        background: sel ? T.blueLight : "#fff", cursor: "pointer",
+                        fontFamily: "inherit", transition: "all .14s",
+                      }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: sel ? T.blue : T.ink, marginBottom: 2 }}>{t.label}</div>
+                        <div style={{ fontSize: 12, color: T.ink3 }}>{t.desc}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div><label style={lbl}>Jméno / název *</label><input value={form.name} onChange={e => upd("name", e.target.value)} placeholder="Pavel Šikovný" style={inp} /></div>
+              {form.workerType === "zivnostnik_firma" && (
+                <div><label style={lbl}>IČO *</label><input value={form.ico} onChange={e => upd("ico", e.target.value)} placeholder="12345678" style={inp} /></div>
+              )}
               <div><label style={lbl}>E-mail *</label><input value={form.email} onChange={e => upd("email", e.target.value)} placeholder="vas@email.cz" type="email" autoComplete="email" style={inp} /></div>
               <div><label style={lbl}>Heslo * (min. 8 znaků)</label><PasswordField value={form.password} onChange={e => upd("password", e.target.value)} autoComplete="new-password" /></div>
               <div><label style={lbl}>Telefon *</label><input value={form.phone} onChange={e => upd("phone", e.target.value)} placeholder="+420 777 000 000" type="tel" autoComplete="tel" style={inp} /></div>
-              <div><label style={lbl}>Ulice a číslo popisné</label><input value={form.street || ""} onChange={e => upd("street", e.target.value)} placeholder="Hlavní 42" style={inp} /></div>
+              <div><label style={lbl}>Ulice a číslo *</label><input value={form.street} onChange={e => upd("street", e.target.value)} placeholder="Hlavní 42" style={inp} /></div>
               <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
-                <div><label style={lbl}>Město / oblast *</label><input value={form.city} onChange={e => upd("city", e.target.value)} placeholder="Praha a okolí" style={inp} /></div>
-                <div><label style={lbl}>PSČ</label><input value={form.psc || ""} onChange={e => upd("psc", e.target.value)} placeholder="110 00" style={inp} /></div>
+                <div><label style={lbl}>Město / oblast *</label><input value={form.cityArea} onChange={e => upd("cityArea", e.target.value)} placeholder="Praha a okolí" style={inp} /></div>
+                <div><label style={lbl}>PSČ *</label><input value={form.zip} onChange={e => upd("zip", e.target.value)} placeholder="110 00" style={inp} /></div>
               </div>
             </div>
           )}

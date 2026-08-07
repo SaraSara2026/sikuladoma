@@ -206,6 +206,18 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS platce_dph BOOLEAN DEFAULT FALSE;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_status TEXT DEFAULT 'inactive';
 ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ;
 
+-- worker_type: zivnostnik_firma (ico povinne) / prilezitostna_vypomoc (bez ico).
+-- Strukturovana adresa nahrazuje puvodni jedno pole `city`, ktere se drive
+-- plnilo slepenym "ulice, PSC, mesto" -- to zpusobovalo, ze verejny profil
+-- mohl ukazat presnou ulici. street/zip jsou vzdy neverejne, city_area je
+-- jedine pole pouzivane ve verejnych SELECTech. `city` zustava beze zmeny
+-- jako legacy sloupec (nemaze se, neprejmenovava se).
+ALTER TABLE users ADD COLUMN IF NOT EXISTS worker_type TEXT
+  CHECK (worker_type IS NULL OR worker_type IN ('zivnostnik_firma','prilezitostna_vypomoc'));
+ALTER TABLE users ADD COLUMN IF NOT EXISTS street TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS zip TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS city_area TEXT;
+
 -- ============================================================
 -- EMAIL VERIFIKACE + RESET HESLA
 -- ============================================================

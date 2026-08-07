@@ -7,13 +7,11 @@ import { CATEGORIES } from '../lib/categories';
 import { usersApi } from '../lib/api';
 import { BtnPrimary } from '../ui/Button';
 
-const PLAN_BADGE = {
-  'aktiv':      { label: 'Aktivní šikula',      bg: '#FFF7ED', fg: '#C2410C' },
-  'aktiv-plus': { label: 'Aktivní šikula Plus',  bg: '#FAF5FF', fg: '#7C3AED' },
-  top:          { label: '👑 Top',               bg: '#FEF3C7', fg: '#92400E' },
-  profi:        { label: '⭐ Profi',             bg: '#FAF5FF', fg: '#7C3AED' },
-  plus:         { label: 'Plus',                 bg: '#EFF6FF', fg: '#2563EB' },
-  start:        { label: 'Start',               bg: '#F3F4F6', fg: '#6B7280' },
+// Tarif/plán je interní údaj (viz api/users/[[...slug]].js) — veřejný katalog
+// místo něj ukazuje typ šikuly.
+const WORKER_TYPE_LABEL = {
+  zivnostnik_firma: 'Živnostník / firma',
+  prilezitostna_vypomoc: 'Příležitostná výpomoc',
 };
 
 export default function SikuloveListPage({ onBack, onProfile, onReg, onOrder }) {
@@ -147,7 +145,7 @@ export default function SikuloveListPage({ onBack, onProfile, onReg, onOrder }) 
 }
 
 function SikulaCard({ s, onClick }) {
-  const plan = PLAN_BADGE[s.plan || 'start'];
+  const workerTypeLabel = WORKER_TYPE_LABEL[s.worker_type];
   const initials = (s.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
   return (
@@ -171,14 +169,17 @@ function SikulaCard({ s, onClick }) {
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: T.ink, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.name}</div>
-          <div style={{ fontSize: 12, color: T.ink3 }}>📍 {s.city || 'celá ČR'}</div>
+          {/* Jen city_area je veřejná — chybí-li, radši žádná lokalita než přesná adresa. */}
+          {s.city_area && <div style={{ fontSize: 12, color: T.ink3 }}>📍 {s.city_area}</div>}
         </div>
       </div>
 
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: plan.bg, color: plan.fg }}>
-          {plan.label}
-        </span>
+        {workerTypeLabel && (
+          <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: '#F3F4F6', color: '#334155' }}>
+            {workerTypeLabel}
+          </span>
+        )}
         {s.verified && (
           <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: '#DCFCE7', color: '#15803D' }}>
             ✓ Ověřený
