@@ -29,6 +29,7 @@ export const ORDER_STATUS_MAP = {
 // ─── CATEGORIES ─────────────────────────────────────────────────────────────
 // Tvar pro HomePage (emoji ikona) a NewOrderPage. SVG ikony pro register form
 // jsou v App.jsx (CATEGORIES tam má .Icon komponentu).
+// „seniori" (Péče o seniory) se od 2026-08 veřejně nenabízí — viz src/lib/categories.js.
 export const CATEGORIES = [
   { id: 'domacnost',   icon: '🧹', name: 'Domácnost' },
   { id: 'opravy',      icon: '🪛', name: 'Drobné opravy a montáže' },
@@ -42,7 +43,7 @@ export const CATEGORIES = [
   { id: 'stehovani',   icon: '📦', name: 'Stěhování a odvoz' },
   { id: 'spotrebice',  icon: '🔌', name: 'Spotřebiče a technika' },
   { id: 'doprava',     icon: '🚗', name: 'Auto / doprava / pomoc' },
-  { id: 'seniori',     icon: '❤️', name: 'Péče o seniory' },
+  { id: 'stineni_klima', icon: '🪟', name: 'Stínění, žaluzie a klimatizace' },
   { id: 'zvirata',     icon: '🐾', name: 'Zvířata' },
   { id: 'hlidani',     icon: '👶', name: 'Hlídání dětí' },
   { id: 'hodinovy',    icon: '🔨', name: 'Hodinový manžel' },

@@ -1,8 +1,9 @@
 // Mapování příbuzných kategorií — šikula uvidí (a dostane e-mail) i o poptávkách
 // z blízkých oborů, ne jen z přesně zvolené kategorie.
 //
-// Schváleno 2026-07-28, tři konzervativní shluky:
-//   A - generalista / drobné práce a technika: hodinovy, opravy, nabytek, spotrebice, it
+// Schváleno 2026-07-28, tři konzervativní shluky (2026-08: doplněna
+// stineni_klima do shluku A — běžná montážní/technická práce, ne citlivá):
+//   A - generalista / drobné práce a technika: hodinovy, opravy, nabytek, spotrebice, it, stineni_klima
 //   B - stavební a renovační práce: malovani, obklady, podlahy
 //   C - stěhování a doprava: stehovani, doprava
 // Odborné/bezpečnostní kategorie (elektro, instalater, kotle) a citlivé služby
@@ -10,7 +11,7 @@
 // zůstávají samostatné.
 
 const CLUSTERS = [
-  ['hodinovy', 'opravy', 'nabytek', 'spotrebice', 'it'],
+  ['hodinovy', 'opravy', 'nabytek', 'spotrebice', 'it', 'stineni_klima'],
   ['malovani', 'obklady', 'podlahy'],
   ['stehovani', 'doprava'],
 ];
@@ -48,7 +49,10 @@ export const CATEGORY_LABELS = {
   stehovani:  'Stěhování a odvoz',
   spotrebice: 'Spotřebiče a technika',
   doprava:    'Auto, doprava, pomoc',
+  // seniori: už se veřejně nenabízí (viz src/lib/categories.js), label zachován
+  // jen kvůli starým objednávkám/e-mailům, ať se nezobrazí "undefined".
   seniori:    'Péče o seniory',
+  stineni_klima: 'Stínění, žaluzie a klimatizace',
   zvirata:    'Zvířata',
   hlidani:    'Hlídání dětí',
   hodinovy:   'Hodinový manžel',

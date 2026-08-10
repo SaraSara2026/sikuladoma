@@ -6,10 +6,14 @@
 
 import {
   IcClean, IcWrench, IcPlumbing, IcElectric, IcPaint, IcTile, IcFloor,
-  IcFurniture, IcGarden, IcMove, IcTech, IcCar, IcHeart, IcPaw,
-  IcChild, IcHammer, IcFlameSvc, IcMonitor,
+  IcFurniture, IcGarden, IcMove, IcTech, IcCar, IcPaw,
+  IcChild, IcHammer, IcFlameSvc, IcMonitor, IcBlinds,
 } from "../ui/icons/ServiceIcons.jsx";
 
+// „seniori" (Péče o seniory) se od 2026-08 veřejně nenabízí — citlivá oblast,
+// budí dojem sociální/zdravotní péče. Id zůstává zachované v SUBCATEGORIES,
+// CAT_COLORS a v api/_relatedCategories.js CATEGORY_LABELS kvůli starým datům,
+// jen se už nezobrazuje v žádném výběru kategorie (viz CATEGORIES níže).
 export const CATEGORIES = [
   { id: "domacnost",   label: "Domácnost a úklid",            Icon: IcClean },
   { id: "opravy",      label: "Drobné opravy a montáže",      Icon: IcWrench },
@@ -23,7 +27,7 @@ export const CATEGORIES = [
   { id: "stehovani",   label: "Stěhování a odvoz",            Icon: IcMove },
   { id: "spotrebice",  label: "Spotřebiče a technika",        Icon: IcTech },
   { id: "doprava",     label: "Auto, doprava, pomoc",         Icon: IcCar },
-  { id: "seniori",     label: "Péče o seniory",               Icon: IcHeart },
+  { id: "stineni_klima", label: "Stínění, žaluzie a klimatizace", Icon: IcBlinds },
   { id: "zvirata",     label: "Zvířata",                      Icon: IcPaw },
   { id: "hlidani",     label: "Hlídání dětí",                 Icon: IcChild },
   { id: "hodinovy",    label: "Hodinový manžel",              Icon: IcHammer },
@@ -46,7 +50,9 @@ export const SUBCATEGORIES = {
   stehovani:  ["Stěhování bytu", "Stěhování kanceláře", "Odnos nábytku", "Vyklízení sklepa / garáže", "Odvoz odpadu", "Odvoz starého nábytku", OTHER],
   spotrebice: ["Připojení pračky", "Připojení myčky", "Montáž TV na zeď", "Nastavení Wi-Fi", "Zapojení tiskárny", "Základní pomoc s počítačem", "Instalace aplikací", OTHER],
   doprava:    ["Odvoz věcí", "Dovoz nákupu", "Vyzvednutí zásilky", "Drobná asistence seniorům", "Doprovod k lékaři", OTHER],
+  // seniori: už není v CATEGORIES (nenabízí se veřejně), mapování zachováno kvůli starým datům.
   seniori:    ["Nákup", "Úklid", "Doprovod", "Pomoc s běžnou domácností", "Donáška léků", "Kontrolní návštěva", OTHER],
+  stineni_klima: ["Montáž žaluzií", "Oprava žaluzií", "Výměna ovládání / řetízku žaluzií", "Montáž rolet", "Montáž sítí proti hmyzu", "Montáž markýzy", "Oprava markýzy", "Montáž garnýží", "Montáž záclonových kolejnic", "Čištění klimatizace", "Základní servis klimatizace", "Montáž mobilní klimatizace", OTHER],
   zvirata:    ["Venčení psů", "Hlídání psa / kočky", "Krmení zvířat", "Péče o zvíře během dovolené", OTHER],
   hlidani:    ["Jednorázové hlídání", "Večerní hlídání", "Vyzvednutí ze školy", "Hlídání o víkendu", OTHER],
   hodinovy:   ["Montáž nábytku", "Zavěšení TV", "Vrtání a upevnění", "Drobné opravy", "Výměna baterie", "Montáž polic", OTHER],
@@ -72,5 +78,6 @@ export const CAT_COLORS = {
   spotrebice: { bg:"#EDE9FE", ic:"#7C3AED" },
   doprava:    { bg:"#FEF3C7", ic:"#D97706" },
   seniori:    { bg:"#FEF2F2", ic:"#EF4444" },
+  stineni_klima: { bg:"#EEF2FF", ic:"#6366F1" },
   zvirata:    { bg:"#ECFDF5", ic:"#10B981" },
 };
