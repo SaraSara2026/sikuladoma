@@ -110,16 +110,17 @@ async function listOffers(req, res) {
       return res.status(200).json({ offers: rows });
     }
 
-    // customer_phone i přesná adresa (order_city) se pošlou jen u přijaté/
-    // dokončené zakázky — před přijetím nabídky vidí šikula jen obecnou
-    // lokalitu a žádný kontakt na zákazníka.
+    // Jméno, telefon zákazníka i přesná adresa (order_city) se pošlou jen
+    // u přijaté/dokončené zakázky — před přijetím nabídky vidí šikula jen
+    // obecnou lokalitu a žádný kontakt na zákazníka.
     const rows = await sql`
       SELECT o.*, ord.title AS order_title,
              CASE WHEN ord.status IN ('accepted', 'completed')
                THEN ord.city
                ELSE trim(reverse(split_part(reverse(ord.city), ',', 1)))
              END AS order_city,
-             ord.customer_id AS customer_id, ord.customer_name AS customer_name,
+             ord.customer_id AS customer_id,
+             CASE WHEN ord.status IN ('accepted', 'completed') THEN ord.customer_name ELSE NULL END AS customer_name,
              ord.status AS order_status,
              CASE WHEN ord.status IN ('accepted', 'completed') THEN ord.customer_phone ELSE NULL END AS customer_phone
       FROM offers o JOIN orders ord ON ord.id = o.order_id
@@ -144,10 +145,13 @@ async function listOffers(req, res) {
         FROM offers o JOIN users u ON u.id = o.sikula_id
         WHERE o.order_id = ${orderId} AND o.sikula_id = ${me.id}
       `
+    // Telefon šikuly vidí zákazník až u přijaté nabídky — před přijetím
+    // žádný přímý kontakt na šikulu.
     : await sql`
         SELECT o.*, u.name AS sikula_name, u.avatar AS sikula_avatar,
                u.verified AS sikula_verified, u.rating AS sikula_rating,
-               u.jobs_count AS sikula_jobs, u.plan AS sikula_plan
+               u.jobs_count AS sikula_jobs, u.plan AS sikula_plan,
+               CASE WHEN o.status = 'accepted' THEN u.phone ELSE NULL END AS sikula_phone
         FROM offers o JOIN users u ON u.id = o.sikula_id
         WHERE o.order_id = ${orderId}
         ORDER BY o.created_at ASC

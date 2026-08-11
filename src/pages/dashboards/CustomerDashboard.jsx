@@ -372,10 +372,14 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
                 </div>
                 {offer.message && <p style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 12 }}>{offer.message}</p>}
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                  <button className="btn btn-outline btn-sm"
-                    onClick={(e) => { e.stopPropagation(); onNav('chat', { otherUserId: offer.sikula_id, orderId: offer.order_id }) }}>
-                    💬 Chat
-                  </button>
+                  {/* Konverzace vzniká až po přijetí nabídky — u nepřijaté by
+                      tlačítko jen skončilo chybou 403 (viz api/conversations.js). */}
+                  {offer.status === 'accepted' && (
+                    <button className="btn btn-outline btn-sm"
+                      onClick={(e) => { e.stopPropagation(); onNav('chat', { otherUserId: offer.sikula_id, orderId: offer.order_id }) }}>
+                      💬 Chat
+                    </button>
+                  )}
                   {offer.status === 'pending' && (
                     <button className="btn btn-green btn-sm" onClick={(e) => { e.stopPropagation(); handleAcceptOffer(offer.id) }}>✓ Přijmout nabídku</button>
                   )}

@@ -1,17 +1,71 @@
+// GET /api/orders/:id — plný detail zakázky (maskovaný podle role/vztahu)
 // PATCH /api/orders/:id — action: 'complete' | 'cancel'
 
 import { sql } from '../_db.js';
 import { requireUser } from '../_auth.js';
 import { sendReviewRequestEmail } from '../_email.js';
+import { isSikulaPlanActive } from '../_plan.js';
 
 function getAppUrl() {
   return process.env.APP_URL || 'https://sikuladoma.vercel.app';
 }
 
+// Poslední čárkou oddělená část "city" = obecná lokalita bez přesné adresy
+// (stejná heuristika jako v listOrders/listOffers — zákazník do pole "Město
+// nebo adresa" může napsat i plnou adresu s ulicí).
+function generalArea(city) {
+  const parts = String(city || '').split(',');
+  return parts[parts.length - 1].trim();
+}
+
+async function getOrder(req, res) {
+  const me = await requireUser(req, res);
+  if (!me) return;
+
+  const orderId = Number(req.query?.id);
+  if (!orderId) return res.status(400).json({ error: 'Neplatné ID poptávky.' });
+
+  const [order] = await sql`SELECT * FROM orders WHERE id = ${orderId}`;
+  if (!order) return res.status(404).json({ error: 'Poptávka neexistuje.' });
+
+  // Admin a vlastník poptávky (zákazník) vidí vždy vše — je to jejich zakázka.
+  if (me.role === 'admin' || me.id === order.customer_id) {
+    return res.status(200).json({ order });
+  }
+
+  if (me.role !== 'sikula') return res.status(403).json({ error: 'Forbidden' });
+  if (!me.email_verified_at) {
+    return res.status(403).json({ error: 'Nejdřív si ověř e-mail.', code: 'verify_required' });
+  }
+  if (!isSikulaPlanActive(me)) {
+    return res.status(402).json({
+      error: 'Pro zobrazení detailu poptávky si aktivujte tarif.',
+      code: 'activate_required',
+    });
+  }
+
+  // Přesná adresa a kontakt na zákazníka se šikulovi odemykají až u zakázky,
+  // kde má přijatou nabídku — samotný aktivní tarif na to nestačí.
+  const [accepted] = await sql`
+    SELECT id FROM offers WHERE order_id = ${orderId} AND sikula_id = ${me.id} AND status = 'accepted'
+  `;
+  const fullAccess = !!accepted;
+
+  const safeOrder = {
+    ...order,
+    city: fullAccess ? order.city : generalArea(order.city),
+    customer_name:  fullAccess ? order.customer_name  : null,
+    customer_email: fullAccess ? order.customer_email : null,
+    customer_phone: fullAccess ? order.customer_phone : null,
+  };
+  return res.status(200).json({ order: safeOrder });
+}
+
 export default async function handler(req, res) {
   try {
+    if (req.method === 'GET') return await getOrder(req, res);
     if (req.method !== 'PATCH') {
-      res.setHeader('Allow', 'PATCH');
+      res.setHeader('Allow', 'GET, PATCH');
       return res.status(405).json({ error: 'Method not allowed' });
     }
     const me = await requireUser(req, res);

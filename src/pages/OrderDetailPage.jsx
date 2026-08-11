@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ORDER_STATUS_MAP } from '../data'
 import Icon from '../components/Icon'
-import { offersApi } from '../lib/api'
+import { offersApi, ordersApi } from '../lib/api'
 import { formatCurrencyCz, formatDateCz, getOrderTiming } from '../lib/format.js'
 import { isSikulaPlanActive } from '../lib/plan.js'
 import ChatPage from './ChatPage.jsx'
@@ -12,30 +12,45 @@ const TIMING_ICON  = { urgent: '🚨', soon: '⚡', flexible: '🕊️' }
 const fieldLabel = { fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px' }
 const fieldValue = { fontSize: 15, fontWeight: 600, marginTop: 4 }
 
-export default function OrderDetailPage({ order, onNav, currentUser, onAcceptOffer }) {
+export default function OrderDetailPage({ order: orderProp, onNav, currentUser, onAcceptOffer }) {
   const [activeTab, setActiveTab] = useState('detail')
   const [offers, setOffers]       = useState([])
   const [loading, setLoading]     = useState(true)
   const [error, setError]         = useState(null)
   const [acting, setActing]       = useState(null) // id právě akceptované nabídky
+  const [fullOrder, setFullOrder] = useState(null)
 
   // Bez aktivního tarifu šikula nesmí vidět detail poptávky ani nabídky/zprávy k ní.
   // Zrušený tarif zůstává funkční až do konce zaplaceného období.
   const sikulaHasActivePlan = isSikulaPlanActive(currentUser)
   const gateForSikula = currentUser?.role === 'sikula' && !sikulaHasActivePlan
 
+  // Navigace sem občas nese jen část polí zakázky (např. ze seznamu nabídek
+  // v dashboardu) — vždy dotáhneme autoritativní plný detail přes API, které
+  // samo maskuje popis/adresu/kontakt podle role a vztahu k zakázce.
   useEffect(() => {
-    if (!order?.id || gateForSikula) return
+    if (!orderProp?.id || gateForSikula) return
+    let alive = true
+    ordersApi.get(orderProp.id)
+      .then(({ order }) => { if (alive) setFullOrder(order) })
+      .catch(() => {})
+    return () => { alive = false }
+  }, [orderProp?.id, gateForSikula])
+
+  const order = fullOrder || orderProp
+
+  useEffect(() => {
+    if (!orderProp?.id || gateForSikula) return
     let alive = true
     setLoading(true)
-    offersApi.listByOrder(order.id)
+    offersApi.listByOrder(orderProp.id)
       .then(({ offers }) => { if (alive) { setOffers(offers); setError(null) } })
       .catch(e => { if (alive) setError(e.message) })
       .finally(() => { if (alive) setLoading(false) })
     return () => { alive = false }
-  }, [order?.id, gateForSikula])
+  }, [orderProp?.id, gateForSikula])
 
-  if (!order) return null
+  if (!orderProp) return null
 
   if (gateForSikula) {
     return (
@@ -122,6 +137,17 @@ export default function OrderDetailPage({ order, onNav, currentUser, onAcceptOff
                   </div>
                 ))}
               </div>
+
+              {/* Kontakt na zákazníka se u šikuly zobrazí, jen když ho API
+                  vrátilo — to se stane až u zakázky s přijatou nabídkou. */}
+              {currentUser?.role === 'sikula' && (order.customer_name || order.customer_phone || order.customer_email) && (
+                <div style={{ marginTop: 16, background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 10, padding: 14 }}>
+                  <div style={{ fontSize: 12, color: '#166534', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>Kontakt na zákazníka</div>
+                  {order.customer_name && <div style={{ fontSize: 14, fontWeight: 600 }}>{order.customer_name}</div>}
+                  {order.customer_phone && <div style={{ fontSize: 14 }}>📞 {order.customer_phone}</div>}
+                  {order.customer_email && <div style={{ fontSize: 14 }}>✉️ {order.customer_email}</div>}
+                </div>
+              )}
             </div>
           )}
 
@@ -153,6 +179,10 @@ export default function OrderDetailPage({ order, onNav, currentUser, onAcceptOff
                           <span>{offer.sikula_rating} ({offer.sikula_jobs || 0} zakázek)</span>
                         </>}
                       </div>
+                      {/* Telefon šikuly vidí zákazník až u přijaté nabídky (API ho jinak nevrátí). */}
+                      {offer.sikula_phone && (
+                        <div style={{ fontSize: 13, color: '#166534', fontWeight: 600, marginTop: 4 }}>📞 {offer.sikula_phone}</div>
+                      )}
                     </div>
                   </div>
 
@@ -183,10 +213,14 @@ export default function OrderDetailPage({ order, onNav, currentUser, onAcceptOff
                   )}
 
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                    <button className="btn btn-outline btn-sm"
-                      onClick={() => onNav('chat', { otherUserId: offer.sikula_id, orderId: order.id })}>
-                      Napsat zprávu
-                    </button>
+                    {/* Konverzace vzniká až po přijetí nabídky (viz api/conversations.js) —
+                        u nepřijaté nabídky by tlačítko jen skončilo chybou 403. */}
+                    {offer.status === 'accepted' && (
+                      <button className="btn btn-outline btn-sm"
+                        onClick={() => onNav('chat', { otherUserId: offer.sikula_id, orderId: order.id })}>
+                        Napsat zprávu
+                      </button>
+                    )}
                     {currentUser?.role === 'customer' && offer.status === 'pending' && (
                       <button className="btn btn-green btn-sm" disabled={acting === offer.id} onClick={() => accept(offer)}>
                         {acting === offer.id ? 'Přijímám…' : <><Icon name="check" size={14} /> Přijmout nabídku</>}

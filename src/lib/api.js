@@ -23,6 +23,7 @@ export const ordersApi = {
     const q = new URLSearchParams(Object.entries(params).filter(([, v]) => v != null && v !== ''));
     return fetch(`/api/orders${q.toString() ? `?${q}` : ''}`, opts()).then(unwrap);
   },
+  get:    (id) => fetch(`/api/orders/${id}`, opts()).then(unwrap),
   patch:  (id, action) => fetch(`/api/orders/${id}`, opts({ method: 'PATCH', headers: json, body: JSON.stringify({ action }) })).then(unwrap),
 };
 

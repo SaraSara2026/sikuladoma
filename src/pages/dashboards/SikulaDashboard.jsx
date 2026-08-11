@@ -1140,11 +1140,9 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                     {o.message && <p style={{ fontSize: 13, color: 'var(--text2)', marginTop: 6 }}>{o.message}</p>}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                    {/* Konverzace vzniká až po přijetí nabídky — dokud zákazník
+                        nerozhodne, tu není s kým chatovat (viz api/conversations.js). */}
                     <span className="badge badge-blue">Čeká na odpověď</span>
-                    <button className="btn btn-outline btn-sm"
-                      onClick={(e) => { e.stopPropagation(); onNav('chat', { otherUserId: o.customer_id, orderId: o.order_id }) }}>
-                      💬 Napsat zprávu
-                    </button>
                   </div>
                 </div>
               ))}

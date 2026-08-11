@@ -115,9 +115,13 @@ async function doRegister(req, res) {
   // Telefon je pro šikulu povinný — bez něj se s ním zákazník nedomluví.
   if (role === 'sikula' && !String(phone || '').trim()) return res.status(400).json({ error: 'Zadejte telefonní číslo.' });
 
+  const svc = Array.isArray(services) ? services.filter(s => typeof s === 'string').slice(0, 30) : [];
+
   const WORKER_TYPES = new Set(['zivnostnik_firma', 'prilezitostna_vypomoc']);
-  // Typ šikuly, strukturovaná adresa (nikdy veřejná kromě city_area) a IČO
-  // (jen pro živnostníka/firmu) — všechno povinné jen pro roli sikula.
+  // Typ šikuly, strukturovaná adresa (nikdy veřejná kromě city_area), IČO
+  // (jen pro živnostníka/firmu) a alespoň jedna služba — všechno povinné jen
+  // pro roli sikula. Frontend (RegForm.jsx) tohle už hlídá, ale backend to
+  // musí vynutit nezávisle, ať se nedá obejít přímým voláním API.
   if (role === 'sikula') {
     if (!WORKER_TYPES.has(worker_type))          return res.status(400).json({ error: 'Vyberte typ šikuly.' });
     if (!String(street || '').trim())            return res.status(400).json({ error: 'Zadejte ulici a číslo.' });
@@ -126,9 +130,8 @@ async function doRegister(req, res) {
     if (worker_type === 'zivnostnik_firma' && !String(ico || '').trim()) {
       return res.status(400).json({ error: 'Zadejte IČO.' });
     }
+    if (svc.length === 0) return res.status(400).json({ error: 'Vyberte alespoň jednu službu, kterou nabízíte.' });
   }
-
-  const svc = Array.isArray(services) ? services.filter(s => typeof s === 'string').slice(0, 30) : [];
 
   const [existing] = await sql`SELECT id FROM users WHERE email = ${email.toLowerCase()}`;
   if (existing) return res.status(409).json({ error: 'E-mail je již zaregistrován.' });

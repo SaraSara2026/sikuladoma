@@ -68,6 +68,7 @@ async function createConversation(req, res) {
 
   const { other_user_id, order_id } = req.body ?? {};
   if (!other_user_id) return res.status(400).json({ error: 'Chybí other_user_id.' });
+  if (!order_id)       return res.status(400).json({ error: 'Chybí order_id.' });
   if (Number(other_user_id) === me.id) return res.status(400).json({ error: 'Nelze založit konverzaci sám se sebou.' });
 
   const [other] = await sql`SELECT id, role FROM users WHERE id = ${Number(other_user_id)}`;
@@ -82,7 +83,23 @@ async function createConversation(req, res) {
     return res.status(400).json({ error: 'Konverzace musí být mezi zákazníkem a šikulou.' });
   }
 
-  const orderRef = order_id ? Number(order_id) : null;
+  const orderRef = Number(order_id);
+
+  // Konverzace smí vzniknout jen k zakázce, která patří danému zákazníkovi,
+  // a jen mezi ním a šikulou, jehož nabídku na tuto zakázku už přijal —
+  // jinak by si kdokoliv přihlášený mohl založit konverzaci k cizí zakázce.
+  const [order] = await sql`SELECT id, customer_id FROM orders WHERE id = ${orderRef}`;
+  if (!order || order.customer_id !== customer_id) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  const [offer] = await sql`
+    SELECT id FROM offers
+    WHERE order_id = ${orderRef} AND sikula_id = ${sikula_id} AND status = 'accepted'
+  `;
+  if (!offer) {
+    return res.status(403).json({ error: 'Konverzaci lze založit až po přijetí nabídky.' });
+  }
+
   const [row] = await sql`
     INSERT INTO conversations (customer_id, sikula_id, order_id)
     VALUES (${customer_id}, ${sikula_id}, ${orderRef})
