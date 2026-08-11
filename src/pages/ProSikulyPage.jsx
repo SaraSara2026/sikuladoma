@@ -11,9 +11,9 @@ const IcReceipt = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="no
 const VYHODY = [
   'Vlastní profil šikuly',
   'Poptávky z vašeho okolí',
-  'Kontakty po aktivaci tarifu',
+  'Reagování po aktivaci tarifu',
   'Bez kreditů za odpovědi',
-  'Tarify od 199 Kč / měsíc',
+  'Základní tarif 199 Kč / měsíc',
 ]
 
 const STEPS = [
@@ -100,7 +100,7 @@ export default function ProSikulyPage({ onBack, onReg }) {
             <div style={{ flex: '1 1 320px', minWidth: 0, background: '#fff', borderRadius: 20, border: '2px solid #FED7AA', boxShadow: '0 8px 32px rgba(249,115,22,.12)', padding: '36px 32px 28px', textAlign: 'left' }}>
               <div style={{ marginBottom: 20 }}>
                 <div style={{ fontSize: 18, fontWeight: 800, color: '#1A1F2E', marginBottom: 4 }}>Začněte na ŠikulaDoma</div>
-                <div style={{ fontSize: 15, color: '#9CA3AF', fontWeight: 500, lineHeight: 1.6 }}>Zaregistrujte se zdarma, vytvořte si profil a podívejte se na poptávky ve svém okolí. Kontakty na zákazníky a možnost reagovat se odemknou po aktivaci tarifu.</div>
+                <div style={{ fontSize: 15, color: '#9CA3AF', fontWeight: 500, lineHeight: 1.6 }}>Zaregistrujte se zdarma, vytvořte si profil a podívejte se na poptávky ve svém okolí. Tarif si aktivujete až ve chvíli, kdy chcete na poptávku odpovědět.</div>
               </div>
 
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', display: 'flex', flexDirection: 'column', gap: 9 }}>
@@ -122,7 +122,7 @@ export default function ProSikulyPage({ onBack, onReg }) {
               </button>
 
               <p style={{ fontSize: 12, color: '#9CA3AF', lineHeight: 1.6, marginTop: 12, textAlign: 'center' }}>
-                Registrace profilu je zdarma. Tarif si aktivujete až ve chvíli, kdy chcete reagovat na poptávky a kontaktovat zákazníky.
+                Registrace profilu je zdarma. Tarif si aktivujete až ve chvíli, kdy chcete reagovat na poptávky.
               </p>
             </div>
 
