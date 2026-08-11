@@ -18,7 +18,7 @@ const VYHODY = [
 
 const STEPS = [
   { n: 1, Icon: IcUser,    bg: '#FFF7ED', color: '#F97316', title: 'Zaregistrujete se jako šikula',          desc: 'Vyplníte základní údaje, lokalitu a služby, které nabízíte.' },
-  { n: 2, Icon: IcTag,     bg: '#EFF6FF', color: '#3B82F6', title: 'Vidíte poptávky ve svém okolí',        desc: 'Po registraci uvidíte poptávky ve své lokalitě. Kontakty na zákazníky a možnost reagovat se odemknou po aktivaci tarifu Aktivní šikula od 199 Kč / měsíc.' },
+  { n: 2, Icon: IcTag,     bg: '#EFF6FF', color: '#3B82F6', title: 'Vidíte poptávky ve svém okolí',        desc: 'Po registraci uvidíte poptávky ve své lokalitě. Tarif Aktivní šikula za 199 Kč / měsíc si aktivujete až ve chvíli, kdy chcete na poptávku odpovědět.' },
   { n: 3, Icon: IcBell,    bg: '#F0FDF4', color: '#22C55E', title: 'Dostáváte poptávky z okolí',             desc: 'Když zákazník ve vaší lokalitě zadá poptávku, dostanete upozornění.' },
   { n: 4, Icon: IcCheck,   bg: '#FAF5FF', color: '#A855F7', title: 'Reagujete jen na zakázky, které chcete', desc: 'Vy sami si vyberete, na co odpovíte. Žádné povinné zakázky, žádný tlak.' },
   { n: 5, Icon: IcUsers,   bg: '#F0F9FF', color: '#0EA5E9', title: 'Domluvíte se přímo se zákazníkem',      desc: 'Cenu, termín i podrobnosti práce si domluvíte přímo mezi sebou.' },
@@ -89,7 +89,7 @@ export default function ProSikulyPage({ onBack, onReg }) {
                 Pro vás samé výhody. Jedna jasná platba, žádné provize a žádné kredity za odpovědi. Zaregistrujete se zdarma a hned uvidíte poptávky ve svém okolí.
               </p>
               <p style={{ fontSize: 15, color: '#374151', lineHeight: 1.8, marginBottom: 16 }}>
-                Když najdete poptávku, která vám dává smysl, aktivujete si tarif a můžete rovnou kontaktovat zákazníka. Vy sami si vybíráte, na co odpovíte, kdy máte čas a jestli je pro vás zakázka zajímavá.
+                Když najdete poptávku, která vám dává smysl, aktivujete si tarif a můžete na ni rovnou odpovědět. Vy sami si vybíráte, na co odpovíte, kdy máte čas a jestli je pro vás zakázka zajímavá.
               </p>
               <p style={{ fontSize: 15, color: '#374151', lineHeight: 1.8, margin: 0 }}>
                 Cenu, termín i rozsah práce si domlouváte přímo se zákazníkem. Co si domluvíte, je vaše. ŠikulaDoma si nebere procenta ze zakázky.
@@ -182,7 +182,7 @@ export default function ProSikulyPage({ onBack, onReg }) {
               Zaregistrovat se jako šikula <IcArrow />
             </button>
             <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 14, lineHeight: 1.6 }}>
-              Registrace profilu je zdarma. Tarify začínají na 199 Kč / měsíc. Platba probíhá bezpečně kartou online a tarif lze kdykoliv zrušit.
+              Registrace profilu je zdarma. Základní tarif 199 Kč / měsíc. Platba probíhá bezpečně kartou online a tarif lze kdykoliv zrušit.
             </p>
           </div>
         </div>
