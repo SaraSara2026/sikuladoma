@@ -20,7 +20,7 @@ const STEPS = [
   { n: 1, Icon: IcUser,    bg: '#FFF7ED', color: '#F97316', title: 'Zaregistrujete se jako šikula',          desc: 'Vyplníte základní údaje, lokalitu a služby, které nabízíte.' },
   { n: 2, Icon: IcTag,     bg: '#EFF6FF', color: '#3B82F6', title: 'Vidíte poptávky ve svém okolí',        desc: 'Po registraci uvidíte poptávky ve své lokalitě. Tarif Aktivní šikula za 199 Kč / měsíc si aktivujete až ve chvíli, kdy chcete na poptávku odpovědět.' },
   { n: 3, Icon: IcBell,    bg: '#F0FDF4', color: '#22C55E', title: 'Dostáváte poptávky z okolí',             desc: 'Když zákazník ve vaší lokalitě zadá poptávku, dostanete upozornění.' },
-  { n: 4, Icon: IcCheck,   bg: '#FAF5FF', color: '#A855F7', title: 'Reagujete jen na zakázky, které chcete', desc: 'Vy sami si vyberete, na co odpovíte. Žádné povinné zakázky, žádný tlak.' },
+  { n: 4, Icon: IcCheck,   bg: '#FAF5FF', color: '#A855F7', title: 'Reagujete jen na zakázky, které chcete', desc: 'Vy sami si vyberete, na které poptávky odpovíte. Bez kreditů, bez provizí a bez omezení počtu zakázek. Jedna jasná platba, neomezeně příležitostí.' },
   { n: 5, Icon: IcUsers,   bg: '#F0F9FF', color: '#0EA5E9', title: 'Domluvíte se přímo se zákazníkem',      desc: 'Cenu, termín i podrobnosti práce si domluvíte přímo mezi sebou.' },
   { n: 6, Icon: IcReceipt, bg: '#FDF4FF', color: '#C026D3', title: 'Vystavíte fakturu jednoduše',            desc: 'V profilu si můžete aktivovat fakturovač a zákazníkovi vystavit fakturu přímo v aplikaci.' },
   { n: 7, Icon: IcStar,    bg: '#FFFBEB', color: '#D97706', title: 'Budujete si hodnocení',                  desc: 'Spokojení zákazníci vám zanechají hodnocení a pomáhají vám získávat další práci.' },
