@@ -146,11 +146,12 @@ async function listOffers(req, res) {
         WHERE o.order_id = ${orderId} AND o.sikula_id = ${me.id}
       `
     // Telefon šikuly vidí zákazník až u přijaté nabídky — před přijetím
-    // žádný přímý kontakt na šikulu.
+    // žádný přímý kontakt na šikulu. Tarif šikuly (u.plan) je interní údaj
+    // platformy a zákazníkovi se nikdy neposílá.
     : await sql`
         SELECT o.*, u.name AS sikula_name, u.avatar AS sikula_avatar,
                u.verified AS sikula_verified, u.rating AS sikula_rating,
-               u.jobs_count AS sikula_jobs, u.plan AS sikula_plan,
+               u.jobs_count AS sikula_jobs,
                CASE WHEN o.status = 'accepted' THEN u.phone ELSE NULL END AS sikula_phone
         FROM offers o JOIN users u ON u.id = o.sikula_id
         WHERE o.order_id = ${orderId}

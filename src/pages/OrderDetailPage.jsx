@@ -171,7 +171,6 @@ export default function OrderDetailPage({ order: orderProp, onNav, currentUser, 
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontWeight: 700, fontSize: 16 }}>{offer.sikula_name}</span>
                         {offer.sikula_verified && <span className="badge badge-green" style={{ fontSize: 11 }}>✓ Ověřen</span>}
-                        {offer.sikula_plan && <span className="badge badge-blue" style={{ fontSize: 11 }}>{offer.sikula_plan}</span>}
                       </div>
                       <div style={{ fontSize: 13, color: 'var(--text2)', display: 'flex', gap: 10, marginTop: 2 }}>
                         {offer.sikula_rating && <>
