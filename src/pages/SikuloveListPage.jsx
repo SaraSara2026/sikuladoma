@@ -17,7 +17,7 @@ const WORKER_TYPE_LABEL = {
 export default function SikuloveListPage({ onBack, onProfile, onReg, onOrder }) {
   const [sikulove, setSikulove] = useState([]);
   const [loading, setLoading] = useState(true);
-  const initial = { category: '', city: '', verified: false, profiPlus: false, minRating: 0 };
+  const initial = { category: '', city: '', verified: false, minRating: 0 };
   const [filters, setFilters] = useState(initial);            // co uživatel vyplňuje
   const [appliedFilters, setApplied] = useState(initial);      // co je aplikováno (po kliku Hledej)
 
@@ -28,7 +28,6 @@ export default function SikuloveListPage({ onBack, onProfile, onReg, onOrder }) 
       category: appliedFilters.category,
       city: appliedFilters.city,
       verified: appliedFilters.verified,
-      profiPlus: appliedFilters.profiPlus,
       minRating: appliedFilters.minRating || undefined,
     })
       .then(data => { if (alive) setSikulove(data.sikulove || []); })
@@ -80,10 +79,6 @@ export default function SikuloveListPage({ onBack, onProfile, onReg, onOrder }) 
             <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
               <input type="checkbox" checked={filters.verified} onChange={e => setFilters(f => ({ ...f, verified: e.target.checked }))} />
               ✓ Jen s ověřeným e-mailem
-            </label>
-            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-              <input type="checkbox" checked={filters.profiPlus} onChange={e => setFilters(f => ({ ...f, profiPlus: e.target.checked }))} />
-              👑 Jen Profi a Top
             </label>
             <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
               Min. hodnocení:

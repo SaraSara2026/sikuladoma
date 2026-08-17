@@ -33,14 +33,13 @@ const CAT_ICON = Object.fromEntries(CATEGORIES.map(c => [c.id, c.icon]))
 const SVC_LABEL = Object.fromEntries(SERVICES.map(s => [s.id, s.label]))
 
 const PLAN_LABELS = {
-  start: 'Start', plus: 'Plus', profi: 'Profi', top: 'Top Šikula',
+  start: 'Start', plus: 'Plus', profi: 'Profi',
   'aktiv': 'Aktivní šikula', 'aktiv-plus': 'Aktivní šikula Plus',
 }
 const PLAN_COLORS = {
   start: 'var(--text3)',
   plus:  'var(--blue, #2563eb)',
   profi: 'var(--purple, #7c3aed)',
-  top:   'var(--orange, #F07800)',
   'aktiv':      'var(--orange, #F07800)',
   'aktiv-plus': 'var(--purple, #7c3aed)',
 }
@@ -310,7 +309,7 @@ function VylepseniProfilu({ currentUser, onLogout }) {
   const isCancelledGrace = subStatus === 'cancelled' && isSikulaPlanActive(currentUser)
   const isActive = isTrulyActive || isCancelledGrace
   const [billing, setBilling] = useState('monthly') // 'monthly' | 'yearly'
-  const [busyPlan, setBusyPlan] = useState(null)   // null | 'aktiv' | 'aktiv-plus' | 'top'
+  const [busyPlan, setBusyPlan] = useState(null)   // null | 'aktiv' | 'aktiv-plus'
   const [errPlan, setErrPlan] = useState(null)
   const [checkoutErr, setCheckoutErr] = useState(null)
 
@@ -513,31 +512,6 @@ function VylepseniProfilu({ currentUser, onLogout }) {
             </div>
           )
         })}
-      </div>
-
-      {/* Topování — samostatný doplněk */}
-      <div style={{ background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 14, padding: '20px 22px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-              <span style={{ fontSize: 15, fontWeight: 700, color: '#1A1F2E' }}>Topování profilu</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#D97706', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 999, padding: '2px 10px' }}>99 Kč / 30 dní</span>
-            </div>
-            <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6, margin: 0 }}>
-              Chcete být tento měsíc víc vidět? Zapněte si zvýraznění profilu na 30 dní. Zvýšíte šanci, že vás zákazník uvidí dříve ve výsledcích podle služby a lokality.
-            </p>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
-            <button disabled={busyPlan === 'top'}
-              onClick={() => goCheckout('top')}
-              style={{ height: 40, padding: '0 18px', borderRadius: 9, border: '1.5px solid #FDE68A', background: '#FFFBEB', color: '#D97706', fontWeight: 700, fontSize: 13, cursor: busyPlan === 'top' ? 'wait' : 'pointer', whiteSpace: 'nowrap' }}>
-              {busyPlan === 'top' ? 'Přesměrovávám…' : 'Zvýraznit profil za 99 Kč'}
-            </button>
-            {errPlan === 'top' && checkoutErr && (
-              <div style={{ fontSize: 12, color: '#B91C1C', textAlign: 'right' }}>{checkoutErr}</div>
-            )}
-          </div>
-        </div>
       </div>
 
       <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 16, lineHeight: 1.6 }}>
@@ -785,7 +759,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
 
   // Zamčenost dle tarifu — aktivní je subscription_status='active', nebo
   // 'cancelled' dokud neuplyne zaplacené období (plan_expires_at), NA tarifu
-  // aktiv/aktiv-plus (samotné 'top' zvýraznění za 99 Kč dashboard neodemyká).
+  // aktiv/aktiv-plus.
   const subStatus = currentUser?.subscription_status || 'inactive'
   const currentPlanId = currentUser?.plan || 'start'
   const isActivePlan = isSikulaPlanActive(currentUser)

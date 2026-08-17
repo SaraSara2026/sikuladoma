@@ -72,7 +72,6 @@ const PRICE_IDS = {
   'aktiv-plus': (billing) => billing === 'yearly' ? process.env.STRIPE_PRICE_PLUS_YEARLY  : process.env.STRIPE_PRICE_PLUS,
   plus:         () => process.env.STRIPE_PRICE_PLUS,
   profi:        () => process.env.STRIPE_PRICE_PROFI,
-  top:          () => process.env.STRIPE_PRICE_TOP,
 };
 
 const ENV_NAMES = {
@@ -80,18 +79,19 @@ const ENV_NAMES = {
   'aktiv-plus': (billing) => billing === 'yearly' ? 'STRIPE_PRICE_PLUS_YEARLY'  : 'STRIPE_PRICE_PLUS',
   plus:         () => 'STRIPE_PRICE_PLUS',
   profi:        () => 'STRIPE_PRICE_PROFI',
-  top:          () => 'STRIPE_PRICE_TOP',
 };
 
 // Reverzní lookup (webhook): Stripe Price ID → kanonický plan ('aktiv'/'aktiv-plus').
 // Měsíční i roční cena stejného tarifu se musí namapovat na STEJNÝ plan id —
 // do users.plan se nikdy nezapisuje "-yearly" varianta (viz DB constraint).
+// 'top' (jednorázové zvýraznění profilu za 99 Kč) je od 2026-08 vypnuté a
+// záměrně tu chybí — starý STRIPE_PRICE_TOP se už na žádný plan nemapuje,
+// ať by ho ani starý/replayovaný webhook event nemohl zapsat do users.plan.
 function planFromPriceId(priceId) {
   if (!priceId) return null;
   if (priceId === process.env.STRIPE_PRICE_AKTIV || priceId === process.env.STRIPE_PRICE_AKTIV_YEARLY) return 'aktiv';
   if (priceId === process.env.STRIPE_PRICE_PLUS  || priceId === process.env.STRIPE_PRICE_PLUS_YEARLY)  return 'aktiv-plus';
   if (priceId === process.env.STRIPE_PRICE_PROFI) return 'profi';
-  if (priceId === process.env.STRIPE_PRICE_TOP)   return 'top';
   return null;
 }
 
@@ -100,7 +100,6 @@ const PLAN_NAMES = {
   'aktiv-plus': 'Aktivní šikula Plus',
   plus:         'Plus',
   profi:        'Profi',
-  top:          'Přednostní zobrazení',
 };
 
 // Očekávaná cena v Kč pro aktiv/aktiv-plus — použije se jen jako bezpečnostní
@@ -241,11 +240,8 @@ async function handleCheckout(req, res, me, sql) {
     console.warn('[stripe/checkout] nepodařilo se nastavit preferred_locales:', e.message);
   }
 
-  // 'top' je jednorázová platba (99 Kč / 30 dní), ostatní jsou subscripce
-  const isSubscription = plan !== 'top';
-
   const sessionData = {
-    mode: isSubscription ? 'subscription' : 'payment',
+    mode: 'subscription',
     line_items: [{ price: priceId, quantity: 1 }],
     // page=dashboard — bez toho App.jsx při startu neví, že se má vrátit do
     // dashboardu (řídí se jen ?page= URL parametrem), a přihlášeného uživatele
@@ -255,15 +251,8 @@ async function handleCheckout(req, res, me, sql) {
     metadata: { user_id: String(me.id), plan },
     payment_method_types: ['card'],
     locale: 'cs',
+    subscription_data: { metadata: { user_id: String(me.id), plan } },
   };
-
-  if (isSubscription) {
-    sessionData.subscription_data = { metadata: { user_id: String(me.id), plan } };
-  } else {
-    // Jednorázová platba (top) — subscripce fakturu vytváří automaticky,
-    // u mode:'payment' je nutné si o ni říct explicitně.
-    sessionData.invoice_creation = { enabled: true };
-  }
 
   if (customerId) {
     sessionData.customer = customerId;
@@ -363,15 +352,22 @@ async function processEvent(event, sql) {
         break;
       }
 
+      // Topování profilu ('top', jednorázová platba 99 Kč) je od 2026-08
+      // vypnuté — checkout ho už nejde založit (viz handleCheckout), ale
+      // pro jistotu i tady blokujeme zápis, kdyby dorazil starý/replayovaný
+      // webhook event s plan='top' z dřívějška. 'top' nesmí nikdy přepsat
+      // users.plan.
+      if (plan === 'top') {
+        console.warn('[stripe/webhook] checkout.session.completed s vyřazeným plánem "top" — přeskočeno', { userId, sessionId: session.id });
+        break;
+      }
+
       const customerId     = session.customer;
       const subscriptionId = session.subscription;
 
       let expiresAt = null;
 
-      if (session.mode === 'payment' && plan === 'top') {
-        // Jednorázové topování — platné 30 dní od zaplacení
-        expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-      } else if (subscriptionId) {
+      if (subscriptionId) {
         try {
           const sub = await stripeRequest('GET', `/subscriptions/${subscriptionId}`);
           if (sub.current_period_end) {

@@ -4,7 +4,7 @@
 //   GET   /api/users/:id          → veřejný profil + recenze + souhrn
 //   PATCH /api/users/me           → update vlastního profilu (vyžaduje auth)
 //
-// Šikulové se řadí: plán priorita (top > profi > plus > start) + rating DESC + jobs DESC.
+// Šikulové se řadí: aktivní tarif před neaktivním, aktiv-plus před aktiv, pak rating DESC + jobs DESC.
 // Vrací jen safe pole — bez emailu, telefonu, IČO atd.
 
 import { sql } from '../_db.js';
@@ -111,9 +111,13 @@ async function updateMe(req, res) {
 
 // ─── List šikulů s filtry ───────────────────────────────────────────────────
 async function getList(req, res) {
-  const { category, city, search, verified, profiPlus, minRating } = req.query || {};
+  const { category, city, search, verified, minRating } = req.query || {};
   const minR = minRating ? Math.max(0, Math.min(5, Number(minRating) || 0)) : null;
 
+  // Řazení: aktivní tarif před neaktivním, aktiv-plus před aktiv (stejná
+  // definice "aktivní" jako isSikulaPlanActive — active, nebo cancelled dokud
+  // neuplyne zaplacené období), pak hodnocení a počet zakázek. Tarif samotný
+  // se do odpovědi neposílá — zákazníkovi se veřejně nezobrazuje.
   const rows = await sql`
     SELECT id, name, avatar, city_area, verified, rating, jobs_count, bio, services, worker_type,
            email_verified_at IS NOT NULL AS email_verified
@@ -125,14 +129,12 @@ async function getList(req, res) {
            OR name ILIKE ${search ? `%${search}%` : null}
            OR bio  ILIKE ${search ? `%${search}%` : null})
       AND (${verified === '1' ? true : null}::boolean IS NULL OR email_verified_at IS NOT NULL)
-      AND (${profiPlus === '1' ? true : null}::boolean IS NULL OR plan IN ('profi','top'))
       AND (${minR}::numeric IS NULL OR COALESCE(rating, 0) >= ${minR})
     ORDER BY
-      CASE plan
-        WHEN 'top'   THEN 4
-        WHEN 'profi' THEN 3
-        WHEN 'plus'  THEN 2
-        ELSE              1
+      CASE
+        WHEN plan = 'aktiv-plus' AND (subscription_status = 'active' OR (subscription_status = 'cancelled' AND plan_expires_at > NOW())) THEN 2
+        WHEN plan = 'aktiv'      AND (subscription_status = 'active' OR (subscription_status = 'cancelled' AND plan_expires_at > NOW())) THEN 1
+        ELSE 0
       END DESC,
       COALESCE(rating, 0) DESC,
       jobs_count DESC,
