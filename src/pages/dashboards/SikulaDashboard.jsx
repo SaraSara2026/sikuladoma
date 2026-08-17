@@ -1241,7 +1241,11 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                   <p>📍 {profileForm.city_area || '—'}</p>
                   <div className="profile-badges">
                     {currentUser?.email_verified_at && <span className="badge badge-green">✓ Ověřený e-mail</span>}
-                    {currentUser?.plan && <span className="badge badge-blue">👑 {currentUser.plan}</span>}
+                    <span className="badge badge-blue">
+                      {currentUser?.plan === 'aktiv' ? '👑 Aktivní šikula'
+                        : currentUser?.plan === 'aktiv-plus' ? '👑 Aktivní šikula Plus'
+                        : 'Bez aktivního tarifu'}
+                    </span>
                     {currentUser?.rating && <span className="badge badge-orange">⭐ {currentUser.rating} ({reviewsSummary?.total ?? 0} recenzí)</span>}
                   </div>
                 </div>

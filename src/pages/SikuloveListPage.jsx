@@ -172,7 +172,7 @@ function SikulaCard({ s, onClick }) {
         )}
         {s.verified && (
           <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: '#DCFCE7', color: '#15803D' }}>
-            ✓ Ověřený
+            ✓ Ověřený šikula
           </span>
         )}
         {s.rating && (
