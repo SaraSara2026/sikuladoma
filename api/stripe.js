@@ -84,14 +84,16 @@ const ENV_NAMES = {
 // Reverzní lookup (webhook): Stripe Price ID → kanonický plan ('aktiv'/'aktiv-plus').
 // Měsíční i roční cena stejného tarifu se musí namapovat na STEJNÝ plan id —
 // do users.plan se nikdy nezapisuje "-yearly" varianta (viz DB constraint).
-// 'top' (jednorázové zvýraznění profilu za 99 Kč) je od 2026-08 vypnuté a
-// záměrně tu chybí — starý STRIPE_PRICE_TOP se už na žádný plan nemapuje,
-// ať by ho ani starý/replayovaný webhook event nemohl zapsat do users.plan.
+// STRIPE_PRICE_PLUS je aktuální cena za "Aktivní šikula Plus" a mapuje se na
+// 'aktiv-plus' — NE na starý plan 'plus' (to je jen název proměnné, ne
+// hodnota planu). 'top' (99 Kč zvýraznění) a 'profi' jsou od 2026-08 vypnuté
+// a záměrně tu chybí — jejich staré price ID se už na žádný plan nemapuje,
+// ať by ani starý/replayovaný webhook event nemohl zapsat neplatnou hodnotu
+// do users.plan (viz ACTIVE_PLAN_IDS).
 function planFromPriceId(priceId) {
   if (!priceId) return null;
   if (priceId === process.env.STRIPE_PRICE_AKTIV || priceId === process.env.STRIPE_PRICE_AKTIV_YEARLY) return 'aktiv';
   if (priceId === process.env.STRIPE_PRICE_PLUS  || priceId === process.env.STRIPE_PRICE_PLUS_YEARLY)  return 'aktiv-plus';
-  if (priceId === process.env.STRIPE_PRICE_PROFI) return 'profi';
   return null;
 }
 
@@ -101,6 +103,13 @@ const PLAN_NAMES = {
   plus:         'Plus',
   profi:        'Profi',
 };
+
+// Jediné dvě hodnoty, které smí (a) založit nový checkout, (b) skončit
+// zapsané do users.plan webhookem. 'plus'/'profi'/'top' a cokoliv jiného
+// jsou staré/vyřazené hodnoty — PRICE_IDS/ENV_NAMES/PLAN_NAMES pro ně výše
+// zůstávají kvůli starým datům a diagnostice, ale nikdy se přes tenhle
+// allowlist nedostanou dál.
+const ACTIVE_PLAN_IDS = new Set(['aktiv', 'aktiv-plus']);
 
 // Očekávaná cena v Kč pro aktiv/aktiv-plus — použije se jen jako bezpečnostní
 // pojistka (viz handleCheckout), nikde neurčuje/nemění skutečnou cenu ve Stripe.
@@ -162,7 +171,10 @@ export default async function handler(req, res) {
 
 async function handleCheckout(req, res, me, sql) {
   const { plan = 'aktiv', billing = 'monthly' } = req.body ?? {};
-  if (!PLAN_NAMES[plan]) {
+  // Nový checkout smí založit jen na aktuální veřejné tarify (aktiv,
+  // aktiv-plus). Staré hodnoty (plus, profi, top) i cokoliv neznámé se
+  // odmítnou, i kdyby pro ně PRICE_IDS/PLAN_NAMES pořád měly legacy záznam.
+  if (!ACTIVE_PLAN_IDS.has(plan)) {
     return res.status(400).json({ error: 'Neplatný plán.' });
   }
   if (billing !== 'monthly' && billing !== 'yearly') {
@@ -352,13 +364,13 @@ async function processEvent(event, sql) {
         break;
       }
 
-      // Topování profilu ('top', jednorázová platba 99 Kč) je od 2026-08
-      // vypnuté — checkout ho už nejde založit (viz handleCheckout), ale
-      // pro jistotu i tady blokujeme zápis, kdyby dorazil starý/replayovaný
-      // webhook event s plan='top' z dřívějška. 'top' nesmí nikdy přepsat
-      // users.plan.
-      if (plan === 'top') {
-        console.warn('[stripe/webhook] checkout.session.completed s vyřazeným plánem "top" — přeskočeno', { userId, sessionId: session.id });
+      // Do users.plan smí dojít zápis jen pro aktuální tarify (aktiv,
+      // aktiv-plus). Staré/vyřazené hodnoty (plus, profi, top) i cokoliv
+      // neznámé se zahodí — checkout je sice od teď negeneruje (viz
+      // handleCheckout), ale webhook musí být odolný i vůči starému/
+      // replayovanému eventu s takovou hodnotou v metadata.plan.
+      if (!ACTIVE_PLAN_IDS.has(plan)) {
+        console.warn('[stripe/webhook] checkout.session.completed s neplatným/vyřazeným plánem — přeskočeno', { userId, plan, sessionId: session.id });
         break;
       }
 
