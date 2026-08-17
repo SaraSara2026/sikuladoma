@@ -19,6 +19,7 @@ export default function OrderDetailPage({ order: orderProp, onNav, currentUser, 
   const [error, setError]         = useState(null)
   const [acting, setActing]       = useState(null) // id právě akceptované nabídky
   const [fullOrder, setFullOrder] = useState(null)
+  const [fetchError, setFetchError] = useState(null)
 
   // Bez aktivního tarifu šikula nesmí vidět detail poptávky ani nabídky/zprávy k ní.
   // Zrušený tarif zůstává funkční až do konce zaplaceného období.
@@ -26,14 +27,16 @@ export default function OrderDetailPage({ order: orderProp, onNav, currentUser, 
   const gateForSikula = currentUser?.role === 'sikula' && !sikulaHasActivePlan
 
   // Navigace sem občas nese jen část polí zakázky (např. ze seznamu nabídek
-  // v dashboardu) — vždy dotáhneme autoritativní plný detail přes API, které
-  // samo maskuje popis/adresu/kontakt podle role a vztahu k zakázce.
+  // v dashboardu, nebo jen {id} z e-mailového odkazu) — vždy dotáhneme
+  // autoritativní plný detail přes API, které samo maskuje popis/adresu/
+  // kontakt podle role a vztahu k zakázce.
   useEffect(() => {
     if (!orderProp?.id || gateForSikula) return
     let alive = true
+    setFetchError(null)
     ordersApi.get(orderProp.id)
       .then(({ order }) => { if (alive) setFullOrder(order) })
-      .catch(() => {})
+      .catch(e => { if (alive) setFetchError(e) })
     return () => { alive = false }
   }, [orderProp?.id, gateForSikula])
 
@@ -60,6 +63,25 @@ export default function OrderDetailPage({ order: orderProp, onNav, currentUser, 
           <div style={{ fontSize: 40, marginBottom: 12 }}>🔒</div>
           <h2 style={{ marginBottom: 22 }}>Pro zobrazení detailu poptávky a odeslání nabídky si aktivujte tarif.</h2>
           <button className="btn btn-primary" onClick={() => onNav('dash-sikula')}>Aktivovat tarif</button>
+        </div>
+      </div>
+    )
+  }
+
+  // Autoritativní dotažení selhalo (neexistuje / nepatří tomuto účtu) a
+  // nemáme z navigace ani žádná smysluplná data k zobrazení — typicky přišel
+  // uživatel rovnou z e-mailového odkazu pod jiným účtem, než pro který byl
+  // e-mail určený. Radši jasná hláška než prázdná/rozbitá stránka.
+  if (fetchError && !orderProp.title) {
+    return (
+      <div className="page-enter" style={{ padding: '32px 24px', maxWidth: 640, margin: '0 auto' }}>
+        <button className="btn btn-ghost" onClick={() => onNav('back')} style={{ marginBottom: 16 }}>← Zpět</button>
+        <div className="card card-pad" style={{ textAlign: 'center', padding: '40px 24px' }}>
+          <div style={{ fontSize: 40, marginBottom: 12 }}>🔒</div>
+          <h2 style={{ marginBottom: 8 }}>Tuto poptávku nelze zobrazit</h2>
+          <p style={{ color: 'var(--text2)', fontSize: 14 }}>
+            Poptávka neexistuje, nebo k ní nemáte přístup pod tímto účtem. Pokud odkaz patří jinému účtu, přihlaste se prosím pod ním.
+          </p>
         </div>
       </div>
     )
@@ -211,6 +233,11 @@ export default function OrderDetailPage({ order: orderProp, onNav, currentUser, 
                     </div>
                   )}
 
+                  {offer.status === 'pending' && (
+                    <p style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'right', marginBottom: 8 }}>
+                      Zprávy budou dostupné po přijetí nabídky.
+                    </p>
+                  )}
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                     {/* Konverzace vzniká až po přijetí nabídky (viz api/conversations.js) —
                         u nepřijaté nabídky by tlačítko jen skončilo chybou 403. */}

@@ -77,6 +77,7 @@ async function createOffer(req, res) {
         duration: row.available_time,
         date: row.available_date,
         message: row.message,
+        orderId: order.id,
       });
     } catch (err) {
       console.error('[offers] new offer notification email failed:', err);

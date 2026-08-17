@@ -115,6 +115,20 @@ export default function App() {
     } catch {}
     return null;
   });
+  // orderId z e-mailových odkazů "Vaše poptávka byla odeslána" / "Nová poptávka
+  // ve vašem okolí" / "Máte novou nabídku" (?page=dashboard&order=) — po
+  // přihlášení rovnou otevře detail té poptávky. Bezpečnost (že poptávka
+  // patří přihlášenému účtu) řeší GET /api/orders/:id, ne tenhle odkaz.
+  const [orderIdStart, setOrderIdStart] = useState(() => {
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('page') === 'dashboard') {
+        const o = url.searchParams.get('order');
+        if (o) return Number(o);
+      }
+    } catch {}
+    return null;
+  });
   const [sikulaUser,  setSikulaUser]   = useState(() => {
     try { const s = localStorage.getItem("sd_user"); return s ? JSON.parse(s) : null; } catch { return null; }
   });
@@ -146,6 +160,20 @@ export default function App() {
     setPage(target);
     window.scrollTo(0, 0);
   };
+
+  // Jakmile je uživatel přihlášený (ať už byl přihlášený už při načtení
+  // stránky, nebo se přihlásí až teď kliknutím na "Přihlásit se"), a z
+  // e-mailového odkazu víme konkrétní orderId, přesměruj rovnou na detail
+  // té poptávky místo obecného přehledu dashboardu. Funguje stejně pro
+  // zákazníka i šikulu — GET /api/orders/:id sám ověří, že na poptávku má
+  // přihlášený účet přístup.
+  useEffect(() => {
+    if (orderIdStart && sikulaUser && page === "dashboard") {
+      handleNav("order-detail", { id: orderIdStart });
+      setOrderIdStart(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderIdStart, sikulaUser, page]);
 
   // Login: uloží uživatele do localStorage + state, přesměruje dle role.
   const loginSikula = (user) => {

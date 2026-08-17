@@ -20,16 +20,16 @@ const STEPS = [
   { n: 1, Icon: IcUser,    bg: '#FFF7ED', color: '#F97316', title: 'Zaregistrujete se jako šikula',          desc: 'Vyplníte základní údaje, lokalitu a služby, které nabízíte.' },
   { n: 2, Icon: IcTag,     bg: '#EFF6FF', color: '#3B82F6', title: 'Vidíte poptávky ve svém okolí',        desc: 'Po registraci uvidíte poptávky ve své lokalitě. Tarif Aktivní šikula za 199 Kč / měsíc si aktivujete až ve chvíli, kdy chcete na poptávku odpovědět.' },
   { n: 3, Icon: IcBell,    bg: '#F0FDF4', color: '#22C55E', title: 'Dostáváte poptávky z okolí',             desc: 'Když zákazník ve vaší lokalitě zadá poptávku, dostanete upozornění.' },
-  { n: 4, Icon: IcCheck,   bg: '#FAF5FF', color: '#A855F7', title: 'Reagujete jen na zakázky, které chcete', desc: 'Vy sami si vyberete, na které poptávky odpovíte. Bez kreditů, bez provizí a bez omezení počtu zakázek. Jedna jasná platba, neomezeně příležitostí.' },
+  { n: 4, Icon: IcCheck,   bg: '#FAF5FF', color: '#A855F7', title: 'Reagujete jen na poptávky, které chcete', desc: 'Vy sami si vyberete, na které poptávky odpovíte. Bez kreditů, bez provizí a bez omezení počtu zakázek. Jedna jasná platba, neomezeně příležitostí.' },
   { n: 5, Icon: IcUsers,   bg: '#F0F9FF', color: '#0EA5E9', title: 'Domluvíte se přímo se zákazníkem',      desc: 'Cenu, termín i podrobnosti práce si domluvíte přímo mezi sebou.' },
   { n: 6, Icon: IcReceipt, bg: '#FDF4FF', color: '#C026D3', title: 'Vystavíte fakturu jednoduše',            desc: 'V profilu si můžete aktivovat fakturovač a zákazníkovi vystavit fakturu přímo v aplikaci.' },
   { n: 7, Icon: IcStar,    bg: '#FFFBEB', color: '#D97706', title: 'Budujete si hodnocení',                  desc: 'Spokojení zákazníci vám zanechají hodnocení a pomáhají vám získávat další práci.' },
 ]
 
 const CHIPS = [
-  { color: '#F97316', text: 'Zakázky ve vašem okolí' },
+  { color: '#F97316', text: 'Poptávky ve vašem okolí' },
   { color: '#3B82F6', text: 'Bez provize' },
-  { color: '#22C55E', text: 'Vy si vybíráte zakázky' },
+  { color: '#22C55E', text: 'Vy si vybíráte poptávky' },
   { color: '#A855F7', text: 'Zákazník platí přímo vám' },
 ]
 
@@ -89,7 +89,7 @@ export default function ProSikulyPage({ onBack, onReg }) {
                 Pro vás samé výhody. Jedna jasná platba, žádné provize a žádné kredity za odpovědi. Zaregistrujete se zdarma a hned uvidíte poptávky ve svém okolí.
               </p>
               <p style={{ fontSize: 15, color: '#374151', lineHeight: 1.8, marginBottom: 16 }}>
-                Když najdete poptávku, která vám dává smysl, aktivujete si tarif a můžete na ni rovnou odpovědět. Vy sami si vybíráte, na co odpovíte, kdy máte čas a jestli je pro vás zakázka zajímavá.
+                Když najdete poptávku, která vám dává smysl, aktivujete si tarif a můžete na ni rovnou odpovědět. Vy sami si vybíráte, na co odpovíte, kdy máte čas a jestli je pro vás poptávka zajímavá.
               </p>
               <p style={{ fontSize: 15, color: '#374151', lineHeight: 1.8, margin: 0 }}>
                 Cenu, termín i rozsah práce si domlouváte přímo se zákazníkem. Co si domluvíte, je vaše. ŠikulaDoma si nebere procenta ze zakázky.
@@ -140,7 +140,7 @@ export default function ProSikulyPage({ onBack, onReg }) {
           <div style={{ textAlign: 'center', marginBottom: 48 }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: '#3B82F6', marginBottom: 10 }}>JAK TO FUNGUJE</div>
             <h2 style={{ fontSize: 'clamp(22px,3vw,30px)', fontWeight: 700, color: '#1A1F2E', letterSpacing: '-.02em' }}>
-              Zaregistrujete se, aktivujete profil a reagujete jen na zakázky, které vám dávají smysl.
+              Zaregistrujete se, aktivujete profil a reagujete jen na poptávky, které vám dávají smysl.
             </h2>
           </div>
 

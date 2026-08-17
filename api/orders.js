@@ -165,7 +165,7 @@ async function createOrder(req, res) {
   // odkaz. Selhání e-mailu nesmí zrušit poptávku ani odhlásit zákazníka, jen
   // se zaloguje.
   try {
-    await sendOrderConfirmationEmail({ to: customer_email, name: customer_name, orderTitle: title, city, timing });
+    await sendOrderConfirmationEmail({ to: customer_email, name: customer_name, orderTitle: title, city, timing, orderId: row.id });
   } catch (err) {
     console.error('[orders] order confirmation email failed:', err);
   }
@@ -190,7 +190,7 @@ async function createOrder(req, res) {
     const categoryLabel = CATEGORY_LABELS[category] || category;
     const results = await Promise.allSettled(
       Array.from(recipients.values()).map(u =>
-        sendNewOrderNotificationEmail({ to: u.email, orderTitle: title, category: categoryLabel, city, timing })
+        sendNewOrderNotificationEmail({ to: u.email, orderTitle: title, category: categoryLabel, city, timing, orderId: row.id })
           .catch(err => { console.error('[orders] new-order notification failed for user', u.id, err); throw err; })
       )
     );

@@ -60,8 +60,12 @@ export async function sendPasswordResetEmail({ to, name, token }) {
 
 // ─── Potvrzení přijaté poptávky (zákazník) ─────────────────────────────────
 // Čistě informační e-mail — žádný token, žádný ověřovací odkaz, nic neblokuje.
-export async function sendOrderConfirmationEmail({ to, name, orderTitle, city, timing }) {
-  const url = `${getAppUrl()}/?page=dashboard`;
+// Pokud známe orderId, odkaz vede rovnou na tuto poptávku (GET /api/orders/:id
+// si po přihlášení sám ověří, že poptávka patří přihlášenému účtu).
+export async function sendOrderConfirmationEmail({ to, name, orderTitle, city, timing, orderId }) {
+  const url = orderId
+    ? `${getAppUrl()}/?page=dashboard&order=${orderId}`
+    : `${getAppUrl()}/?page=dashboard`;
   const resend = getResend();
   const { data, error } = await resend.emails.send({
     from: getFromAddress(),
@@ -80,9 +84,13 @@ export async function sendOrderConfirmationEmail({ to, name, orderTitle, city, t
 // ─── Nová poptávka v oboru (šikula) ─────────────────────────────────────────
 // Informuje šikulu, že vznikla poptávka odpovídající jeho oboru (nebo schválené
 // příbuzné kategorii). Posílá se i šikulovi bez aktivního tarifu — poptávku
-// může vidět, reagovat může až po aktivaci tarifu.
-export async function sendNewOrderNotificationEmail({ to, orderTitle, category, city, timing }) {
-  const url = `${getAppUrl()}/?page=dashboard`;
+// může vidět, reagovat může až po aktivaci tarifu. Odkaz s orderId vede po
+// přihlášení rovnou na detail té poptávky (masku podle tarifu/vztahu řeší
+// GET /api/orders/:id, ne tenhle odkaz).
+export async function sendNewOrderNotificationEmail({ to, orderTitle, category, city, timing, orderId }) {
+  const url = orderId
+    ? `${getAppUrl()}/?page=dashboard&order=${orderId}`
+    : `${getAppUrl()}/?page=dashboard`;
   const resend = getResend();
   const { data, error } = await resend.emails.send({
     from: getFromAddress(),
@@ -100,8 +108,10 @@ export async function sendNewOrderNotificationEmail({ to, orderTitle, category, 
 
 // ─── Nová nabídka na poptávku (zákazník) ────────────────────────────────────
 // Informuje zákazníka, že mu šikula poslal nabídku na jeho poptávku.
-export async function sendNewOfferNotificationEmail({ to, orderTitle, price, duration, date, message }) {
-  const url = `${getAppUrl()}/?page=dashboard`;
+export async function sendNewOfferNotificationEmail({ to, orderTitle, price, duration, date, message, orderId }) {
+  const url = orderId
+    ? `${getAppUrl()}/?page=dashboard&order=${orderId}`
+    : `${getAppUrl()}/?page=dashboard`;
   const resend = getResend();
   const { data, error } = await resend.emails.send({
     from: getFromAddress(),

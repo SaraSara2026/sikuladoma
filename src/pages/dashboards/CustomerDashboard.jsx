@@ -371,6 +371,11 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
                   <div className="offer-price">{formatCurrencyCz(offer.price)}</div>
                 </div>
                 {offer.message && <p style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 12 }}>{offer.message}</p>}
+                {offer.status === 'pending' && (
+                  <p style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'right', marginBottom: 8 }}>
+                    Zprávy budou dostupné po přijetí nabídky.
+                  </p>
+                )}
                 <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                   {/* Konverzace vzniká až po přijetí nabídky — u nepřijaté by
                       tlačítko jen skončilo chybou 403 (viz api/conversations.js). */}

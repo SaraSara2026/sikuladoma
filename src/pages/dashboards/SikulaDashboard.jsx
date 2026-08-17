@@ -1117,6 +1117,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                     {/* Konverzace vzniká až po přijetí nabídky — dokud zákazník
                         nerozhodne, tu není s kým chatovat (viz api/conversations.js). */}
                     <span className="badge badge-blue">Čeká na odpověď</span>
+                    <span style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'right' }}>Zprávy budou dostupné po přijetí nabídky.</span>
                   </div>
                 </div>
               ))}
