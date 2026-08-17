@@ -19,8 +19,8 @@ const FAQ_CUSTOMERS = [
     a: 'Šikulové se zpravidla ozývají brzy. U poptávek označených jako urgentní mají šikulové okamžitou notifikaci, což zkracuje dobu reakce.',
   },
   {
-    q: 'Jak vím, že je šikula ověřený a důvěryhodný?',
-    a: 'U každého profilu vidíte zelený štítek "Ověřený", recenze od minulých zákazníků (hvězdičky 1–5) a kolik zakázek už dokončil. Ověřený profil znamená, že šikula prošel ověřením e-mailu. Další údaje, například IČO, mohou být doplněny v profilu.',
+    q: 'Co znamená Ověřený šikula?',
+    a: 'Odznak Ověřený šikula označuje profil, který prošel ověřením podle pravidel ŠikulaDoma. Nejde o garanci kvality práce, výsledku služby ani o pracovněprávní vztah se ŠikulaDoma. Při výběru doporučujeme sledovat profil šikuly, jeho nabídku, hodnocení a domluvit si podrobnosti předem.',
   },
   {
     q: 'Co když s prací nejsem spokojený?',

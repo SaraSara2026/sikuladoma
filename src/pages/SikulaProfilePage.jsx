@@ -81,7 +81,9 @@ export default function SikulaProfilePage({ id, onBack, onOrder }) {
                     {WORKER_TYPE_LABEL[user.worker_type]}
                   </span>
                 )}
-                {user.email_verified && <span style={{ background: '#EFF6FF', color: '#1D4ED8', padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>✓ Ověřený e-mail</span>}
+                {/* Ověření e-mailu je interní bezpečnostní pravidlo (vyžadované pro
+                    používání dashboardu), veřejně se nezobrazuje jako samostatný
+                    benefit — jen souhrnný odznak "Ověřený šikula". */}
                 {user.verified && <span style={{ background: '#F0FDF4', color: '#16A34A', padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>✓ Ověřený šikula</span>}
                 {/* Tarif/plán je interní údaj — nezobrazuje se veřejně. */}
                 {summary?.total > 0 && (

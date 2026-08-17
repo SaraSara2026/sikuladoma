@@ -17,7 +17,7 @@ const WORKER_TYPE_LABEL = {
 export default function SikuloveListPage({ onBack, onProfile, onReg, onOrder }) {
   const [sikulove, setSikulove] = useState([]);
   const [loading, setLoading] = useState(true);
-  const initial = { category: '', city: '', verified: false, minRating: 0 };
+  const initial = { category: '', city: '', minRating: 0 };
   const [filters, setFilters] = useState(initial);            // co uživatel vyplňuje
   const [appliedFilters, setApplied] = useState(initial);      // co je aplikováno (po kliku Hledej)
 
@@ -27,7 +27,6 @@ export default function SikuloveListPage({ onBack, onProfile, onReg, onOrder }) 
     usersApi.listSikulove({
       category: appliedFilters.category,
       city: appliedFilters.city,
-      verified: appliedFilters.verified,
       minRating: appliedFilters.minRating || undefined,
     })
       .then(data => { if (alive) setSikulove(data.sikulove || []); })
@@ -76,10 +75,6 @@ export default function SikuloveListPage({ onBack, onProfile, onReg, onOrder }) 
           </div>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginTop: 12, alignItems: 'center', fontSize: 13, color: T.ink3 }}>
-            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-              <input type="checkbox" checked={filters.verified} onChange={e => setFilters(f => ({ ...f, verified: e.target.checked }))} />
-              ✓ Jen s ověřeným e-mailem
-            </label>
             <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
               Min. hodnocení:
               <select value={filters.minRating} onChange={e => setFilters(f => ({ ...f, minRating: Number(e.target.value) }))}

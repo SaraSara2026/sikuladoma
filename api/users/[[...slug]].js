@@ -111,16 +111,18 @@ async function updateMe(req, res) {
 
 // ─── List šikulů s filtry ───────────────────────────────────────────────────
 async function getList(req, res) {
-  const { category, city, search, verified, minRating } = req.query || {};
+  const { category, city, search, minRating } = req.query || {};
   const minR = minRating ? Math.max(0, Math.min(5, Number(minRating) || 0)) : null;
 
   // Řazení: aktivní tarif před neaktivním, aktiv-plus před aktiv (stejná
   // definice "aktivní" jako isSikulaPlanActive — active, nebo cancelled dokud
   // neuplyne zaplacené období), pak hodnocení a počet zakázek. Tarif samotný
   // se do odpovědi neposílá — zákazníkovi se veřejně nezobrazuje.
+  // Ověření e-mailu je interní bezpečnostní pravidlo, ne veřejný údaj — proto
+  // se ani nefiltruje, ani neprojektuje (viz "verified" = interní ruční
+  // ověření šikuly, to jediné se veřejně zobrazuje jako "Ověřený šikula").
   const rows = await sql`
-    SELECT id, name, avatar, city_area, verified, rating, jobs_count, bio, services, worker_type,
-           email_verified_at IS NOT NULL AS email_verified
+    SELECT id, name, avatar, city_area, verified, rating, jobs_count, bio, services, worker_type
     FROM users
     WHERE role = 'sikula'
       AND (${category ?? null}::text IS NULL OR ${category ?? null} = ANY(services))
@@ -128,7 +130,6 @@ async function getList(req, res) {
       AND (${search ?? null}::text IS NULL
            OR name ILIKE ${search ? `%${search}%` : null}
            OR bio  ILIKE ${search ? `%${search}%` : null})
-      AND (${verified === '1' ? true : null}::boolean IS NULL OR email_verified_at IS NOT NULL)
       AND (${minR}::numeric IS NULL OR COALESCE(rating, 0) >= ${minR})
     ORDER BY
       CASE
@@ -148,8 +149,7 @@ async function getList(req, res) {
 // ─── Single šikula + recenze + summary ──────────────────────────────────────
 async function getSingle(id, res) {
   const [user] = await sql`
-    SELECT id, name, role, avatar, city_area, verified, rating, jobs_count, bio, services, worker_type,
-           email_verified_at IS NOT NULL AS email_verified
+    SELECT id, name, role, avatar, city_area, verified, rating, jobs_count, bio, services, worker_type
     FROM users WHERE id = ${id} AND role = 'sikula'
   `;
   if (!user) return res.status(404).json({ error: 'Šikula nenalezen.' });
