@@ -387,7 +387,7 @@ function VylepseniProfilu({ currentUser, onLogout }) {
         'Jednoduchý fakturovač',
         'Přehled zákazníků',
         'Přehled vystavených faktur',
-        'Historie zakázek',
+        'Dokončené zakázky',
         'Evidence příjmů ze zakázek',
         'Vhodné pro šikuly, kteří chtějí mít zakázky, zákazníky a faktury přehledně pohromadě',
       ],
