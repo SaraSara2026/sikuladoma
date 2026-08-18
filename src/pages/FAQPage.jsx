@@ -55,7 +55,7 @@ const FAQ_SIKULOVE = [
   },
   {
     q: 'Co když mi zákazník nezaplatí?',
-    a: 'Vždy si dohodu dokumentujte v chatu. Pokud zákazník nezaplatí, máte důkaz. Kontaktujte nás, pomůžeme s mediací. V krajním případě se obraťte na advokáta — ŠikulaDoma platby nezprostředkovává, ale dohoda v chatu je platná.',
+    a: 'Doporučujeme domlouvat cenu, termín a rozsah práce přes chat v rámci platformy, aby byl zachovaný přehled o domluvě. Pokud zákazník nezaplatí, řeší šikula situaci přímo se zákazníkem, protože ŠikulaDoma není smluvní stranou provedené práce. Pokud dojde k problému, můžete nás kontaktovat na info@sikuladoma.cz a pomůžeme vám s dalším postupem v rámci platformy.',
   },
 ];
 
