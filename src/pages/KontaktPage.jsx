@@ -235,7 +235,7 @@ export default function KontaktPage({ onBack }) {
                 Mokošínská 913/4<br />
                 190 17 Praha 9<br />
                 Česká republika<br />
-                IČ: 29228379<br />
+                IČO: 29228379<br />
                 DIČ: CZ29228379
               </div>
               <a href="mailto:info@sikuladoma.cz?subject=Dotaz ze ŠikulaDoma"
