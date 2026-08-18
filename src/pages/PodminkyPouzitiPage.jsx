@@ -104,7 +104,7 @@ const SECTIONS = [
   },
   {
     n: "16", title: "Podmínky pro šikuly",
-    text: "Pro registrované šikuly platí kromě těchto podmínek také samostatné Podmínky pro šikuly.",
+    sikulyLink: true,
   },
   {
     n: "17", title: "Změny podmínek a závěrečná ustanovení",
@@ -115,7 +115,7 @@ const SECTIONS = [
   },
 ]
 
-export default function PodminkyPouzitiPage({ onBack }) {
+export default function PodminkyPouzitiPage({ onBack, onPodminkySikuly }) {
   return (
     <div style={{ minHeight: "100vh", background: "#F9FAFB" }}>
 
@@ -169,6 +169,18 @@ export default function PodminkyPouzitiPage({ onBack }) {
 
               {s.text && (
                 <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.7, marginBottom: s.highlight ? 14 : 0 }}>{s.text}</p>
+              )}
+
+              {s.sikulyLink && (
+                <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.7 }}>
+                  Pro registrované šikuly platí kromě těchto podmínek také samostatné{' '}
+                  {onPodminkySikuly ? (
+                    <span onClick={onPodminkySikuly} style={{ color: "#3B82F6", fontWeight: 600, textDecoration: "underline", cursor: "pointer" }}>
+                      Podmínky pro šikuly
+                    </span>
+                  ) : "Podmínky pro šikuly"}
+                  .
+                </p>
               )}
 
               {s.highlight && (

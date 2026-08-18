@@ -181,7 +181,7 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
                 <label style={lbl}>Typ šikuly *</label>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   {[
-                    { id: "zivnostnik_firma", label: "Živnostník / firma", desc: "Mám nebo budu mít IČO" },
+                    { id: "zivnostnik_firma", label: "Živnostník / firma", desc: "Vyžaduje IČO" },
                     { id: "prilezitostna_vypomoc", label: "Příležitostná výpomoc", desc: "Bez IČO" },
                   ].map(t => {
                     const sel = form.workerType === t.id;
@@ -201,7 +201,11 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
               </div>
               <div><label style={lbl}>Jméno / název *</label><input value={form.name} onChange={e => upd("name", e.target.value)} placeholder="Pavel Šikovný" style={inp} /></div>
               {form.workerType === "zivnostnik_firma" && (
-                <div><label style={lbl}>IČO *</label><input value={form.ico} onChange={e => upd("ico", e.target.value)} placeholder="12345678" style={inp} /></div>
+                <div>
+                  <label style={lbl}>IČO *</label>
+                  <input value={form.ico} onChange={e => upd("ico", e.target.value)} placeholder="12345678" style={inp} />
+                  <div style={{ fontSize: 11, color: T.ink3, marginTop: 4 }}>U živnostníka nebo firmy je IČO povinné.</div>
+                </div>
               )}
               <div><label style={lbl}>E-mail *</label><input value={form.email} onChange={e => upd("email", e.target.value)} placeholder="vas@email.cz" type="email" autoComplete="email" style={inp} /></div>
               <div><label style={lbl}>Heslo * (min. 8 znaků)</label><PasswordField value={form.password} onChange={e => upd("password", e.target.value)} autoComplete="new-password" /></div>

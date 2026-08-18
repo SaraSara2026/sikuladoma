@@ -341,7 +341,8 @@ export default function App() {
       ) : page === "gdpr" ? (
         <GDPRPage onBack={() => { setPage("home"); window.scrollTo(0,0); }} />
       ) : page === "podminky-pouziti" ? (
-        <PodminkyPouzitiPage onBack={() => { setPage("home"); window.scrollTo(0,0); }} />
+        <PodminkyPouzitiPage onBack={() => { setPage("home"); window.scrollTo(0,0); }}
+          onPodminkySikuly={() => { setPage("podminky-sikuly"); window.scrollTo(0,0); }} />
       ) : page === "ochrana-soukromi" ? (
         <OchranaSoukromiPage onBack={() => { setPage("home"); window.scrollTo(0,0); }} />
       ) : page === "podpora-sikuly" ? (

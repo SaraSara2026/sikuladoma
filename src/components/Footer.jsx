@@ -53,6 +53,7 @@ export default function Footer({ onOrder, onReg, onKontakt, onHow, onSikuly, onP
             {[
               { label: "Ochrana osobních údajů", onClick: onOchrana },
               { label: "Obchodní podmínky",       onClick: onPodminkyPouziti },
+              { label: "Podmínky pro šikuly",     onClick: onPodminkySikuly },
               { label: "Cookies",                 onClick: onCookies },
             ].map(({ label, onClick }) => (
               <div key={label}

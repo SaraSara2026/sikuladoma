@@ -365,7 +365,7 @@ function VylepseniProfilu({ currentUser, onLogout }) {
         'Recenze',
         'Zobrazení zákazníkům',
         'Možnost reagovat na poptávky',
-        'Bez kreditů za odpovědi',
+        'Žádné kredity za kontakty',
         'Žádná provize ze zakázky',
         'Zákazník platí přímo šikulovi',
       ],
@@ -381,7 +381,7 @@ function VylepseniProfilu({ currentUser, onLogout }) {
       badge: 'Více funkcí',
       features: [
         'Vše z tarifu Aktivní šikula',
-        'Bez kreditů za odpovědi',
+        'Žádné kredity za kontakty',
         'Přehled zakázek na jednom místě',
         'Kalendář zakázek',
         'Jednoduchý fakturovač',
@@ -446,9 +446,9 @@ function VylepseniProfilu({ currentUser, onLogout }) {
 
       {/* Info blok — bez kreditů, jedna měsíční cena */}
       <div style={{ marginBottom: 24, padding: '18px 22px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 14 }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#166534', marginBottom: 6 }}>Žádné kredity. Žádné skryté poplatky. Jen jedna měsíční cena.</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#166534', marginBottom: 6 }}>Jedna jasná cena. Žádné kredity. Žádná provize.</div>
         <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.6, margin: 0 }}>
-          U ŠikulaDoma neplatíte za každou odpověď zvlášť. Neřešíte kredity ani to, jestli se vám poptávka vyplatí otevřít. Máte jeden jasný měsíční tarif a zákazník platí přímo vám.
+          U ŠikulaDoma neplatíte za otevření kontaktu ani za každou jednotlivou odpověď. Neřešíte kredity. Máte jeden jasný měsíční tarif a zákazník platí přímo vám.
         </p>
       </div>
 
@@ -852,8 +852,8 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
               {subStatus === 'payment_failed'
                 ? 'Platba za tarif selhala. Aktivujte si ho prosím znovu, ať můžete reagovat na poptávky.'
                 : subStatus === 'cancelled'
-                  ? 'Váš tarif byl zrušen a platnost vypršela. Aktivujte si ho prosím znovu, ať můžete reagovat na poptávky.'
-                  : 'Váš profil je připravený. Aktivujte tarif a můžete začít reagovat na poptávky.'}
+                  ? 'Váš tarif vypršel. Aktivujte si ho znovu, abyste mohli reagovat na poptávky.'
+                  : 'Nemáte aktivní tarif. Aktivujte si ho, abyste mohli reagovat na poptávky.'}
             </span>
             <button onClick={() => setActivePage('membership')}
               style={{ height: 36, padding: '0 16px', borderRadius: 9, border: 'none', background: '#F97316', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
@@ -1135,12 +1135,12 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                 subscription_status/plan_expires_at, nic se neukládá zvlášť. */}
             {currentUser?.subscription_status === 'cancelled' ? (
               <div style={{ padding: '16px 20px', borderRadius: 10, background: '#FFF7ED', border: '1px solid #FED7AA', color: '#9A3412' }}>
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>📣 Váš tarif byl zrušen.</div>
+                <div style={{ fontWeight: 700, marginBottom: 6 }}>📣 {isActivePlan ? 'Váš tarif je zrušený.' : 'Váš tarif vypršel.'}</div>
                 <p style={{ fontSize: 14, lineHeight: 1.6, margin: 0 }}>
                   {isActivePlan ? (
                     <>Zůstává aktivní do <strong>{formatDateCz(currentUser.plan_expires_at)}</strong>. Po tomto datu se profil přepne do neaktivního režimu.</>
                   ) : (
-                    <>Profil zůstává zachovaný, ale bez aktivního tarifu nemůžete reagovat na poptávky ani komunikovat se zákazníky. Tarif si můžete kdykoliv znovu aktivovat.</>
+                    <>Aktivujte si ho znovu, abyste mohli reagovat na poptávky a komunikovat se zákazníky. Profil zůstává zachovaný.</>
                   )}
                 </p>
               </div>
@@ -1337,7 +1337,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                   <label className="form-label">Typ šikuly</label>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                     {[
-                      { id: 'zivnostnik_firma', label: 'Živnostník / firma', desc: 'Mám nebo budu mít IČO' },
+                      { id: 'zivnostnik_firma', label: 'Živnostník / firma', desc: 'Vyžaduje IČO' },
                       { id: 'prilezitostna_vypomoc', label: 'Příležitostná výpomoc', desc: 'Bez IČO' },
                     ].map(t => {
                       const sel = profileForm.worker_type === t.id
@@ -1361,7 +1361,9 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                     <div className="form-group"><label className="form-label">IČO</label>
                       <input className="form-input" value={profileForm.ico}
                         onChange={e => setProfileForm(p => ({ ...p, ico: e.target.value.replace(/\D/g,'').slice(0,8) }))}
-                        placeholder="12345678" inputMode="numeric" /></div>
+                        placeholder="12345678" inputMode="numeric" />
+                      <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>U živnostníka nebo firmy je IČO povinné.</div>
+                    </div>
                   )}
                   <div className="form-group"><label className="form-label">Hodinová sazba (Kč)</label>
                     <input className="form-input" type="number" min="0" value={profileForm.hourly_rate}

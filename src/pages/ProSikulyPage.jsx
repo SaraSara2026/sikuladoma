@@ -12,7 +12,7 @@ const VYHODY = [
   'Vlastní profil šikuly',
   'Poptávky z vašeho okolí',
   'Reagování po aktivaci tarifu',
-  'Bez kreditů za odpovědi',
+  'Žádné kredity za kontakty',
   'Základní tarif 199 Kč / měsíc',
 ]
 
@@ -85,8 +85,11 @@ export default function ProSikulyPage({ onBack, onReg }) {
               <h2 style={{ fontSize: 'clamp(20px,2.5vw,24px)', fontWeight: 800, color: '#1A1F2E', letterSpacing: '-.02em', lineHeight: 1.3, marginBottom: 24 }}>
                 Proč se vám ŠikulaDoma vyplatí?
               </h2>
+              <p style={{ fontSize: 16, fontWeight: 700, color: '#1A1F2E', lineHeight: 1.6, marginBottom: 12 }}>
+                Jedna jasná cena. Žádné kredity. Žádná provize.
+              </p>
               <p style={{ fontSize: 15, color: '#374151', lineHeight: 1.8, marginBottom: 16 }}>
-                Pro vás samé výhody. Jedna jasná platba, žádné provize a žádné kredity za odpovědi. Zaregistrujete se zdarma a hned uvidíte poptávky ve svém okolí.
+                ŠikulaDoma stavíme jednoduše: šikula nemá řešit kredity, poplatky za kontakt ani provize ze zakázky. Má jeden jasný tarif a sám si vybírá poptávky, na které chce reagovat. Zaregistrujete se zdarma a hned uvidíte poptávky ve svém okolí.
               </p>
               <p style={{ fontSize: 15, color: '#374151', lineHeight: 1.8, marginBottom: 16 }}>
                 Když najdete poptávku, která vám dává smysl, aktivujete si tarif a můžete na ni rovnou odpovědět. Vy sami si vybíráte, na co odpovíte, kdy máte čas a jestli je pro vás poptávka zajímavá.

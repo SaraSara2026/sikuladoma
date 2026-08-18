@@ -24,7 +24,7 @@ const FAQ_CUSTOMERS = [
   },
   {
     q: 'Co když s prací nejsem spokojený?',
-    a: 'Domluvte se vždy přes náš chat — ten slouží jako důkaz dohody. Pokud nastane spor, kontaktujte nás na <a href="mailto:info@sikuladoma.cz" style="color:#F97316">info@sikuladoma.cz</a> a pomůžeme vyřešit. Můžete také dát šikulovi nízké hodnocení, které ostatní zákazníky varuje.',
+    a: 'Doporučujeme domlouvat se přes chat v rámci platformy, aby byl zachovaný přehled o domluvě. Pokud nastane problém, kontaktujte nás na <a href="mailto:info@sikuladoma.cz" style="color:#F97316">info@sikuladoma.cz</a> a pomůžeme vám situaci řešit. Po dokončení zakázky můžete šikulu také ohodnotit, aby měli ostatní zákazníci lepší představu o vaší zkušenosti.',
   },
   {
     q: 'Platím šikulovi předem?',
