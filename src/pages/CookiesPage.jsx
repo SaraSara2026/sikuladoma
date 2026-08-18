@@ -3,33 +3,36 @@ const IcBack = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
 const SECTIONS = [
   {
     n: "1", title: "Co jsou cookies",
-    text: "Cookies jsou malé textové soubory ukládané do zařízení uživatele při návštěvě webových stránek. Pomáhají správnému fungování webu a mohou zlepšovat uživatelské prostředí.",
+    text: "Cookies jsou malé textové soubory ukládané do zařízení uživatele při návštěvě webových stránek. Podobným způsobem funguje i lokální úložiště prohlížeče (local storage), které web používá ke stejnému účelu.",
   },
   {
-    n: "2", title: "Jaké cookies můžeme používat",
-    intro: "Platforma může používat zejména:",
-    items: ["Technické cookies nezbytné pro fungování webu.", "Analytické cookies pro zlepšení služeb a výkonu webu.", "Bezpečnostní cookies.", "Preference uživatele."],
+    n: "2", title: "Jaké cookies a podobná úložiště používáme",
+    intro: "ŠikulaDoma aktuálně používá pouze technická (nezbytná) úložiště:",
+    items: [
+      "Přihlašovací cookie, která po přihlášení udržuje vaši relaci.",
+      "Technické úložiště prohlížeče pro zapamatování přihlášeného uživatele.",
+      "Technické úložiště prohlížeče pro zapamatování, že jste byli informováni o používání cookies.",
+    ],
   },
   {
-    n: "3", title: "K čemu cookies používáme",
-    intro: "Cookies používáme například pro:",
-    items: ["Správné fungování platformy.", "Zapamatování nastavení uživatele.", "Zabezpečení webu.", "Analýzu návštěvnosti a výkonu webu.", "Zlepšování uživatelského prostředí."],
+    n: "3", title: "Technické cookies a souhlas",
+    text: "Uvedená technická cookies a úložiště jsou nezbytná pro fungování platformy — bez nich by nebylo možné se přihlásit ani používat účet. K jejich použití proto podle zákona nepotřebujeme váš souhlas. I tak vás o nich na této stránce transparentně informujeme.",
   },
   {
-    n: "4", title: "Cookies třetích stran",
-    text: "Některé cookies mohou být poskytovány třetími stranami, například analytickými nebo technickými službami používanými při provozu platformy.",
+    n: "4", title: "Analytické a marketingové cookies",
+    text: "V současné době nepoužíváme žádné analytické ani marketingové cookies ani podobné sledovací nástroje třetích stran. Pokud je v budoucnu zavedeme, doplníme tuto stránku a požádáme vás o výslovný souhlas ještě předtím, než se taková cookies načtou.",
   },
   {
-    n: "5", title: "Nastavení cookies",
-    text: "Používání cookies může uživatel upravit nebo omezit ve svém internetovém prohlížeči.",
+    n: "5", title: "Nastavení cookies ve vašem prohlížeči",
+    text: "Používání cookies můžete kdykoliv upravit nebo omezit v nastavení svého internetového prohlížeče.",
   },
   {
     n: "6", title: "Ochrana osobních údajů",
-    text: "Používání cookies souvisí také se zpracováním osobních údajů. Více informací je uvedeno na stránkách Ochrana soukromí a GDPR.",
+    text: "Používání cookies souvisí také se zpracováním osobních údajů. Více informací najdete na stránce Ochrana osobních údajů.",
   },
   {
     n: "7", title: "Závěrečná ustanovení",
-    text: "Tyto informace mohou být průběžně aktualizovány.",
+    text: "Tyto informace mohou být průběžně aktualizovány, zejména pokud se změní rozsah používaných cookies.",
   },
 ]
 
@@ -57,7 +60,7 @@ export default function CookiesPage({ onBack }) {
             Cookies
           </h1>
           <p style={{ fontSize: 15, color: "#6B7280", lineHeight: 1.7, maxWidth: 560 }}>
-            Tato stránka vysvětluje, jak platforma ŠikulaDoma používá cookies a podobné technologie při používání webu.
+            Tato stránka vysvětluje, jak platforma ŠikulaDoma používá cookies a podobné technologie.
           </p>
         </div>
 
@@ -88,7 +91,7 @@ export default function CookiesPage({ onBack }) {
         </div>
 
         <div style={{ textAlign: "center", fontSize: 12, color: "#6B7280", marginTop: 8 }}>
-          Účinnost od: 11. 5. 2026
+          Účinnost od: 18. 8. 2026
         </div>
       </div>
     </div>

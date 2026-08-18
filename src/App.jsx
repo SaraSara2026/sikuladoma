@@ -46,7 +46,7 @@ import { apiLogout, apiMe } from "./lib/auth.js";
 // SEO metadata pro každou hlavní route. Klíče = hodnoty `page` state.
 const PAGE_META = {
   home:              { title: null, description: null }, // default z index.html
-  sikulove:          { title: 'Šikulové v ČR',          description: 'Procházej ověřené šikuly podle kategorie a oblasti. Recenze, plán, kontakt.' },
+  sikulove:          { title: 'Šikulové v ČR',          description: 'Procházej šikuly podle kategorie a oblasti. Recenze, hodnocení, kontakt.' },
   kontakt:           { title: 'Kontakt',                description: 'Napiš nám — odpovídáme do 24 hodin. ŠikulaDoma, Stavira s.r.o.' },
   sikuly:            { title: 'Chci vydělávat jako šikula', description: 'Registruj se zdarma a začni dostávat poptávky z okolí.' },
   faktury:           { title: 'Fakturace',              description: 'Vytvoř fakturu do 60 sekund — splňuje právní požadavky ČR.', noindex: true },
@@ -223,22 +223,21 @@ export default function App() {
     <>
       <PageMeta title={meta.title} description={meta.description} noindex={meta.noindex} />
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800&display=swap');
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
         html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
-        *{font-family:'Inter',system-ui,sans-serif;}
+        *{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
         body{background:${T.bg};color:${T.ink};}
-        button,input,textarea,select{font-family:'Inter',system-ui,sans-serif;}
+        button,input,textarea,select{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
         ::-webkit-scrollbar{width:5px;}
         ::-webkit-scrollbar-thumb{background:${T.border2};border-radius:3px;}
         @keyframes modalUp{from{opacity:0;transform:translateY(12px) scale(.98);}to{opacity:1;transform:none;}}
         @keyframes spin{to{transform:rotate(360deg);}}
         .nav-link{padding:6px 12px;border-radius:8px;font-size:14px;font-weight:500;color:${T.ink3};border:none;background:none;cursor:pointer;transition:all .12s;letter-spacing:-.01em;}
         .nav-link:hover{color:${T.ink};background:${T.bg};}
-        .svc-tile{display:flex;flex-direction:column;align-items:center;gap:9px;padding:18px 12px;background:#fff;border:1px solid ${T.border};border-radius:14px;cursor:pointer;font-size:12px;font-weight:600;color:${T.ink};transition:all .18s;box-shadow:0 1px 3px rgba(0,0,0,.04);letter-spacing:-.01em;font-family:'Inter',system-ui,sans-serif;}
+        .svc-tile{display:flex;flex-direction:column;align-items:center;gap:9px;padding:18px 12px;background:#fff;border:1px solid ${T.border};border-radius:14px;cursor:pointer;font-size:12px;font-weight:600;color:${T.ink};transition:all .18s;box-shadow:0 1px 3px rgba(0,0,0,.04);letter-spacing:-.01em;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
         .svc-tile:hover{border-color:${T.orange};color:${T.orangeDk};transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.08);}
         .svc-tile:hover .svc-tile-icon{color:${T.orange};}
-        .how-card{background:#fff;border:1px solid ${T.border};border-radius:14px;padding:24px;transition:all .18s;box-shadow:0 1px 3px rgba(0,0,0,.05);font-family:'Inter',system-ui,sans-serif;}
+        .how-card{background:#fff;border:1px solid ${T.border};border-radius:14px;padding:24px;transition:all .18s;box-shadow:0 1px 3px rgba(0,0,0,.05);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
         .how-card:hover{box-shadow:0 6px 24px rgba(0,0,0,.08);transform:translateY(-2px);}
         .pri-chip{display:inline-flex;align-items:center;gap:6px;padding:0 14px;height:36px;border-radius:10px;border:1.5px solid;font-size:13px;font-weight:500;cursor:pointer;transition:all .14s;font-family:inherit;letter-spacing:-.01em;}
         .trust-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;}
@@ -385,7 +384,7 @@ export default function App() {
             Šikulové dostupní v celé ČR
           </div>
 
-          <h1 style={{ fontSize: "clamp(28px, 5vw, 42px)", fontWeight: 800, color: T.ink, lineHeight: 1.2, letterSpacing: "-.03em", marginBottom: 16, fontFamily: "'Inter', system-ui, sans-serif" }}>
+          <h1 style={{ fontSize: "clamp(28px, 5vw, 42px)", fontWeight: 800, color: T.ink, lineHeight: 1.2, letterSpacing: "-.03em", marginBottom: 16, fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
             Doma se vždycky něco najde.{" "}
             My najdeme <span style={{ color: T.orange }}>šikulu.</span>
           </h1>
@@ -571,7 +570,7 @@ export default function App() {
         <div style={{ maxWidth: 1060, margin: "0 auto" }}>
           <div className="trust-grid">
             {[
-              { emoji: "🔍", title: "Ověřené profily",         desc: "Profily jsou ověřené e-mailem." },
+              { emoji: "🔍", title: "Ověřený šikula",          desc: "Vybrané profily mají odznak Ověřený šikula." },
               { emoji: "💬", title: "Poptávka zdarma",         desc: "Za zadání poptávky neplatíte." },
               { emoji: "⚡", title: "Reakce do 48 hodin",     desc: "Šikulům ji zobrazíme co nejdříve." },
               { emoji: "🤝", title: "Platíte přímo šikulovi", desc: "Bez provize portálu ze zakázky." },

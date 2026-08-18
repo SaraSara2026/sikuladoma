@@ -8,45 +8,110 @@ const SECTIONS = [
   {
     n: "2", title: "Charakter platformy",
     text: "ŠikulaDoma je online platforma sloužící k propojení zákazníků a šikulů.",
-    highlight: "ŠikulaDoma není poskytovatelem nabízených služeb a není smluvní stranou mezi zákazníkem a šikulou.",
+    highlight: "ŠikulaDoma není poskytovatelem nabízených služeb, není smluvní stranou dohody uzavřené mezi zákazníkem a šikulou a není zaměstnavatelem šikulů.",
   },
   {
-    n: "3", title: "Používání platformy",
+    n: "3", title: "Role zákazníka",
+    intro: "Pro zákazníky platí zejména:",
+    items: [
+      "Zadání poptávky je zdarma.",
+      "Zákazník si vybírá šikulu podle vlastního uvážení.",
+      "Zákazník platí za provedenou práci přímo vybranému šikulovi, ne ŠikulaDoma.",
+      "Zákazník si má se šikulou předem domluvit rozsah práce, cenu, termín a další podmínky.",
+    ],
+  },
+  {
+    n: "4", title: "Role šikuly",
+    intro: "Pro šikuly platí zejména:",
+    items: [
+      "Registrace na platformě je zdarma.",
+      "Šikula odpovídá za pravdivost údajů uvedených při registraci a v profilu.",
+      "Šikula odpovídá za to, že má pro nabízenou činnost potřebné oprávnění k podnikání, případně odbornou způsobilost vyžadovanou právními předpisy.",
+      "Šikula odpovídá za obsah svých nabídek, komunikaci se zákazníkem, sjednanou cenu a provedení práce.",
+      "Příležitostná výpomoc nesmí být prezentována jako regulovaná odborná služba, pokud k ní osoba nemá zákonem vyžadované oprávnění.",
+    ],
+    note: "Podrobnosti pro šikuly upravují samostatné Podmínky pro šikuly.",
+  },
+  {
+    n: "5", title: "Tarify",
+    intro: "Pro tarify šikulů platí:",
+    items: [
+      "Aktivní šikula — 199 Kč / měsíc.",
+      "Aktivní šikula Plus — 299 Kč / měsíc.",
+      "Aktivní tarif odemyká odpovídání na poptávky a další funkce podle zvoleného tarifu.",
+      "Tarify se automaticky obnovují za zvolené období, dokud je uživatel nezruší.",
+      "Zrušení lze provést kdykoliv v uživatelském účtu; zaplacené období zůstává funkční až do svého konce.",
+      "ŠikulaDoma si z uskutečněné zakázky neúčtuje žádnou provizi.",
+      "Za zadání poptávky zákazník ŠikulaDoma neplatí nic.",
+    ],
+  },
+  {
+    n: "6", title: "Ověřený šikula",
+    text: "Odznak Ověřený šikula označuje profil, u kterého provozovatel provedl základní kontrolu podle interních pravidel platformy. Tento odznak neznamená garanci kvality práce, odborné způsobilosti, bezúhonnosti ani převzetí odpovědnosti za provedenou službu.",
+  },
+  {
+    n: "7", title: "Odpovědnost",
+    intro: "Provozovatel neodpovídá zejména za:",
+    items: [
+      "Kvalitu, cenu, termín ani výsledek práce provedené šikulou.",
+      "Obsah komunikace mezi uživateli.",
+      "Škodu vzniklou v souvislosti se službou sjednanou mezi zákazníkem a šikulou.",
+    ],
+    text2: "Odpovědnost provozovatele se vztahuje na provoz a dostupnost platformy v rozsahu stanoveném právními předpisy.",
+  },
+  {
+    n: "8", title: "Dostupnost služby",
+    text: "Provozovatel se snaží zajistit dostupnost platformy, negarantuje však nepřetržitý a bezchybný provoz.",
+  },
+  {
+    n: "9", title: "Používání platformy",
     intro: "Uživatelé jsou povinni používat platformu v souladu s právními předpisy České republiky a nesmí:",
     items: ["Vytvářet falešné účty.", "Vydávat se za jinou osobu nebo firmu.", "Zneužívat platformu.", "Rozesílat spam.", "Vkládat nepravdivý, urážlivý nebo nezákonný obsah."],
   },
   {
-    n: "4", title: "Uživatelský obsah a recenze",
+    n: "10", title: "Zakázané služby",
+    intro: "Prostřednictvím platformy je zakázáno nabízet nebo poptávat zejména:",
+    items: [
+      "Nelegální služby.",
+      "Regulované odborné služby, pokud k nim uživatel nemá zákonem vyžadované oprávnění.",
+      "Zdravotní, sociální, právní, účetní nebo finanční služby bez příslušného oprávnění.",
+      "Klamavé nebo nepravdivé informace o rozsahu, ceně či kvalifikaci.",
+      "Zneužití kontaktů získaných prostřednictvím platformy k jinému účelu, než ke kterému byly poskytnuty.",
+    ],
+  },
+  {
+    n: "11", title: "Uživatelský obsah a recenze",
     text: "Recenze a hodnocení musí vycházet ze skutečné zkušenosti. Provozovatel si vyhrazuje právo odstranit obsah, který porušuje podmínky nebo právní předpisy.",
   },
   {
-    n: "5", title: "Omezení odpovědnosti",
-    intro: "Provozovatel nenese odpovědnost za:",
-    items: ["Kvalitu poskytovaných služeb.", "Cenu nebo termíny zakázek.", "Komunikaci mezi uživateli.", "Případné škody vzniklé mezi zákazníkem a šikulou."],
-  },
-  {
-    n: "6", title: "Dostupnost služby",
-    text: "Provozovatel se snaží zajistit dostupnost platformy, negarantuje však nepřetržitý a bezchybný provoz.",
-  },
-  {
-    n: "7", title: "Platby a fakturace",
+    n: "12", title: "Platby a fakturace",
     text: "Platby tarifů probíhají kartou prostřednictvím platební brány Stripe. Doklad o zaplacení (faktura/účtenka) je uživateli po úspěšné platbě automaticky vygenerován a zaslán e-mailem prostřednictvím Stripe jménem provozovatele.",
   },
   {
-    n: "8", title: "Ochrana osobních údajů",
-    text: "Nakládání s osobními údaji se řídí zásadami ochrany osobních údajů a GDPR.",
+    n: "13", title: "Reklamace",
+    text: "Reklamace týkající se provedené práce, ceny, termínu nebo kvality služby řeší zákazník přímo se šikulou, který zakázku provedl — ŠikulaDoma není stranou tohoto vztahu. Reklamace týkající se platby tarifu nebo fungování platformy samotné řeší uživatel s provozovatelem na info@sikuladoma.cz.",
   },
   {
-    n: "9", title: "Podmínky pro šikuly",
+    // Text níže je opatrně formulovaný návrh, ale klasifikace šikuly jako
+    // spotřebitel vs. podnikatel (zejména u příležitostné výpomoci bez IČO)
+    // by měla být před ostrým nasazením ještě potvrzena advokátem.
+    n: "14", title: "Odstoupení od předplatného",
+    text: "Pokud šikula aktivuje tarif v rámci své podnikatelské činnosti (jako OSVČ nebo firma), spotřebitelská ochrana včetně práva na odstoupení od smlouvy dle občanského zákoníku se na tento vztah nevztahuje. Pokud šikula jedná mimo rámec podnikatelské činnosti, aktivací tarifu a okamžitým zpřístupněním jeho funkcí výslovně žádá o zahájení poskytování služby před uplynutím lhůty pro odstoupení a bere na vědomí, že tímto právo na odstoupení od smlouvy v rozsahu již poskytnutého plnění zaniká.",
+  },
+  {
+    n: "15", title: "Ochrana osobních údajů",
+    text: "Nakládání s osobními údaji se řídí stránkou Ochrana osobních údajů.",
+  },
+  {
+    n: "16", title: "Podmínky pro šikuly",
     text: "Pro registrované šikuly platí kromě těchto podmínek také samostatné Podmínky pro šikuly.",
   },
   {
-    n: "10", title: "Změny podmínek",
-    text: "Provozovatel si vyhrazuje právo tyto podmínky kdykoliv upravit nebo aktualizovat.",
-  },
-  {
-    n: "11", title: "Závěrečná ustanovení",
-    text: "Tyto podmínky se řídí právním řádem České republiky.",
+    n: "17", title: "Změny podmínek a závěrečná ustanovení",
+    items: [
+      "Provozovatel si vyhrazuje právo tyto podmínky kdykoliv upravit nebo aktualizovat.",
+      "Tyto podmínky se řídí právním řádem České republiky.",
+    ],
   },
 ]
 
@@ -71,7 +136,7 @@ export default function PodminkyPouzitiPage({ onBack }) {
         <div style={{ marginBottom: 40 }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".1em", textTransform: "uppercase", color: "#6B7280", marginBottom: 12 }}>PRÁVNÍ</div>
           <h1 style={{ fontSize: "clamp(26px,4vw,38px)", fontWeight: 700, color: "#1A1F2E", letterSpacing: "-.025em", lineHeight: 1.15, marginBottom: 14 }}>
-            Podmínky použití
+            Obchodní podmínky
           </h1>
           <p style={{ fontSize: 15, color: "#6B7280", lineHeight: 1.7, maxWidth: 560 }}>
             Tyto podmínky upravují používání platformy ŠikulaDoma a vztahy mezi provozovatelem platformy a jejími uživateli.
@@ -97,7 +162,8 @@ export default function PodminkyPouzitiPage({ onBack }) {
                   Mokošínská 913/4<br />
                   190 17 Praha 9<br />
                   Česká republika<br />
-                  IČ: 29228379
+                  IČO: 29228379<br />
+                  DIČ: CZ29228379
                 </div>
               )}
 
@@ -125,13 +191,23 @@ export default function PodminkyPouzitiPage({ onBack }) {
                   ))}
                 </ul>
               )}
+
+              {s.text2 && (
+                <p style={{ fontSize: 14, color: "#6B7280", lineHeight: 1.7, marginTop: 12 }}>{s.text2}</p>
+              )}
+
+              {s.note && (
+                <div style={{ marginTop: 14, background: "#F9FAFB", border: "1px solid #E5E7EB", borderRadius: 10, padding: "10px 16px", fontSize: 13, color: "#6B7280" }}>
+                  {s.note}
+                </div>
+              )}
             </div>
           ))}
         </div>
 
         {/* Datum */}
         <div style={{ textAlign: "center", fontSize: 12, color: "#6B7280", marginTop: 8 }}>
-          Účinnost od: 11. 5. 2026
+          Účinnost od: 18. 8. 2026
         </div>
       </div>
     </div>

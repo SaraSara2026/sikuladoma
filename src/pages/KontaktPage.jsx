@@ -18,6 +18,7 @@ const TEMATA = [
   { label: "Dotaz k poptávce",    bg: "#EFF6FF", color: "#3B82F6", activeBg: "#3B82F6" },
   { label: "Chci být šikula",     bg: "#F0FDF4", color: "#22C55E", activeBg: "#22C55E" },
   { label: "Technický problém",   bg: "#FDF4FF", color: "#A855F7", activeBg: "#A855F7" },
+  { label: "Ochrana osobních údajů (GDPR)", bg: "#F9FAFB", color: "#6B7280", activeBg: "#6B7280" },
   { label: "Jen vám chci napsat", bg: "#F0F9FF", color: "#0EA5E9", activeBg: "#0EA5E9" },
 ]
 
@@ -305,7 +306,7 @@ function Field({ label, type = 'text', value, onChange, placeholder }) {
 
 // ─── Styly ────────────────────────────────────────────────────────────────────
 const S = {
-  page:      { minHeight: '100vh', background: '#F9FAFB', fontFamily: "'Inter', system-ui, sans-serif" },
+  page:      { minHeight: '100vh', background: '#F9FAFB', fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
   h2:        { fontSize: 22, fontWeight: 700, color: '#1A1F2E', letterSpacing: '-.02em', marginBottom: 8 },
   lbl:       { display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 5, letterSpacing: '.02em' },
   inp:       { width: '100%', padding: '11px 14px', border: '1.5px solid #E5E7EB', borderRadius: 10, fontSize: 14, outline: 'none', fontFamily: 'inherit', color: '#1A1F2E', background: '#fff', boxSizing: 'border-box', transition: 'border-color .15s' },

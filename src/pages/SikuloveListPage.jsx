@@ -54,7 +54,7 @@ export default function SikuloveListPage({ onBack, onProfile, onReg, onOrder }) 
             Šikulové, kterým můžete věřit
           </h1>
           <p style={{ fontSize: 15, color: T.ink3, marginBottom: 24, maxWidth: 620, lineHeight: 1.6 }}>
-            Procházejte ověřené šikuly podle kategorie a oblasti — uvidíte jejich recenze, hodnocení a co nabízejí. Zaujal vás někdo? <strong>Zadejte poptávku</strong> a šikulové z okolí (včetně toho vybraného) vám pošlou nabídky.
+            Procházejte šikuly podle kategorie a oblasti — uvidíte jejich recenze, hodnocení a co nabízejí. Zaujal vás někdo? <strong>Zadejte poptávku</strong> a šikulové z okolí (včetně toho vybraného) vám pošlou nabídky.
           </p>
 
           {/* FILTERS */}

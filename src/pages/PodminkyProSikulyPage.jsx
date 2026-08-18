@@ -14,6 +14,7 @@ const SECTIONS = [
     n: "2",
     title: "Registrace a účet",
     items: [
+      "Registrace na platformě je zdarma.",
       "Uživatel je povinen uvádět pravdivé údaje.",
       "Každý uživatel může používat pouze jeden účet.",
       "Uživatel odpovídá za zabezpečení svého účtu.",
@@ -21,12 +22,21 @@ const SECTIONS = [
   },
   {
     n: "3",
-    title: "Poptávky a zakázky",
-    text: "Šikula reaguje pouze na zakázky, o které má zájem.",
-    highlight: "ŠikulaDoma pouze propojuje zákazníky a šikuly. Za provedení práce, cenu, termíny a průběh zakázky odpovídá konkrétní šikula.",
+    title: "Oprávnění k činnosti",
+    items: [
+      "Šikula odpovídá za to, že má pro nabízenou činnost potřebné oprávnění k podnikání, případně odbornou způsobilost vyžadovanou právními předpisy.",
+      "Pokud šikula vystupuje jako živnostník nebo firma, odpovídá za pravdivost uvedeného IČO a souvisejících údajů.",
+      "Příležitostná výpomoc nesmí být prezentována jako regulovaná odborná služba, pokud k ní osoba nemá zákonem vyžadované oprávnění.",
+    ],
   },
   {
     n: "4",
+    title: "Poptávky a zakázky",
+    text: "Šikula reaguje pouze na poptávky, o které má zájem.",
+    highlight: "ŠikulaDoma pouze propojuje zákazníky a šikuly. Za provedení práce, cenu, termíny a průběh zakázky odpovídá konkrétní šikula.",
+  },
+  {
+    n: "5",
     title: "Hodnocení a recenze",
     items: [
       "Recenze musí vycházet ze skutečné zkušenosti.",
@@ -35,16 +45,25 @@ const SECTIONS = [
     ],
   },
   {
-    n: "5",
-    title: "Tarify a služby platformy",
+    n: "6",
+    title: "Ověřený šikula",
+    text: "Odznak Ověřený šikula označuje profil, u kterého provozovatel provedl základní kontrolu podle interních pravidel platformy. Tento odznak neznamená garanci kvality práce, odborné způsobilosti, bezúhonnosti ani převzetí odpovědnosti za provedenou službu.",
+  },
+  {
+    n: "7",
+    title: "Tarify",
     items: [
-      "Platforma může nabízet bezplatné i placené tarify.",
-      "Některé funkce (například online fakturovač) mohou být dostupné pouze u vybraných tarifů.",
+      "Registrace a náhled poptávek jsou zdarma.",
+      "Pro odesílání nabídek a odpovídání na poptávky je nutné aktivovat tarif Aktivní šikula (199 Kč / měsíc) nebo Aktivní šikula Plus (299 Kč / měsíc).",
+      "Některé funkce (například online fakturovač) mohou být dostupné jen u vybraných tarifů.",
+      "Tarify se automaticky obnovují za zvolené období, dokud je šikula nezruší.",
+      "Zrušení lze provést kdykoliv v uživatelském účtu; zaplacené období zůstává funkční až do svého konce.",
+      "ŠikulaDoma si z uskutečněné zakázky neúčtuje žádnou provizi.",
       "Provozovatel si vyhrazuje právo upravit nabídku tarifů.",
     ],
   },
   {
-    n: "6",
+    n: "8",
     title: "Zakázané jednání",
     intro: "Je zakázáno:",
     items: [
@@ -56,17 +75,17 @@ const SECTIONS = [
     ],
   },
   {
-    n: "7",
+    n: "9",
     title: "Pozastavení nebo zrušení účtu",
     text: "Provozovatel může účet dočasně omezit nebo zrušit při porušení podmínek nebo podvodném jednání.",
   },
   {
-    n: "8",
+    n: "10",
     title: "Ochrana osobních údajů",
-    text: "Nakládání s osobními údaji se řídí zásadami ochrany osobních údajů a GDPR.",
+    text: "Nakládání s osobními údaji se řídí stránkou Ochrana osobních údajů.",
   },
   {
-    n: "9",
+    n: "11",
     title: "Závěrečná ustanovení",
     items: [
       "Podmínky se řídí právním řádem České republiky.",
@@ -157,7 +176,7 @@ export default function PodminkyProSikulyPage({ onBack }) {
               </div>
             </div>
             <div style={{ fontSize: 13, color: "#9CA3AF", lineHeight: 1.75 }}>
-              IČ: 29228379<br />
+              IČO: 29228379<br />
               DIČ: CZ29228379<br />
               <a href="mailto:info@sikuladoma.cz" style={{ color: "#F97316", fontWeight: 600, textDecoration: "none", marginTop: 4, display: "inline-block" }}>
                 info@sikuladoma.cz
@@ -168,7 +187,7 @@ export default function PodminkyProSikulyPage({ onBack }) {
 
         {/* Datum */}
         <div style={{ marginTop: 24, textAlign: "center", fontSize: 12, color: "#6B7280" }}>
-          Platnost od: 11. 5. 2026
+          Platnost od: 18. 8. 2026
         </div>
 
       </div>

@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -36,8 +34,8 @@
 
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
 html { scroll-behavior:smooth; -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
-body { font-family:Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:var(--canvas); color:var(--ink); font-size:15px; line-height:1.6; }
-h1,h2,h3,h4 { font-family:Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height:1.15; letter-spacing:-.025em; color:var(--ink); }
+body { font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:var(--canvas); color:var(--ink); font-size:15px; line-height:1.6; }
+h1,h2,h3,h4 { font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height:1.15; letter-spacing:-.025em; color:var(--ink); }
 button { font-family:inherit; cursor:pointer; }
 input,textarea,select { font-family:inherit; }
 a { text-decoration:none; color:inherit; }
@@ -159,7 +157,7 @@ a { text-decoration:none; color:inherit; }
 .live-item:last-child { border-right:none; }
 .live-dot { width:6px; height:6px; border-radius:50%; background:var(--green); flex-shrink:0; animation:livepulse 2.5s infinite; }
 @keyframes livepulse { 0%,100%{ opacity:1; } 50%{ opacity:.4; } }
-.live-val { font-weight:700; font-size:16px; color:var(--ink); font-family:Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+.live-val { font-weight:700; font-size:16px; color:var(--ink); font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 .live-label { font-size:13px; color:var(--ink3); }
 
 /* MINI FEED */
@@ -195,7 +193,7 @@ a { text-decoration:none; color:inherit; }
 /* ─── HOW ────────────────────────────────── */
 .how-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
 .how-card { padding:32px; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-xl); }
-.how-num { width:40px; height:40px; background:var(--blue); color:#fff; border-radius:var(--r-sm); font-family:Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size:18px; font-weight:800; display:flex; align-items:center; justify-content:center; margin-bottom:20px; }
+.how-num { width:40px; height:40px; background:var(--blue); color:#fff; border-radius:var(--r-sm); font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size:18px; font-weight:800; display:flex; align-items:center; justify-content:center; margin-bottom:20px; }
 .how-card h3 { font-size:17px; margin-bottom:8px; }
 .how-card p { font-size:14px; color:var(--ink3); line-height:1.65; }
 
@@ -280,7 +278,7 @@ a { text-decoration:none; color:inherit; }
 .stats-row { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-bottom:28px; }
 .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:18px 20px; }
 .stat-icon { font-size:20px; margin-bottom:8px; }
-.stat-val { font-family:Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size:26px; font-weight:800; color:var(--ink); }
+.stat-val { font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size:26px; font-weight:800; color:var(--ink); }
 .stat-label { font-size:12px; color:var(--ink3); margin-top:2px; }
 .stat-trend { font-size:12px; color:var(--green); margin-top:6px; font-weight:600; }
 
@@ -308,7 +306,7 @@ a { text-decoration:none; color:inherit; }
 .offer-card:hover { border-color:var(--border2); }
 .offer-top { display:flex; gap:12px; align-items:center; margin-bottom:12px; }
 .offer-av { width:40px; height:40px; border-radius:999px; background:var(--blue); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; flex-shrink:0; }
-.offer-price { font-family:Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size:20px; font-weight:800; color:var(--ink); margin-left:auto; }
+.offer-price { font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size:20px; font-weight:800; color:var(--ink); margin-left:auto; }
 
 /* CHAT */
 .chat-wrap { display:flex; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-xl); height:600px; overflow:hidden; }
@@ -338,7 +336,7 @@ a { text-decoration:none; color:inherit; }
 
 /* PROFILE HERO */
 .profile-hero { background:linear-gradient(135deg, #FFF7ED 0%, #FEF3C7 100%); padding:36px 24px; display:flex; gap:20px; align-items:flex-start; border-bottom:1px solid var(--border); border-radius:var(--r-md) var(--r-md) 0 0; }
-.profile-av-lg, .profile-avatar-big { width:80px; height:80px; border-radius:var(--r-lg); background:var(--orange); color:#fff; display:flex; align-items:center; justify-content:center; font-family:Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight:800; font-size:28px; flex-shrink:0; box-shadow:0 4px 12px rgba(249,115,22,.25); }
+.profile-av-lg, .profile-avatar-big { width:80px; height:80px; border-radius:var(--r-lg); background:var(--orange); color:#fff; display:flex; align-items:center; justify-content:center; font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-weight:800; font-size:28px; flex-shrink:0; box-shadow:0 4px 12px rgba(249,115,22,.25); }
 .profile-info { flex:1; color:var(--ink); }
 .profile-info h2 { font-size:22px; margin-bottom:3px; color:var(--ink); font-weight:700; letter-spacing:-.02em; }
 .profile-info p { color:var(--ink3); font-size:14px; }
@@ -370,7 +368,7 @@ a { text-decoration:none; color:inherit; }
 .price-tier { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--ink4); margin-bottom:6px; }
 .price-card.featured .price-tier { color:rgba(255,255,255,.4); }
 .price-name { font-size:20px; font-weight:800; margin-bottom:4px; }
-.price-amount { font-family:Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size:36px; font-weight:800; color:var(--ink); line-height:1; }
+.price-amount { font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size:36px; font-weight:800; color:var(--ink); line-height:1; }
 .price-amount span { font-size:15px; font-weight:400; opacity:.5; }
 .price-period { font-size:13px; color:var(--ink3); margin-bottom:20px; }
 .price-card.featured .price-period { color:rgba(255,255,255,.45); }
@@ -388,7 +386,7 @@ a { text-decoration:none; color:inherit; }
 .inv-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:20px; margin-bottom:10px; }
 .inv-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
 .inv-id { font-size:14px; font-weight:700; color:var(--ink); }
-.inv-amount { font-family:Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size:18px; font-weight:800; color:var(--ink); }
+.inv-amount { font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size:18px; font-weight:800; color:var(--ink); }
 .inv-meta { font-size:13px; color:var(--ink4); }
 
 /* MODAL */
