@@ -118,7 +118,7 @@ async function listOffers(req, res) {
       SELECT o.*, ord.title AS order_title,
              CASE WHEN ord.status IN ('accepted', 'completed')
                THEN ord.city
-               ELSE trim(reverse(split_part(reverse(ord.city), ',', 1)))
+               ELSE COALESCE(NULLIF(ord.city_area, ''), trim(reverse(split_part(reverse(ord.city), ',', 1))))
              END AS order_city,
              ord.customer_id AS customer_id,
              CASE WHEN ord.status IN ('accepted', 'completed') THEN ord.customer_name ELSE NULL END AS customer_name,

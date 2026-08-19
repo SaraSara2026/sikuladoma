@@ -5,17 +5,10 @@ import { sql } from '../_db.js';
 import { requireUser } from '../_auth.js';
 import { sendReviewRequestEmail } from '../_email.js';
 import { isSikulaPlanActive } from '../_plan.js';
+import { generalOrderArea } from '../_location.js';
 
 function getAppUrl() {
   return process.env.APP_URL || 'https://sikuladoma.vercel.app';
-}
-
-// Poslední čárkou oddělená část "city" = obecná lokalita bez přesné adresy
-// (stejná heuristika jako v listOrders/listOffers — zákazník do pole "Město
-// nebo adresa" může napsat i plnou adresu s ulicí).
-function generalArea(city) {
-  const parts = String(city || '').split(',');
-  return parts[parts.length - 1].trim();
 }
 
 async function getOrder(req, res) {
@@ -53,7 +46,8 @@ async function getOrder(req, res) {
 
   const safeOrder = {
     ...order,
-    city: fullAccess ? order.city : generalArea(order.city),
+    city: fullAccess ? order.city : generalOrderArea(order),
+    zip:  fullAccess ? order.zip  : null,
     customer_name:  fullAccess ? order.customer_name  : null,
     customer_email: fullAccess ? order.customer_email : null,
     customer_phone: fullAccess ? order.customer_phone : null,

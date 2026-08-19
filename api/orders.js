@@ -6,6 +6,7 @@ import { getCurrentUser, hashPassword, verifyPassword, signToken, setSessionCook
 import { sendOrderConfirmationEmail, sendNewOrderNotificationEmail } from './_email.js';
 import { expandCategories, CATEGORY_LABELS } from './_relatedCategories.js';
 import { isSikulaPlanActive } from './_plan.js';
+import { locationMatches, generalOrderArea } from './_location.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const STATUS_NEW = 'new';
@@ -28,7 +29,17 @@ async function createOrder(req, res) {
   const title       = String(b.title || '').trim();
   const category    = String(b.category || '').trim();
   const description = b.description != null ? String(b.description) : (b.desc != null ? String(b.desc) : null);
-  const city        = String(b.city || '').trim();
+  // Lokalita se od šikuly zadává odděleně (PSČ + obec/město/oblast +
+  // volitelná přesnější adresa/ulice), ať jde spolehlivěji párovat s
+  // oblastí, kde šikula pracuje (viz api/_location.js). `city` zůstává
+  // legacy sloupec s plným textem pro zákazníka/admina/přijatou zakázku —
+  // dopočítá se z těchto tří polí, pokud nepřijde přímo (starší volání API).
+  const zip      = String(b.zip || '').replace(/\s+/g, '');
+  const cityArea = String(b.city_area || '').trim();
+  const street   = b.street != null ? String(b.street).trim() : '';
+  const city     = cityArea
+    ? [street, zip, cityArea].filter(Boolean).join(', ')
+    : String(b.city || '').trim();
   const budget      = b.budget ? String(b.budget) : null;
   const floor       = b.floor ? String(b.floor) : null;
   const parking     = b.parking ? String(b.parking) : null;
@@ -63,7 +74,8 @@ async function createOrder(req, res) {
 
   if (title.length < 3)                              return res.status(400).json({ error: 'Zadejte název poptávky (min. 3 znaky).' });
   if (!category)                                     return res.status(400).json({ error: 'Vyberte kategorii.' });
-  if (city.length < 2)                               return res.status(400).json({ error: 'Zadejte město.' });
+  if (cityArea.length < 2)                           return res.status(400).json({ error: 'Zadejte obec / město / část obce.' });
+  if (!/^\d{5}$/.test(zip))                          return res.status(400).json({ error: 'Zadejte platné PSČ (5 číslic).' });
   if (!customer_name)                                return res.status(400).json({ error: 'Zadejte své jméno.' });
   if (!/^\S+\s+\S+/.test(customer_name))             return res.status(400).json({ error: 'Zadejte jméno i příjmení.' });
   if (!EMAIL_RE.test(customer_email))                return res.status(400).json({ error: 'Zadejte platný e-mail.' });
@@ -130,11 +142,11 @@ async function createOrder(req, res) {
   const [row] = await sql`
     INSERT INTO orders (
       customer_id, customer_name, customer_email, customer_phone,
-      title, category, subcategory, description, city, floor, parking, budget,
+      title, category, subcategory, description, city, zip, city_area, floor, parking, budget,
       preferred_date, preferred_time, gender_preference, urgent, note, status
     ) VALUES (
       ${customerId}, ${customer_name}, ${customer_email}, ${customer_phone},
-      ${title}, ${category}, ${subcategory}, ${description}, ${city}, ${floor}, ${parking}, ${budget},
+      ${title}, ${category}, ${subcategory}, ${description}, ${city}, ${zip || null}, ${cityArea || null}, ${floor}, ${parking}, ${budget},
       ${preferred_date}, ${preferred_time}, ${gender}, ${urgent}, ${note}, ${STATUS_NEW}
     )
     RETURNING *
@@ -247,10 +259,15 @@ async function listOrders(req, res) {
     // Popis práce, termín a urgentnost jsou "detail poptávky" a odemyká je
     // až aktivní tarif (199/299 Kč). Přesná adresa se navíc odemyká zvlášť
     // až u přijaté zakázky (viz api/offers.js) — bez ohledu na tarif.
+    //
+    // Lokalita se filtruje podle vlastní PSČ/oblasti šikuly (ne podle
+    // parametru z requestu — server je v tomhle autoritativní), pomocí
+    // locationMatches() z api/_location.js: shoda PSČ, nebo normalizovaný
+    // textový průnik obce/oblasti. Kategorie/obor se dál filtruje v SQL.
     const hasActivePlan = isSikulaPlanActive(me);
-    rows = await sql`
+    const rawRows = await sql`
       SELECT o.id, o.title, o.category, o.subcategory,
-             trim(reverse(split_part(reverse(o.city), ',', 1))) AS city,
+             o.city, o.zip, o.city_area,
              o.budget,
              CASE WHEN ${hasActivePlan} THEN o.description ELSE NULL END AS description,
              CASE WHEN ${hasActivePlan} THEN o.urgent ELSE false END AS urgent,
@@ -263,10 +280,15 @@ async function listOrders(req, res) {
       FROM orders o
       WHERE o.status IN ('new','in_progress')
         AND (${category ?? null}::text IS NULL OR o.category = ${category ?? null})
-        AND (${city ?? null}::text IS NULL OR o.city ILIKE ${city ? `%${city}%` : null})
         AND (${categoriesArr}::text[] IS NULL OR o.category = ANY(${categoriesArr}))
       ORDER BY o.created_at DESC LIMIT 200
     `;
+    rows = rawRows
+      .filter(o => locationMatches(me, o))
+      .map(o => {
+        const { zip, city_area, ...safe } = o;
+        return { ...safe, city: generalOrderArea(o) };
+      });
   } else {
     rows = await sql`
       SELECT * FROM orders WHERE customer_id = ${me.id}

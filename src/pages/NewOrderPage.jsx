@@ -9,7 +9,7 @@ const STEP_LABELS = ['Popis', 'Lokalita a termín', 'Detaily', 'Váš kontakt', 
 export default function NewOrderPage({ onNav, onSubmit }) {
   const [step, setStep] = useState(1)
   const [data, setData] = useState({
-    title: '', category: '', desc: '', city: '', budget: '',
+    title: '', category: '', desc: '', zip: '', city_area: '', street: '', budget: '',
     urgent: false, date: '', floor: '', parking: '', note: '',
     // contact – collected last
     name: '', email: '', phone: '',
@@ -28,7 +28,9 @@ export default function NewOrderPage({ onNav, onSubmit }) {
         title:           data.title,
         category:        data.category,
         description:     data.desc,
-        city:            data.city,
+        zip:             data.zip,
+        city_area:       data.city_area,
+        street:          data.street,
         budget:          data.budget,
         urgent:          data.urgent,
         preferred_date:  data.date || null,
@@ -112,10 +114,23 @@ export default function NewOrderPage({ onNav, onSubmit }) {
           {/* STEP 2 – Lokalita */}
           {step === 2 && (
             <>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">PSČ *</label>
+                  <input className="form-input" value={data.zip} onChange={e => update('zip', e.target.value.replace(/\D/g, '').slice(0, 5))}
+                    placeholder="160 00" inputMode="numeric" maxLength={5} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Obec / město / část obce *</label>
+                  <input className="form-input" value={data.city_area} onChange={e => update('city_area', e.target.value)}
+                    placeholder="Praha 6 – Dejvice" />
+                </div>
+              </div>
               <div className="form-group">
-                <label className="form-label">Město nebo adresa *</label>
-                <input className="form-input" value={data.city} onChange={e => update('city', e.target.value)}
-                  placeholder="Praha 6 – Dejvice" />
+                <label className="form-label">Přesnější adresa nebo ulice (volitelné)</label>
+                <input className="form-input" value={data.street} onChange={e => update('street', e.target.value)}
+                  placeholder="Ulice a číslo popisné" />
+                <p className="form-hint">Přesnou adresu uvidí šikula až po přijetí jeho nabídky.</p>
               </div>
               <div className="form-row">
                 <div className="form-group">
@@ -200,7 +215,7 @@ export default function NewOrderPage({ onNav, onSubmit }) {
                   ['Název', data.title || '—'],
                   ['Kategorie', CATEGORIES.find(c => c.id === data.category)?.name ?? '—'],
                   ['Popis', data.desc || '—'],
-                  ['Lokalita', data.city || '—'],
+                  ['Lokalita', [data.street, data.zip, data.city_area].filter(Boolean).join(', ') || '—'],
                   ['Termín', data.date || 'Flexibilní'],
                   ['Rozpočet', data.budget || 'Na dohodě'],
                   ['Urgentní', data.urgent ? '🚨 Ano' : 'Ne'],

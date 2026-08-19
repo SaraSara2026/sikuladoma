@@ -1,8 +1,5 @@
 // Poptávkový formulář — 6 kroků (kategorie → služba → upřesnění → místo → čas → kontakt).
-// Po dokončení zobrazí confirmation screen.
-//
-// Pozn. zatím neukládá poptávku do DB (App.jsx legacy). Reálné odesílání řeší
-// src/pages/NewOrderPage.jsx přes ordersApi.create().
+// Po dokončení zobrazí confirmation screen. Odesílá přímo na /api/orders (POST).
 
 import { useState } from "react";
 import { T, S, inp, lbl } from "../ui/theme";
@@ -55,7 +52,7 @@ export default function OrderForm({ initialService, initialCategory, initialCity
     if (step === 0) return !!category;
     if (step === 1) return !!subSvc;
     if (step === 2) return true;
-    if (step === 3) return city.trim().length >= 2;
+    if (step === 3) return city.trim().length >= 2 && /^\d{3}\s?\d{2}$/.test(psc.trim());
     if (step === 4) return !!priority;
     if (step === 5) {
       const fullName = name.trim();
@@ -71,7 +68,6 @@ export default function OrderForm({ initialService, initialCategory, initialCity
     setSubmitErr(null);
     setSubmitting(true);
     try {
-      const fullCity = [street, psc, city].filter(Boolean).join(', ') || city;
       const res = await fetch('/api/orders', {
         method: 'POST',
         credentials: 'include',
@@ -81,7 +77,9 @@ export default function OrderForm({ initialService, initialCategory, initialCity
           category: category?.id,
           subcategory: subSvc,
           description: desc,
-          city: fullCity,
+          zip: psc,
+          city_area: city,
+          street,
           floor,
           urgent: priority === 'urgent',
           preferred_time: TIMING_LABEL[priority] || null,
@@ -274,7 +272,7 @@ export default function OrderForm({ initialService, initialCategory, initialCity
                 placeholder="Hlavní 42" style={inp} />
               <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 10, marginTop: 12 }}>
                 <div>
-                  <label style={lbl}>PSČ</label>
+                  <label style={lbl}>PSČ *</label>
                   <input value={psc} onChange={e => setPsc(e.target.value)}
                     style={inp} placeholder="110 00" />
                 </div>

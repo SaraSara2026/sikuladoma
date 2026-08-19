@@ -219,6 +219,18 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS zip TEXT;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS city_area TEXT;
 
 -- ============================================================
+-- LOKALITA POPTAVKY — PSC + obec/mesto/oblast oddelene od volneho textu
+-- ============================================================
+-- `city` zustava beze zmeny jako plny/legacy text (ulice + PSC + obec),
+-- pouzivany pro plny prehled u vlastnika poptavky, admina a u prijate
+-- zakazky. zip a city_area jsou nova strukturovana pole pro parovani
+-- poptavek se sikuly a pro "obecnou lokalitu" pred prijetim nabidky.
+-- Stare poptavky maji zip/city_area NULL a pouzije se puvodni heuristika
+-- (posledni cast `city` za carkou) — viz api/_location.js.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS zip TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS city_area TEXT;
+
+-- ============================================================
 -- EMAIL VERIFIKACE + RESET HESLA
 -- ============================================================
 ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ;
