@@ -4,6 +4,7 @@ import Icon from '../../components/Icon'
 import { ordersApi, offersApi, reviewsApi, conversationsApi, usersApi } from '../../lib/api.js'
 import { formatCurrencyCz } from '../../lib/format.js'
 import HodnoceniForm from '../../modals/HodnoceniForm.jsx'
+import LinkAccountMismatch from '../../components/LinkAccountMismatch.jsx'
 
 const menuItems = [
   { id: 'profile',   icon: '👤', label: 'Profil' },
@@ -182,12 +183,25 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
   const initials = (currentUser?.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
   const avatar   = currentUser?.avatar || initials
   const [reviewOrderId, setReviewOrderId] = useState(null)
+  const [reviewLinkError, setReviewLinkError] = useState(null)
   // E-mailový odkaz "Ohodnotit šikulu" (?page=dashboard&review=<id>) rovnou
-  // otevře formulář hodnocení k té zakázce, ať se zákazník neztrácí v menu.
+  // otevře formulář hodnocení k té zakázce, ať se zákazník neztrácí v menu —
+  // ale nejdřív se přes GET /api/orders/:id ověří, že zakázka opravdu patří
+  // přihlášenému zákazníkovi (backend 403 jinak) — jinak se formulář vůbec
+  // neotevře a žádná data k zakázce se nenačtou.
   useEffect(() => {
     if (!initialReviewOrderId) return
-    setActivePage('completed')
-    setReviewOrderId(initialReviewOrderId)
+    let alive = true
+    ordersApi.get(initialReviewOrderId)
+      .then(() => {
+        if (!alive) return
+        setActivePage('completed')
+        setReviewOrderId(initialReviewOrderId)
+      })
+      .catch(() => {
+        if (alive) setReviewLinkError('Přihlaste se prosím správným e-mailem, abyste mohli ohodnotit tuto zakázku.')
+      })
+    return () => { alive = false }
   }, [initialReviewOrderId])
 
   const handleAcceptOffer = async (offerId) => {
@@ -564,6 +578,17 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
         <HodnoceniForm orderId={reviewOrderId}
           onClose={() => setReviewOrderId(null)}
           onSubmitted={() => { setReviewOrderId(null); reload(); reloadReviews() }} />
+      )}
+
+      {reviewLinkError && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 20 }}
+          onClick={() => setReviewLinkError(null)}>
+          <div style={{ background: '#fff', borderRadius: 14, maxWidth: 480, width: '100%' }} onClick={e => e.stopPropagation()}>
+            <LinkAccountMismatch
+              onNav={(target) => target === 'back' ? setReviewLinkError(null) : onNav(target)}
+              text={reviewLinkError} />
+          </div>
+        </div>
       )}
     </div>
   )

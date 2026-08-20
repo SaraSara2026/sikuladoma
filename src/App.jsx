@@ -67,6 +67,19 @@ const PAGE_META = {
   'faq-sikuly':         { title: 'Časté dotazy pro šikuly', description: 'Odpovědi na nejčastější otázky o tarifech, platbách a recenzích pro šikuly.' },
 };
 
+// Přihlašovací obrazovka pro odkazy z e-mailu (poptávka, nabídka, zpráva,
+// hodnocení) — vždy nahrazuje dashboard/chat, dokud neproběhne čerstvé
+// přihlášení. Žádný obsah aktivního účtu se za ní nevykresluje.
+function EmailLinkGate({ text, onOpenLogin }) {
+  return (
+    <div style={{ minHeight: "60vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: 24, textAlign: "center" }}>
+      <div style={{ fontSize: 40 }}>🔐</div>
+      <div style={{ fontSize: 17, fontWeight: 700, color: T.ink }}>Přihlaste se</div>
+      <div style={{ fontSize: 14, color: T.ink3, maxWidth: 380 }}>{text}</div>
+      <BtnPrimary onClick={onOpenLogin}>Přihlásit se</BtnPrimary>
+    </div>
+  );
+}
 
 export default function App() {
   // Detekce ?page= z URL při startu (pro email linky verify-email + reset-password + chat/dashboard)
@@ -134,12 +147,39 @@ export default function App() {
     try { const s = localStorage.getItem("sd_user"); return s ? JSON.parse(s) : null; } catch { return null; }
   });
 
+  // Odkaz z e-mailu (poptávka/nabídka, zpráva, hodnocení) musí VŽDY vyžádat
+  // nové přihlášení — nikdy se nesmí potichu použít aktuálně aktivní session
+  // v prohlížeči, ani kdyby náhodou patřila správnému účtu. emailLinkAuthed
+  // je true až po skutečném novém přihlášení (loginSikula) provedeném PO
+  // detekci odkazu — do té doby se dashboard/chat vůbec nevykreslí (viz render
+  // níže), takže není šance na "zablesknutí" cizího obsahu.
+  const [emailLinkAuthed, setEmailLinkAuthed] = useState(false);
+  const hasEmailDeepLink = !!(orderIdStart || reviewOrderStart || chatStart?.conversationId);
+
+  // Při startu appky s odkazem z e-mailu: pokud byl v prohlížeči už někdo
+  // přihlášený, jeho session se rovnou zruší (server cookie i lokální stav) —
+  // "skutečné nové ověření", ne jen přihlašovací obrazovka nad starou session.
+  // E-mail případně přihlášeného účtu se použije jen jako nápověda do pole.
+  useEffect(() => {
+    if (!hasEmailDeepLink) return;
+    if (sikulaUser) {
+      setLoginPrefillEmail(sikulaUser.email || "");
+      apiLogout().catch(() => {});
+      try { localStorage.removeItem("sd_user"); } catch {}
+      setSikulaUser(null);
+    }
+    setLoginModal(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // sd_user v localStorage je snapshot z doby přihlášení a sám se neobnoví —
   // pokud se mezitím na serveru něco změnilo (např. ověření e-mailu kliknutím
   // z jiné karty/zařízení), appka by o tom jinak nevěděla, dokud se uživatel
   // znovu nepřihlásí. Při startu appky proto stav jednou potichu dosynchronizujeme.
+  // Přeskočí se u odkazu z e-mailu (hasEmailDeepLink) — tam session naopak
+  // vždy rušíme (viz efekt výše) a tenhle by ji mezitím tiše obnovil zpátky.
   useEffect(() => {
-    if (!sikulaUser) return;
+    if (!sikulaUser || hasEmailDeepLink) return;
     apiMe().then(({ user }) => { if (user) updateSikula(user); }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -191,8 +231,14 @@ export default function App() {
       }
     } catch {}
     setSikulaUser(user);
-    // Přesměrování dle role — všechny vedou na "dashboard", komponenta se vybere podle role
-    setPage("dashboard");
+    if (hasEmailDeepLink) {
+      // Odemkne vykreslení cílového obsahu (poptávka/chat/hodnocení) — page
+      // zůstává beze změny (dashboard/chat), backend si přístup ověří sám.
+      setEmailLinkAuthed(true);
+    } else {
+      // Přesměrování dle role — všechny vedou na "dashboard", komponenta se vybere podle role
+      setPage("dashboard");
+    }
     window.scrollTo(0, 0);
   };
 
@@ -286,12 +332,19 @@ export default function App() {
         // Neznámá/chybějící role (např. session, co se ještě nenačetla, nebo se
         // nepodařilo přihlásit) nesmí nikdy skončit v SikulaDashboardu.
         //
-        // Pokud z e-mailového odkazu čekáme na konkrétní poptávku (orderIdStart),
-        // dashboard se vůbec nesmí vykreslit — i na zlomek vteřiny by to byl
-        // dashboard podle AKTUÁLNÍ session, ne podle toho, komu odkaz patří.
-        // Místo něj krátce zobrazíme neutrální "Ověřuji odkaz…" a hned nato
-        // efekt níže přesměruje na detail poptávky, který si přístup ověří sám.
-        orderIdStart && sikulaUser ? (
+        // Odkaz z e-mailu (order=/review=) VŽDY vyžaduje čerstvé přihlášení —
+        // dokud neproběhne (emailLinkAuthed), dashboard se vůbec nevykreslí,
+        // ani kdyby už někdo byl přihlášený (viz mount efekt výše, který
+        // takovou session rovnou zrušil). Místo dashboardu jen přihlašovací
+        // obrazovka s vysvětlením, komu odkaz patří.
+        (orderIdStart || reviewOrderStart) && !emailLinkAuthed ? (
+          <EmailLinkGate onOpenLogin={() => setLoginModal(true)}
+            text={orderIdStart
+              ? "Pro otevření poptávky se přihlaste k účtu, kterému byl tento e-mail doručen."
+              : "Pro ohodnocení šikuly se přihlaste k účtu, kterému byl tento e-mail doručen."} />
+        ) : orderIdStart && sikulaUser ? (
+          // Čerstvě přihlášeno, ještě čekáme na přesměrování efektem níže na
+          // detail poptávky (ten si přístup ověří sám přes GET /api/orders/:id).
           <div style={{ minHeight: "50vh", display: "flex", alignItems: "center", justifyContent: "center", color: T.ink3, fontSize: 14 }}>
             Ověřuji odkaz…
           </div>
@@ -330,7 +383,15 @@ export default function App() {
         <OrderDetailPage order={currentOrder} currentUser={sikulaUser} onNav={handleNav}
           onAcceptOffer={() => { /* refresh dashboard po accept */ }} />
       ) : page === "chat" ? (
-        <ChatPage currentUser={sikulaUser} startWith={chatStart} onNav={handleNav} />
+        // Odkaz "Otevřít zprávy" z e-mailu (?page=chat&conversation=) musí
+        // vždy vyžádat čerstvé přihlášení — chat se nevykreslí, dokud
+        // neproběhne (viz mount efekt výše).
+        chatStart?.conversationId && !emailLinkAuthed ? (
+          <EmailLinkGate onOpenLogin={() => setLoginModal(true)}
+            text="Pro otevření zprávy se přihlaste k účtu, kterému byl tento e-mail doručen." />
+        ) : (
+          <ChatPage currentUser={sikulaUser} startWith={chatStart} onNav={handleNav} />
+        )
       ) : page === "verify-email" ? (
         <VerifyEmailPage
           onBack={() => { setPage("home"); window.history.replaceState({}, '', '/'); }}
