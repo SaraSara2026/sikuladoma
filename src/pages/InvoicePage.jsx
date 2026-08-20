@@ -514,25 +514,17 @@ function ProfilModal({ profil, onSave, onClose }) {
             <div><label style={LB}>Město</label><input style={IN} value={f.mesto||''} onChange={e=>u('mesto',e.target.value)} placeholder="Praha" /></div>
             <div><label style={LB}>PSČ</label><input style={IN} value={f.psc||''} onChange={e=>u('psc',e.target.value)} placeholder="19000" maxLength={6} /></div>
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, alignItems:'end' }}>
-            <div>
-              <label style={{ ...LB, minHeight:30, display:'flex', alignItems:'flex-end' }}>IČO *</label>
-              <input style={IN} value={f.ico} onChange={e=>u('ico', e.target.value.replace(/\D/g,'').slice(0,8))} placeholder="12345678" inputMode="numeric" />
-            </div>
-            <div>
-              <label style={{ ...LB, minHeight:30, display:'flex', alignItems:'flex-end' }}>DIČ {f.platceDph ? '*' : '(jen pro plátce DPH)'}</label>
-              <input style={{ ...IN, background: f.platceDph ? '#fff' : '#F9FAFB', color: f.platceDph ? '#1A1F2E' : '#9CA3AF' }}
-                value={f.dic} onChange={e=>{ if (!f.platceDph) return; u('dic', e.target.value.toUpperCase()) }}
-                placeholder={f.platceDph ? 'CZ12345678' : '—'}
-                disabled={!f.platceDph} />
-            </div>
-          </div>
-          <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background:'#F9FAFB', borderRadius:10, border:'1px solid #E5E7EB', cursor:'pointer' }} onClick={()=>u('platceDph',!f.platceDph)}>
+          <div><label style={LB}>IČO *</label><input style={IN} value={f.ico} onChange={e=>u('ico', e.target.value.replace(/\D/g,'').slice(0,8))} placeholder="12345678" inputMode="numeric" /></div>
+          <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background:'#F9FAFB', borderRadius:10, border:'1px solid #E5E7EB', cursor:'pointer' }}
+            onClick={()=>setF(p=>({ ...p, platceDph: !p.platceDph, dic: p.platceDph ? '' : p.dic }))}>
             <div style={{ width:20, height:20, borderRadius:4, border:`2px solid ${f.platceDph?'#F07800':'#D1D5DB'}`, background:f.platceDph?'#F07800':'#fff', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, transition:'all .14s' }}>
               {f.platceDph && <span style={{ color:'#fff', fontSize:11, fontWeight:800 }}>✓</span>}
             </div>
             <div style={{ fontWeight:600, fontSize:14 }}>Jsem plátce DPH</div>
           </div>
+          {f.platceDph && (
+            <div><label style={LB}>DIČ *</label><input style={IN} value={f.dic} onChange={e=>u('dic', e.target.value.toUpperCase())} placeholder="CZ12345678" /></div>
+          )}
         </div>
         <div style={{ padding:'12px 20px', borderTop:'1px solid #E5E7EB', display:'flex', justifyContent:'flex-end', gap:8 }}>
           <button style={BG} onClick={onClose}>Zrušit</button>
