@@ -514,13 +514,13 @@ function ProfilModal({ profil, onSave, onClose }) {
             <div><label style={LB}>Město</label><input style={IN} value={f.mesto||''} onChange={e=>u('mesto',e.target.value)} placeholder="Praha" /></div>
             <div><label style={LB}>PSČ</label><input style={IN} value={f.psc||''} onChange={e=>u('psc',e.target.value)} placeholder="19000" maxLength={6} /></div>
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, alignItems:'end' }}>
             <div>
-              <label style={LB}>IČO *</label>
+              <label style={{ ...LB, minHeight:30, display:'flex', alignItems:'flex-end' }}>IČO *</label>
               <input style={IN} value={f.ico} onChange={e=>u('ico', e.target.value.replace(/\D/g,'').slice(0,8))} placeholder="12345678" inputMode="numeric" />
             </div>
             <div>
-              <label style={LB}>DIČ {f.platceDph ? '*' : '(jen pro plátce DPH)'}</label>
+              <label style={{ ...LB, minHeight:30, display:'flex', alignItems:'flex-end' }}>DIČ {f.platceDph ? '*' : '(jen pro plátce DPH)'}</label>
               <input style={{ ...IN, background: f.platceDph ? '#fff' : '#F9FAFB', color: f.platceDph ? '#1A1F2E' : '#9CA3AF' }}
                 value={f.dic} onChange={e=>{ if (!f.platceDph) return; u('dic', e.target.value.toUpperCase()) }}
                 placeholder={f.platceDph ? 'CZ12345678' : '—'}
