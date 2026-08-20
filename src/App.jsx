@@ -85,6 +85,7 @@ export default function App() {
   const [orderForm,   setOrderForm]    = useState(null);
   const [regForm,     setRegForm]      = useState(null);
   const [loginModal,  setLoginModal]   = useState(false);
+  const [loginPrefillEmail, setLoginPrefillEmail] = useState("");
   const [priority,    setPriority]     = useState(null);
   const [dashboardTab, setDashboardTab] = useState("prehled");
   const [currentOrder, setCurrentOrder] = useState(null); // pro SendOffer/OrderDetail navigaci
@@ -307,6 +308,19 @@ export default function App() {
         <VerifyEmailPage
           onBack={() => { setPage("home"); window.history.replaceState({}, '', '/'); }}
           onVerified={updateSikula}
+          // Ověřovací odkaz patří jinému účtu, než jaký je zrovna přihlášený
+          // v prohlížeči (nebo není přihlášený nikdo) — vyčistíme frontendový
+          // stav session, ať "Pokračovat" nemůže otevřít cizí dashboard.
+          onSessionMismatch={() => {
+            try { localStorage.removeItem("sd_user"); } catch {}
+            setSikulaUser(null);
+          }}
+          onNeedsLogin={(email) => {
+            window.history.replaceState({}, '', '/');
+            setPage("home");
+            setLoginPrefillEmail(email || "");
+            setLoginModal(true);
+          }}
           onLogin={() => {
             window.history.replaceState({}, '', '/');
             if (sikulaUser) { setPage("dashboard"); window.scrollTo(0, 0); }
@@ -597,7 +611,7 @@ export default function App() {
       {regForm   !== null && <RegForm   plan={regForm.plan} onClose={() => setRegForm(null)} onRegistered={loginSikula}
         onLogin={() => setLoginModal(true)}
         onForgot={() => { setPage("forgot-password"); window.scrollTo(0, 0); }} />}
-      {loginModal && <LoginModal onClose={() => setLoginModal(false)} onReg={openReg} onOrder={openOrder} onFaktury={() => { setLoginModal(false); setPage("faktury"); window.scrollTo(0,0); }} onDemoLogin={loginSikula} onForgot={() => { setLoginModal(false); setPage("forgot-password"); window.scrollTo(0,0); }} />}
+      {loginModal && <LoginModal initialEmail={loginPrefillEmail} onClose={() => { setLoginModal(false); setLoginPrefillEmail(""); }} onReg={openReg} onOrder={openOrder} onFaktury={() => { setLoginModal(false); setPage("faktury"); window.scrollTo(0,0); }} onDemoLogin={loginSikula} onForgot={() => { setLoginModal(false); setPage("forgot-password"); window.scrollTo(0,0); }} />}
 
     </>
   );

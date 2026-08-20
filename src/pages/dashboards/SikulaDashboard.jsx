@@ -1365,10 +1365,12 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                       <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>U živnostníka nebo firmy je IČO povinné.</div>
                     </div>
                   )}
-                  <div className="form-group"><label className="form-label">Hodinová sazba (Kč)</label>
+                  <div className="form-group"><label className="form-label">Hodinová sazba (Kč, nepovinné)</label>
                     <input className="form-input" type="number" min="0" value={profileForm.hourly_rate}
                       onChange={e => setProfileForm(p => ({ ...p, hourly_rate: e.target.value }))}
-                      placeholder="350" /></div>
+                      placeholder="350" />
+                    <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>Slouží jen jako orientační údaj v profilu. Konečnou cenu si vždy domlouváte u konkrétní poptávky.</div>
+                  </div>
                 </div>
                 <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px', background:'#F9FAFB', borderRadius:10, border:'1px solid #E5E7EB', cursor:'pointer', marginBottom:4 }}
                   onClick={() => setProfileForm(p => ({ ...p, platce_dph: !p.platce_dph }))}>

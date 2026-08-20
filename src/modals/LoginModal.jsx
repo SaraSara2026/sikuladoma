@@ -5,8 +5,8 @@ import { IcX, IcArrow } from "../ui/icons/UIIcons";
 import { apiLogin } from "../lib/auth.js";
 import PasswordField from "../components/PasswordField";
 
-export default function LoginModal({ onClose, onReg, onOrder, onFaktury, onDemoLogin, onForgot }) {
-  const [email, setEmail] = useState("");
+export default function LoginModal({ onClose, onReg, onOrder, onFaktury, onDemoLogin, onForgot, initialEmail = "" }) {
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);

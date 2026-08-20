@@ -6,9 +6,14 @@ import { useEffect, useState } from 'react';
 import { T } from '../ui/theme';
 import { apiVerifyEmail, apiMe } from '../lib/auth.js';
 
-export default function VerifyEmailPage({ onBack, onLogin, onVerified }) {
+export default function VerifyEmailPage({ onBack, onLogin, onVerified, onSessionMismatch, onNeedsLogin }) {
   const [state, setState] = useState('verifying'); // verifying | success | error
   const [errMsg, setErrMsg] = useState('');
+  // sameSession = prohlížeč je právě přihlášený jako ten samý účet, kterému
+  // patří ověřovací odkaz. Pokud ne (jiný účet nebo nikdo), "Pokračovat"
+  // nesmí vést do dashboardu — viz onNeedsLogin níže.
+  const [sameSession, setSameSession] = useState(false);
+  const [verifiedEmail, setVerifiedEmail] = useState('');
 
   useEffect(() => {
     const token = new URL(window.location.href).searchParams.get('token');
@@ -19,15 +24,26 @@ export default function VerifyEmailPage({ onBack, onLogin, onVerified }) {
     }
     let alive = true;
     apiVerifyEmail(token)
-      .then(async () => {
-        // Pokud je uživatel v tomto prohlížeči přihlášený, rovnou mu obnovíme
-        // stav (email_verified_at), ať se po návratu do dashboardu hned
-        // zobrazí jako ověřený a nemusí se znovu přihlašovat.
-        try {
-          const { user } = await apiMe();
-          if (user) onVerified?.(user);
-        } catch {}
-        if (alive) setState('success');
+      .then(async ({ email, sameSession: same }) => {
+        if (!alive) return;
+        setVerifiedEmail(email || '');
+        setSameSession(!!same);
+        if (same) {
+          // Prohlížeč je přihlášený jako právě ověřený účet — obnovíme jeho
+          // stav (email_verified_at), ať po kliknutí na Pokračovat jde rovnou
+          // do svého dashboardu.
+          try {
+            const { user } = await apiMe();
+            if (user) onVerified?.(user);
+          } catch {}
+        } else {
+          // V prohlížeči byl přihlášený jiný účet (nebo žádný). Server session
+          // cookie v tomto případě už smazal (viz api/auth/[action].js) —
+          // frontendový stav vyčistíme i tady, ať "Pokračovat" v žádném
+          // případě neotevře cizí dashboard.
+          onSessionMismatch?.();
+        }
+        setState('success');
       })
       .catch(err => {
         if (!alive) return;
@@ -57,9 +73,14 @@ export default function VerifyEmailPage({ onBack, onLogin, onVerified }) {
             </div>
             <h1 style={{ fontSize: 22, fontWeight: 700, color: T.ink, marginBottom: 8 }}>E-mail ověřen!</h1>
             <p style={{ fontSize: 14, color: T.ink3, marginBottom: 24, lineHeight: 1.6 }}>
-              Teď můžete naplno používat ŠikulaDoma — posílat poptávky, nabídky i zprávy.
+              Váš e-mail byl úspěšně ověřen. Teď můžete pokračovat do svého účtu.
             </p>
-            <button onClick={onLogin} style={primaryBtn}>Pokračovat</button>
+            <button
+              onClick={() => sameSession ? onLogin?.() : onNeedsLogin?.(verifiedEmail)}
+              style={primaryBtn}
+            >
+              Pokračovat
+            </button>
           </>
         )}
 

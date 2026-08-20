@@ -231,7 +231,7 @@ async function doVerifyEmail(req, res) {
   if (!token) return res.status(400).json({ error: 'Chybí ověřovací token.' });
 
   const [row] = await sql`
-    SELECT v.user_id, v.expires_at, v.used_at, u.email_verified_at
+    SELECT v.user_id, v.expires_at, v.used_at, u.email, u.email_verified_at
     FROM email_verifications v
     JOIN users u ON u.id = v.user_id
     WHERE v.token = ${token}
@@ -244,7 +244,19 @@ async function doVerifyEmail(req, res) {
   if (!row.email_verified_at) {
     await sql`UPDATE users SET email_verified_at = NOW(), updated_at = NOW() WHERE id = ${row.user_id}`;
   }
-  return res.status(200).json({ ok: true });
+
+  // Ověřovací odkaz nesmí nikdy vést k tomu, že se ověřený účet smíchá s jinou
+  // právě přihlášenou session ve stejném prohlížeči (např. odkaz pro účet A
+  // otevřený v prohlížeči přihlášeném jako účet B). Pokud aktuální session
+  // patří jinému uživateli než tomu, komu patří token, session se odhlásí —
+  // frontend pak musí uživatele nechat přihlásit se ručně ke správnému účtu.
+  const sessionUser = await getCurrentUser(req);
+  const sameSession = !!sessionUser && sessionUser.id === row.user_id;
+  if (sessionUser && !sameSession) {
+    clearSessionCookie(res);
+  }
+
+  return res.status(200).json({ ok: true, email: row.email, sameSession });
 }
 
 // ─── resend-verification ────────────────────────────────────────────────────
