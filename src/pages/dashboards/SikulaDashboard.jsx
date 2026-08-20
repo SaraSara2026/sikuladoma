@@ -686,7 +686,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
   const { orders, loading: ordersLoading, error: ordersError } = useOpenOrders(sikulaCity, currentUser?.services)
   const { offers: myOffers, reload: reloadMyOffers } = useMyOffers()
   const { reviews: myReviews, summary: reviewsSummary, loading: reviewsLoading } = useMyReviews(currentUser?.id)
-  const { conversations } = useConversations()
+  const { conversations, unreadTotal } = useConversations()
   const conversationForOrder = (orderId) => conversations.find(c => c.order_id === orderId)
   const renderMsgBadge = (orderId) => {
     const conv = conversationForOrder(orderId)
@@ -785,6 +785,13 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             <span className="online-dot" style={{ background: available ? 'var(--green)' : 'var(--text3)' }} />
             {available ? 'Dostupný' : 'Nedostupný'}
           </div>
+          {!emailUnverified && unreadTotal > 0 && (
+            <button onClick={() => onNav('chat')}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, padding: '4px 10px', borderRadius: 999, border: 'none', background: 'var(--brand, #0EA5A4)', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff', flexShrink: 0 }} />
+              Nová zpráva ({unreadTotal})
+            </button>
+          )}
         </div>
         {!emailUnverified && menuItems.map(m => {
           const locked = m.lock === 'plan' ? !isActivePlan

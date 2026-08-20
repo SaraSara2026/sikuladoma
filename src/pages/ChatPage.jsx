@@ -179,15 +179,24 @@ export default function ChatPage({ currentUser, startWith, onNav, embedded = fal
               order_id — nenabízet přepínání na jiné konverzace zákazníka. */}
           {!embedded && (
             <div className="chat-list">
-              {conversations.map(c => (
+              {conversations.map(c => {
+                const unread = Number(c.unread_count) || 0
+                const isUnread = unread > 0
+                return (
                 <div key={c.id} className={`chat-list-item ${active === c.id ? 'active' : ''}`} onClick={() => setActive(c.id)}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div className="chat-avatar">
-                      {c.other_avatar || initials(c.other_name)}
+                    <div style={{ position: 'relative', flexShrink: 0 }}>
+                      <div className="chat-avatar">
+                        {c.other_avatar || initials(c.other_name)}
+                      </div>
+                      {/* Barevná tečka = nepřečtená konverzace, na první pohled i bez čtení textu. */}
+                      {isUnread && (
+                        <span title="Nová zpráva" style={{ position: 'absolute', top: -2, right: -2, width: 10, height: 10, borderRadius: '50%', background: 'var(--orange)', border: '2px solid #fff' }} />
+                      )}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div className="chat-list-name">{c.other_name || 'Uživatel'}</div>
+                        <div className="chat-list-name" style={{ fontWeight: isUnread ? 800 : undefined }}>{c.other_name || 'Uživatel'}</div>
                         <div className="chat-list-time">{timeShort(c.last_message_at || c.created_at)}</div>
                       </div>
                       {/* Název zakázky musí být vidět u každé konverzace, ne jen
@@ -195,19 +204,19 @@ export default function ChatPage({ currentUser, startWith, onNav, embedded = fal
                           konverzace se stejným člověkem k různým zakázkám. */}
                       {c.order_title && <div className="chat-list-order">{c.order_title}</div>}
                       <div className="chat-list-preview" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, fontWeight: isUnread ? 700 : undefined }}>
                           {c.last_message || 'Nová konverzace'}
                         </span>
-                        {Number(c.unread_count) > 0 && (
-                          <span style={{ background: 'var(--orange)', color: 'white', fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 999, marginLeft: 6 }}>
-                            {c.unread_count}
+                        {isUnread && (
+                          <span style={{ background: 'var(--orange)', color: 'white', fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 999, marginLeft: 6, whiteSpace: 'nowrap' }}>
+                            Nová zpráva ({unread})
                           </span>
                         )}
                       </div>
                     </div>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           )}
 

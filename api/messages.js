@@ -111,7 +111,6 @@ async function sendMessage(req, res) {
         to: recipient.email,
         senderName: me.name,
         orderTitle,
-        messagePreview: body.length > 200 ? `${body.slice(0, 200)}…` : body,
         conversationId: convId,
       });
     }

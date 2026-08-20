@@ -129,8 +129,10 @@ export async function sendNewOfferNotificationEmail({ to, orderTitle, price, dur
 
 // ─── Nová zpráva v chatu (zákazník i šikula) ─────────────────────────────────
 // Stejná šablona pro obě strany. Pokud známe conversationId, odkaz vede rovnou
-// na konkrétní konverzaci; jinak aspoň na dashboard.
-export async function sendNewMessageNotificationEmail({ to, senderName, orderTitle, messagePreview, conversationId }) {
+// na konkrétní konverzaci; jinak aspoň na dashboard. Text zprávy se do e-mailu
+// záměrně nedává — jen že zpráva přišla, od koho a ke které zakázce; obsah
+// uvidí až po přihlášení v chatu.
+export async function sendNewMessageNotificationEmail({ to, senderName, orderTitle, conversationId }) {
   const url = conversationId
     ? `${getAppUrl()}/?page=chat&conversation=${conversationId}`
     : `${getAppUrl()}/?page=dashboard`;
@@ -139,8 +141,8 @@ export async function sendNewMessageNotificationEmail({ to, senderName, orderTit
     from: getFromAddress(),
     to,
     subject: 'Máte novou zprávu na ŠikulaDoma',
-    html: newMessageNotificationTemplate({ senderName, orderTitle, messagePreview, url }),
-    text: newMessageNotificationTextVersion({ senderName, orderTitle, messagePreview, url }),
+    html: newMessageNotificationTemplate({ senderName, orderTitle, url }),
+    text: newMessageNotificationTextVersion({ senderName, orderTitle, url }),
   });
   if (error) {
     console.error('[email] new message notification send failed:', error);
@@ -440,14 +442,13 @@ function newOfferNotificationTextVersion({ orderTitle, price, duration, date, me
   return lines.join('\n');
 }
 
-function newMessageNotificationTemplate({ senderName, orderTitle, messagePreview, url }) {
+function newMessageNotificationTemplate({ senderName, orderTitle, url }) {
   return baseLayout({
     title: 'Máte novou zprávu',
     intro: 'Na ŠikulaDoma vám přišla nová zpráva.',
     box: fieldRows([
       ['Od', senderName],
       ['Zakázka', orderTitle],
-      ['Zpráva', messagePreview],
     ]),
     ctaText: 'Otevřít zprávy',
     ctaUrl: url,
@@ -455,7 +456,7 @@ function newMessageNotificationTemplate({ senderName, orderTitle, messagePreview
   });
 }
 
-function newMessageNotificationTextVersion({ senderName, orderTitle, messagePreview, url }) {
+function newMessageNotificationTextVersion({ senderName, orderTitle, url }) {
   const lines = [
     'Dobrý den,',
     '',
@@ -466,9 +467,6 @@ function newMessageNotificationTextVersion({ senderName, orderTitle, messagePrev
     '',
     'Zakázka:',
     orderTitle || '—',
-    '',
-    'Zpráva:',
-    messagePreview || '—',
     '',
     `Otevřít zprávy: ${url}`,
     '',

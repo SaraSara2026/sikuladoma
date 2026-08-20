@@ -131,7 +131,7 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
   const { orders, loading, error, reload } = useMyOrders()
   const { offers: allOffers } = useAllMyOffers(orders)
   const { reviews: myReviews, loading: reviewsLoading, reload: reloadReviews } = useMyReviews()
-  const { conversations } = useConversations()
+  const { conversations, unreadTotal } = useConversations()
   const renderMsgBadge = (orderId) => {
     const conv = conversations.find(c => c.order_id === orderId)
     if (!conv) return null
@@ -263,6 +263,13 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
           <div className="dash-user-avatar">{avatar}</div>
           <div className="dash-user-name">{currentUser?.name}</div>
           <div className="dash-user-role">Zákazník</div>
+          {unreadTotal > 0 && (
+            <button onClick={() => onNav('chat')}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, padding: '4px 10px', borderRadius: 999, border: 'none', background: 'var(--brand, #0EA5A4)', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff', flexShrink: 0 }} />
+              Nová zpráva ({unreadTotal})
+            </button>
+          )}
         </div>
         {menuItems.map(m => {
           const badgeCount = m.id === 'offers' ? pendingOffersCount : 0
