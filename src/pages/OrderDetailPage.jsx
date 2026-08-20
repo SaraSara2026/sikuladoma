@@ -5,6 +5,7 @@ import { offersApi, ordersApi } from '../lib/api'
 import { formatCurrencyCz, formatDateCz, getOrderTiming } from '../lib/format.js'
 import { isSikulaPlanActive } from '../lib/plan.js'
 import ChatPage from './ChatPage.jsx'
+import LinkAccountMismatch from '../components/LinkAccountMismatch.jsx'
 
 const TIMING_COLOR = { urgent: '#B91C1C', soon: '#C2410C', flexible: 'var(--text2)' }
 const TIMING_ICON  = { urgent: '🚨', soon: '⚡', flexible: '🕊️' }
@@ -68,23 +69,24 @@ export default function OrderDetailPage({ order: orderProp, onNav, currentUser, 
     )
   }
 
-  // Autoritativní dotažení selhalo (neexistuje / nepatří tomuto účtu) a
-  // nemáme z navigace ani žádná smysluplná data k zobrazení — typicky přišel
-  // uživatel rovnou z e-mailového odkazu pod jiným účtem, než pro který byl
-  // e-mail určený. Radši jasná hláška než prázdná/rozbitá stránka.
+  // Autoritativní dotažení selhalo a nemáme z navigace ani žádná smysluplná
+  // data k zobrazení — typicky přišel uživatel rovnou z e-mailového odkazu
+  // pod jiným účtem, než pro který byl e-mail určený. Radši jasná hláška
+  // (a možnost přihlásit se pod správným účtem) než cizí/rozbitá stránka.
   if (fetchError && !orderProp.title) {
-    return (
-      <div className="page-enter" style={{ padding: '32px 24px', maxWidth: 640, margin: '0 auto' }}>
-        <button className="btn btn-ghost" onClick={() => onNav('back')} style={{ marginBottom: 16 }}>← Zpět</button>
-        <div className="card card-pad" style={{ textAlign: 'center', padding: '40px 24px' }}>
-          <div style={{ fontSize: 40, marginBottom: 12 }}>🔒</div>
-          <h2 style={{ marginBottom: 8 }}>Tuto poptávku nelze zobrazit</h2>
-          <p style={{ color: 'var(--text2)', fontSize: 14 }}>
-            Poptávka neexistuje, nebo k ní nemáte přístup pod tímto účtem. Pokud odkaz patří jinému účtu, přihlaste se prosím pod ním.
-          </p>
+    if (fetchError.message === 'Poptávka neexistuje.') {
+      return (
+        <div className="page-enter" style={{ padding: '32px 24px', maxWidth: 640, margin: '0 auto' }}>
+          <button className="btn btn-ghost" onClick={() => onNav('back')} style={{ marginBottom: 16 }}>← Zpět</button>
+          <div className="card card-pad" style={{ textAlign: 'center', padding: '40px 24px' }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>🔒</div>
+            <h2 style={{ marginBottom: 8 }}>Tuto poptávku nelze zobrazit</h2>
+            <p style={{ color: 'var(--text2)', fontSize: 14 }}>Poptávka neexistuje nebo byla zrušena.</p>
+          </div>
         </div>
-      </div>
-    )
+      )
+    }
+    return <LinkAccountMismatch onNav={onNav} text="Přihlaste se prosím správným e-mailem, abyste viděli tuto poptávku." />
   }
 
   // "Zprávy k zakázce" má smysl jen když je jasné, s kým — u přijaté/dokončené
@@ -209,7 +211,7 @@ export default function OrderDetailPage({ order: orderProp, onNav, currentUser, 
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, margin: '14px 0' }}>
                     <div style={{ background: 'var(--bg)', borderRadius: 10, padding: 12 }}>
-                      <div style={fieldLabel}>Cena</div>
+                      <div style={fieldLabel}>Předběžná cena</div>
                       <div style={fieldValue}>{formatCurrencyCz(offer.price)}</div>
                     </div>
                     {offer.available_time && (

@@ -160,7 +160,7 @@ export default function SendOfferPage({ order, onNav, onSend, currentUser, onUpd
       <div className="card card-pad">
         <div className="form-row">
           <div className="form-group">
-            <label className="form-label">Vaše cena (Kč) *</label>
+            <label className="form-label">Předběžná cena (Kč) *</label>
             <input className="form-input" value={price} onChange={e => setPrice(e.target.value)} placeholder="900" type="number" min="1" />
           </div>
           <div className="form-group">

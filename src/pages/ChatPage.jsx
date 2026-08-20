@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import Icon from '../components/Icon'
 import { conversationsApi, messagesApi } from '../lib/api'
 import { isSikulaPlanActive } from '../lib/plan.js'
+import LinkAccountMismatch from '../components/LinkAccountMismatch.jsx'
 
 const POLL_MS = 5000
 
@@ -41,6 +42,17 @@ export default function ChatPage({ currentUser, startWith, onNav, embedded = fal
   const [error, setError]     = useState(null)
   const [creating, setCreating] = useState(!!startWith?.otherUserId || !!startWith?.conversationId)
   const endRef = useRef(null)
+
+  // Deep-link z e-mailu (?page=chat&conversation=) na konverzaci, která
+  // nepatří přihlášenému účtu — backend /api/messages ji tichince odmítne
+  // (403), takže bychom jinak ukázali jen prázdný/rozbitý chat. Jakmile se
+  // načte vlastní seznam konverzací a odkazovaná mezi nimi není, je to jasný
+  // signál, že odkaz patří jinému účtu.
+  const [linkMismatch, setLinkMismatch] = useState(false)
+  useEffect(() => {
+    if (!startWith?.conversationId || convLoading || creating) return
+    setLinkMismatch(!conversations.some(c => c.id === startWith.conversationId))
+  }, [startWith?.conversationId, convLoading, creating, conversations])
 
   // Přišli jsme sem přes "Napsat zprávu"/e-mailový odkaz ke konkrétní zakázce —
   // buď už víme přesné ID konverzace (deep-link z e-mailu), nebo ji (idempotentně)
@@ -128,6 +140,10 @@ export default function ChatPage({ currentUser, startWith, onNav, embedded = fal
         <h3>Pro chat se musíte přihlásit</h3>
       </div>
     )
+  }
+
+  if (linkMismatch && onNav) {
+    return <LinkAccountMismatch onNav={onNav} text="Přihlaste se prosím správným e-mailem, abyste viděli tuto konverzaci." />
   }
 
   const activeConv = conversations.find(c => c.id === active)

@@ -397,7 +397,7 @@ function newOfferNotificationTemplate({ orderTitle, price, duration, date, messa
     intro: 'Na vaši poptávku přišla nová nabídka od šikuly.',
     box: fieldRows([
       ['Poptávka', orderTitle],
-      ['Cena', priceStr ? `${priceStr} Kč` : null],
+      ['Předběžná cena', priceStr ? `${priceStr} Kč` : null],
       ['Odhad délky práce', duration],
       ['Navrhovaný termín', dateStr],
       ['Zpráva šikuly', message],
@@ -419,7 +419,7 @@ function newOfferNotificationTextVersion({ orderTitle, price, duration, date, me
     'Poptávka:',
     orderTitle || '—',
     '',
-    'Cena:',
+    'Předběžná cena:',
     priceStr ? `${priceStr} Kč` : '—',
     '',
     'Odhad délky práce:',

@@ -157,6 +157,10 @@ export default function App() {
     if (target === "back")         { setPage(sikulaUser ? "dashboard" : "home"); window.scrollTo(0, 0); return; }
     if (target === "home")         { setPage("home"); window.scrollTo(0, 0); return; }
     if (target === "logout")       { logoutSikula(); return; }
+    // E-mailový odkaz patřil jinému účtu, než jaký je zrovna přihlášený —
+    // odhlas ho a nech přihlásit se pod správným účtem, ať nezůstane viset
+    // v cizím dashboardu/chatu.
+    if (target === "wrong-account") { logoutSikula().then(() => setLoginModal(true)); return; }
     // fallback: setPage napřímo (musí být známá stránka)
     setPage(target);
     window.scrollTo(0, 0);
@@ -281,7 +285,30 @@ export default function App() {
         // Dashboard se vybírá VÝHRADNĚ podle role — žádný "jinak šikula" fallback.
         // Neznámá/chybějící role (např. session, co se ještě nenačetla, nebo se
         // nepodařilo přihlásit) nesmí nikdy skončit v SikulaDashboardu.
-        sikulaUser?.role === "admin"
+        //
+        // Pokud z e-mailového odkazu čekáme na konkrétní poptávku (orderIdStart),
+        // dashboard se vůbec nesmí vykreslit — i na zlomek vteřiny by to byl
+        // dashboard podle AKTUÁLNÍ session, ne podle toho, komu odkaz patří.
+        // Místo něj krátce zobrazíme neutrální "Ověřuji odkaz…" a hned nato
+        // efekt níže přesměruje na detail poptávky, který si přístup ověří sám.
+        orderIdStart && sikulaUser ? (
+          <div style={{ minHeight: "50vh", display: "flex", alignItems: "center", justifyContent: "center", color: T.ink3, fontSize: 14 }}>
+            Ověřuji odkaz…
+          </div>
+        ) : reviewOrderStart && sikulaUser && sikulaUser.role !== "customer" ? (
+          // Odkaz "Ohodnoťte šikulu" patří vždy zákazníkovi dané zakázky —
+          // pokud je přihlášený jiný typ účtu (šikula/admin), nesmí se ukázat
+          // jeho běžný dashboard, jako by se nic nestalo.
+          <div style={{ minHeight: "60vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: 24, textAlign: "center" }}>
+            <div style={{ fontSize: 40 }}>🔒</div>
+            <div style={{ fontSize: 17, fontWeight: 700, color: T.ink }}>Tento odkaz patří jinému účtu</div>
+            <div style={{ fontSize: 14, color: T.ink3, maxWidth: 360 }}>Přihlaste se prosím správným e-mailem.</div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <BtnPrimary onClick={() => handleNav("wrong-account")}>Přihlásit se správným účtem</BtnPrimary>
+              <BtnSecondary onClick={() => { setPage("home"); window.scrollTo(0, 0); }}>Zpět na úvod</BtnSecondary>
+            </div>
+          </div>
+        ) : sikulaUser?.role === "admin"
           ? <AdminDashboard     currentUser={sikulaUser} onLogout={logoutSikula} />
           : sikulaUser?.role === "customer"
             ? <CustomerDashboard currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} onUpdateUser={updateSikula} initialReviewOrderId={reviewOrderStart} />
