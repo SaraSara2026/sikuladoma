@@ -837,7 +837,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
           }}>
             <span>
               {stripeMsg.type === 'success'
-                ? `🎉 Platba proběhla úspěšně! Váš tarif ${stripeMsg.plan ? `(${stripeMsg.plan})` : ''} bude aktivován do pár minut.`
+                ? `🎉 Platba proběhla úspěšně. Váš tarif${stripeMsg.plan && PLAN_LABELS[stripeMsg.plan] ? ` ${PLAN_LABELS[stripeMsg.plan]}` : ''} se aktivuje během chvíle.`
                 : 'Platba byla zrušena. Váš tarif nebyl změněn.'}
             </span>
             <button onClick={() => setStripeMsg(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '0 4px', color: 'inherit' }}>×</button>

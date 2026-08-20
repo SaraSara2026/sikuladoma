@@ -12,6 +12,14 @@ const TABS = [
   { id: 'contacts', label: '📨 Kontakty' },
 ];
 
+// Veřejné názvy tarifů — technické id (aktiv/aktiv-plus) se nikde v UI nesmí
+// zobrazit samo, ani v admin přehledu uživatelů.
+const PLAN_LABELS = {
+  start: 'Start',
+  aktiv: 'Aktivní šikula',
+  'aktiv-plus': 'Aktivní šikula Plus',
+};
+
 function StatCard({ label, value, color }) {
   return (
     <div style={{ background: '#fff', border: '1px solid #F3F4F6', borderRadius: 14, padding: '20px 22px', boxShadow: '0 1px 3px rgba(0,0,0,.04)' }}>
@@ -140,7 +148,7 @@ export default function AdminDashboard({ currentUser, onLogout }) {
                       </span>
                     </td>
                     <td style={{ padding: '10px 16px', color: '#6B7280' }}>{u.city || '—'}</td>
-                    <td style={{ padding: '10px 16px', color: '#6B7280' }}>{u.plan || '—'}</td>
+                    <td style={{ padding: '10px 16px', color: '#6B7280' }}>{(u.plan && PLAN_LABELS[u.plan]) || u.plan || '—'}</td>
                     <td style={{ padding: '10px 16px', textAlign: 'center' }}>{u.verified ? '✓' : '—'}</td>
                     <td style={{ padding: '10px 16px' }}>
                       {u.role === 'sikula' && !u.verified && (
