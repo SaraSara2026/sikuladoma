@@ -302,6 +302,8 @@ function NovaFaktura({ profil, pocet, editing, onSave, onClose, zakaznici = [] }
   const [acOpen, setAcOpen] = useState(false)
   const [zakázkyOpen, setZakázkyOpen] = useState(false)
   const [zakázky, setZakázky] = useState(null)
+  // Jen nápověda k částce — NIKDY se automaticky nevyplní do f.castka.
+  const [predbeznaNabidka, setPredbeznaNabidka] = useState(null)
   const u = (k,v) => setF(p=>({...p,[k]:v}))
   const ok = f.sluzba && f.castka && f.zakaznik
 
@@ -315,6 +317,11 @@ function NovaFaktura({ profil, pocet, editing, onSave, onClose, zakaznici = [] }
     } catch { setZakázky([]) }
   }
 
+  // Předvyplní jen text/kontaktní údaje z přijaté zakázky (viz GET
+  // /api/offers?accepted=1 — vrací je jen pro zakázky s přijatou nabídkou
+  // tohoto šikuly, stejné pravidlo jako všude jinde v appce). Cena z nabídky
+  // se schválně nikam nevyplňuje — jen se uloží pro nápovědný text u částky.
+  // Chybějící údaj necháváme prázdný / beze změny, žádná chyba.
   const vyplnitZeZakazky = (z) => {
     setF(p => ({
       ...p,
@@ -323,8 +330,10 @@ function NovaFaktura({ profil, pocet, editing, onSave, onClose, zakaznici = [] }
       zakaznikEmail: z.customer_email || p.zakaznikEmail,
       zakaznikTel: z.customer_phone || p.zakaznikTel,
       zakaznikMesto: z.order_city || p.zakaznikMesto,
+      zakaznikPsc: z.order_psc || p.zakaznikPsc,
       zakaznikAdresa: z.order_address || p.zakaznikAdresa,
     }))
+    setPredbeznaNabidka(z.price != null ? Number(z.price) : null)
     setZakázkyOpen(false)
   }
 
@@ -384,7 +393,7 @@ function NovaFaktura({ profil, pocet, editing, onSave, onClose, zakaznici = [] }
                       onMouseEnter={e=>e.currentTarget.style.background='#F9FAFB'}
                       onMouseLeave={e=>e.currentTarget.style.background='#fff'}>
                       <div style={{ fontWeight:600, fontSize:13 }}>{z.order_title}</div>
-                      <div style={{ fontSize:12, color:'#6B7280' }}>{z.customer_name} · {z.order_city}</div>
+                      <div style={{ fontSize:12, color:'#6B7280' }}>{z.customer_name} · {z.order_city || z.order_address}</div>
                     </div>
                   ))}
                 </div>
@@ -420,6 +429,14 @@ function NovaFaktura({ profil, pocet, editing, onSave, onClose, zakaznici = [] }
               <input style={{ ...IN, paddingRight:42 }} type="number" value={f.castka} onChange={e=>u('castka',e.target.value)} placeholder="1500" />
               <span style={{ position:'absolute', right:13, top:'50%', transform:'translateY(-50%)', color:'#9CA3AF', fontSize:13 }}>Kč</span>
             </div>
+            <div style={{ fontSize:12, color:'#6B7280', marginTop:4 }}>
+              Zadejte skutečnou částku k fakturaci. Předběžná nabídka slouží jen jako orientace.
+            </div>
+            {predbeznaNabidka != null && (
+              <div style={{ fontSize:12, color:'#9CA3AF', marginTop:2 }}>
+                Předběžná nabídka: {fKc(predbeznaNabidka)}
+              </div>
+            )}
             {f.castka && f.sazba_dph > 0 && (
               <div style={{ fontSize:12, color:'#6B7280', marginTop:4 }}>
                 DPH {f.sazba_dph} %: {fKc(Math.round(Number(f.castka)*f.sazba_dph/100))} · Celkem: <strong>{fKc(Math.round(Number(f.castka)*(1+f.sazba_dph/100)))}</strong>

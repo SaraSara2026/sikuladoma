@@ -97,12 +97,16 @@ async function listOffers(req, res) {
     if (me.role !== 'sikula') return res.status(400).json({ error: 'Zadejte order_id.' });
 
     // ?accepted=1 → přijaté nabídky s daty zákazníka pro předvyplnění faktury
+    // (fakturovač, "Vyplnit ze zakázky"). ord.address neexistuje — orders
+    // nemá samostatný sloupec ulice, jen `city` (plný text vč. ulice, pokud
+    // ji zákazník zadal) a strukturované zip/city_area — viz api/_location.js.
     if (req.query?.accepted === '1') {
       const rows = await sql`
         SELECT o.id, o.order_id, o.price, o.created_at,
-               ord.title AS order_title, ord.city AS order_city,
+               ord.title AS order_title,
+               ord.city AS order_address, ord.city_area AS order_city, ord.zip AS order_psc,
                ord.customer_name, ord.customer_email, ord.customer_phone,
-               ord.address AS order_address, ord.description AS order_description
+               ord.description AS order_description
         FROM offers o
         JOIN orders ord ON ord.id = o.order_id
         WHERE o.sikula_id = ${me.id} AND o.status = 'accepted'
