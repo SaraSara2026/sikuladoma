@@ -176,19 +176,26 @@ function earningsDate(inv) {
 // /api/invoices) jako záložka Faktury, endpoint už filtruje jen faktury
 // tohoto šikuly (sikula_id = me.id). Počítá se jen status='paid', podle
 // data zaplacení (ne vystavení) — viz earningsDate().
-function useEarnings() {
+//
+// Faktury a Výdělky jsou dvě nezávislé záložky (InvoicePage vs. tenhle hook)
+// s vlastním fetchem — změna stavu faktury na Fakturách (zaplaceno/vrátit)
+// se sem sama nepropíše. Proto se znovu načítá pokaždé, když se otevře
+// záložka Výdělky (active=true), ať jsou čísla vždy aktuální.
+function useEarnings(active) {
   const [invoices, setInvoices] = useState([])
   const [loading, setLoading]   = useState(true)
 
   useEffect(() => {
+    if (!active) return
     let alive = true
+    setLoading(true)
     fetch('/api/invoices', { credentials: 'include' })
       .then(r => r.ok ? r.json() : Promise.reject(new Error('API ' + r.status)))
       .then(rows => { if (alive) setInvoices(Array.isArray(rows) ? rows : []) })
       .catch(() => {})
       .finally(() => { if (alive) setLoading(false) })
     return () => { alive = false }
-  }, [])
+  }, [active])
 
   const paid = invoices.filter(i => i.status === 'paid')
   const now = new Date()
@@ -756,7 +763,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
   const { offers: myOffers, reload: reloadMyOffers } = useMyOffers()
   const { reviews: myReviews, summary: reviewsSummary, loading: reviewsLoading } = useMyReviews(currentUser?.id)
   const { conversations, unreadTotal } = useConversations()
-  const earnings = useEarnings()
+  const earnings = useEarnings(activePage === 'earnings')
   const conversationForOrder = (orderId) => conversations.find(c => c.order_id === orderId)
   const renderMsgBadge = (orderId) => {
     const conv = conversationForOrder(orderId)

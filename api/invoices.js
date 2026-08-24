@@ -88,9 +88,6 @@ async function updateInvoice(req, res) {
   if (me.role !== 'admin' && existing.sikula_id !== me.id) {
     return res.status(403).json({ error: 'Nemáš oprávnění upravit tuto fakturu.' });
   }
-  if (existing.status !== 'draft' && me.role !== 'admin') {
-    return res.status(409).json({ error: 'Lze upravovat jen koncepty. Odeslaná faktura je uzamčená.' });
-  }
 
   const b = req.body ?? {};
   const title         = b.title         != null ? String(b.title) : null;
@@ -98,6 +95,20 @@ async function updateInvoice(req, res) {
   const customer_name = b.customer_name != null ? String(b.customer_name) : null;
   const due_date      = b.due_date      != null ? b.due_date : null;
   const status        = b.status        != null ? String(b.status) : null;
+
+  // Obsah faktury (název, částka, zákazník, splatnost) lze měnit jen u
+  // konceptu — jakmile je faktura odeslaná/zaplacená, je obsahově uzamčená.
+  // Změna STAVU (zaplaceno / vrátit) je ale samostatná akce, ne úprava
+  // obsahu faktury, a musí jít provést i u odeslané/zaplacené faktury jejím
+  // vlastníkem — jinak by šikula nemohl vrátit omylem označenou platbu
+  // (to byl nahlášený bug: "↩ Vrátit" bylo v UI, ale backend ho 409oval).
+  const editsContent = title !== null || amount !== null || customer_name !== null || due_date !== null;
+  if (editsContent && existing.status !== 'draft' && me.role !== 'admin') {
+    return res.status(409).json({ error: 'Lze upravovat jen koncepty. Odeslaná faktura je uzamčená.' });
+  }
+  if (status !== null && !['draft', 'sent', 'paid', 'late'].includes(status)) {
+    return res.status(400).json({ error: 'Neplatný stav faktury.' });
+  }
 
   if (amount !== null && amount <= 0) return res.status(400).json({ error: 'Částka musí být kladná.' });
 
