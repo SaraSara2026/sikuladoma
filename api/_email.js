@@ -168,6 +168,26 @@ export async function sendReviewRequestEmail({ to, name, orderTitle, url }) {
   return data;
 }
 
+// ─── Faktura zákazníkovi (šikula → zákazník) ────────────────────────────────
+// MVP: čistý souhrn faktury, bez PDF přílohy a bez odkazu do appky — odkaz na
+// fakturu by potřeboval vlastní bezpečnou (tokenovou) autorizaci, ať neotevře
+// data jinému přihlášenému účtu; pro MVP se tomu radši úplně vyhýbáme.
+export async function sendInvoiceEmail({ to, sikulaName, sikulaPhone, sikulaEmail, invoiceId, title, amount, due }) {
+  const resend = getResend();
+  const { data, error } = await resend.emails.send({
+    from: getFromAddress(),
+    to,
+    subject: 'Faktura k zakázce na ŠikulaDoma',
+    html: invoiceTemplate({ sikulaName, sikulaPhone, sikulaEmail, invoiceId, title, amount, due }),
+    text: invoiceTextVersion({ sikulaName, sikulaPhone, sikulaEmail, invoiceId, title, amount, due }),
+  });
+  if (error) {
+    console.error('[email] invoice send failed:', error);
+    throw new Error('Nepodařilo se odeslat fakturu e-mailem.');
+  }
+  return data;
+}
+
 // ─── Zrušení tarifu (šikula) ────────────────────────────────────────────────
 // expiresAt = konec už zaplaceného období (ISO string nebo null) — do té doby
 // zůstává profil plně funkční, zrušení není okamžité.
@@ -503,6 +523,55 @@ function reviewRequestTextVersion({ name, orderTitle, url }) {
     'Děkujeme,',
     'ŠikulaDoma',
   ];
+  return lines.join('\n');
+}
+
+function invoiceTemplate({ sikulaName, sikulaPhone, sikulaEmail, invoiceId, title, amount, due }) {
+  const priceStr = formatPriceKc(amount);
+  const contact = [sikulaPhone, sikulaEmail].filter(Boolean).join(' · ');
+  return baseLayout({
+    title: 'Faktura k zakázce',
+    intro: `Dobrý den,<br><br>šikula <strong>${escapeHtml(sikulaName || '')}</strong> vám vystavil fakturu k zakázce na ŠikulaDoma.`,
+    box: fieldRows([
+      ['Zakázka', title],
+      ['Číslo faktury', invoiceId],
+      ['Částka', priceStr ? `${priceStr} Kč` : null],
+      ['Splatnost', due],
+      ['Kontakt na šikulu', contact || null],
+    ]),
+    footer: 'Platbu prosím proveďte přímo šikulovi podle údajů uvedených na faktuře. ŠikulaDoma platbu nezpracovává a neúčtuje si provizi ze zakázky.<br><br>Fakturu vám šikula může zároveň předat nebo zaslat jako PDF.',
+  });
+}
+
+function invoiceTextVersion({ sikulaName, sikulaPhone, sikulaEmail, invoiceId, title, amount, due }) {
+  const priceStr = formatPriceKc(amount);
+  const contact = [sikulaPhone, sikulaEmail].filter(Boolean).join(' · ');
+  const lines = [
+    'Dobrý den,',
+    '',
+    `šikula ${sikulaName || ''} vám vystavil fakturu k zakázce na ŠikulaDoma.`,
+    '',
+    'Zakázka:',
+    title || '—',
+    '',
+    'Číslo faktury:',
+    invoiceId || '—',
+    '',
+    'Částka:',
+    priceStr ? `${priceStr} Kč` : '—',
+    '',
+    'Splatnost:',
+    due || '—',
+    contact ? '' : null,
+    contact ? 'Kontakt na šikulu:' : null,
+    contact || null,
+    '',
+    'Platbu prosím proveďte přímo šikulovi podle údajů uvedených na faktuře. ŠikulaDoma platbu nezpracovává a neúčtuje si provizi ze zakázky.',
+    '',
+    'Fakturu vám šikula může zároveň předat nebo zaslat jako PDF.',
+    '',
+    'ŠikulaDoma',
+  ].filter(line => line !== null);
   return lines.join('\n');
 }
 

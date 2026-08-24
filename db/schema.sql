@@ -152,6 +152,11 @@ ALTER TABLE invoices DROP CONSTRAINT IF EXISTS invoices_status_check;
 ALTER TABLE invoices ADD CONSTRAINT invoices_status_check
   CHECK (status IN ('draft','sent','paid','late','cancelled'));
 
+-- E-mail zákazníka zadaný ve formuláři faktury se dřív nikam neukládal
+-- (frontend ho měl jen v lokálním stavu) — pro tlačítko "Odeslat
+-- zákazníkovi" ho potřebujeme mít u faktury trvale.
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS customer_email TEXT;
+
 CREATE INDEX IF NOT EXISTS idx_invoices_sikula ON invoices(sikula_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
 

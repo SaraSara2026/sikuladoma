@@ -567,6 +567,7 @@ export default function InvoicePage() {
         ...i,
         amount: Number(i.amount),
         sluzba: i.title, castka: Number(i.amount), zakaznik: i.customer,
+        zakaznikEmail: i.customer_email || '',
         datumVystaveni: i.created, datumPlneni: i.created, splatnost: i.due,
         poznamka: '', zakaznikAdresa: '', zakaznikMesto: '', zakaznikPsc: '', zakaznikIco: '',
       }))))
@@ -603,6 +604,7 @@ export default function InvoicePage() {
         title: inv.sluzba,
         amount: inv.castka,
         customer_name: inv.zakaznik,
+        customer_email: inv.zakaznikEmail || null,
         due_date: parseCzechDate(inv.splatnost),
       }),
     })
@@ -624,11 +626,38 @@ export default function InvoicePage() {
         title: inv.sluzba,
         amount: inv.castka,
         customer_name: inv.zakaznik,
+        customer_email: inv.zakaznikEmail || null,
       }),
     })
     if (!res.ok) throw new Error((await res.json().catch(()=>({}))).error || 'Úprava se nezdařila.')
     setInvoices(p => p.map(i => i.id === inv.id ? { ...i, ...inv } : i))
     setEditing(null)
+  }
+
+  // POST /api/invoices?action=send — pošle fakturu e-mailem zákazníkovi.
+  // Draft se po úspěchu na serveru přepne na 'sent' (viz api/invoices.js) —
+  // to samé se pro okamžitou odezvu promítne i sem, optimisticky.
+  const [sendingId, setSendingId] = useState(null)
+  const sendToCustomer = async (inv) => {
+    if (!inv.zakaznikEmail && !inv.customer_email) {
+      alert('U faktury chybí e-mail zákazníka. Doplňte ho prosím ručně.')
+      return
+    }
+    setSendingId(inv.id)
+    try {
+      const res = await fetch(`/api/invoices?action=send&id=${encodeURIComponent(inv.id)}`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      const data = await res.json().catch(()=>({}))
+      if (!res.ok) throw new Error(data.error || 'Fakturu se nepodařilo odeslat. Zkuste to prosím znovu.')
+      setInvoices(p => p.map(i => i.id === inv.id ? { ...i, status: i.status === 'draft' ? 'sent' : i.status } : i))
+      alert('Faktura byla odeslána zákazníkovi.')
+    } catch (e) {
+      alert(e.message || 'Fakturu se nepodařilo odeslat. Zkuste to prosím znovu.')
+    } finally {
+      setSendingId(null)
+    }
   }
 
   // PATCH status change (sent / paid / cancelled)
@@ -763,6 +792,7 @@ export default function InvoicePage() {
                   <td style={{ ...TD, textAlign:'right' }}>
                     <div style={{ display:'flex', gap:5, justifyContent:'flex-end', flexWrap:'wrap' }}>
                       <button title="Náhled / PDF" style={BI} onClick={()=>setNahled(inv)}>👁</button>
+                      {inv.status!=='cancelled' && <button title="Odeslat zákazníkovi" disabled={sendingId===inv.id} style={{ ...BI, background:'#EFF6FF', color:'#1D4ED8', border:'1px solid #BFDBFE', opacity:sendingId===inv.id?.6:1 }} onClick={()=>sendToCustomer(inv)}>✉ {sendingId===inv.id ? 'Odesílám…' : 'Odeslat zákazníkovi'}</button>}
                       {inv.status!=='cancelled' && <button title="Upravit FA" style={BI} onClick={()=>setEditing(inv)}>✎ Upravit FA</button>}
                       {inv.status!=='paid' && inv.status!=='cancelled' && <button title="Označit jako zaplaceno" style={{ ...BI, background:'#FEF2F2', color:'#DC2626', border:'1px solid #FECACA', fontWeight:600 }} onClick={()=>changeStatus(inv.id,'paid')}>✓ Označit jako zaplaceno</button>}
                       {inv.status==='paid' && <button title="Zrušit úhradu" style={{ ...BI, background:'#FFF7ED', color:'#D97706', border:'1px solid #FDE68A' }} onClick={()=>changeStatus(inv.id,'sent')}>↩ Zrušit úhradu</button>}
