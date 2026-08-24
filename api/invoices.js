@@ -25,19 +25,22 @@ async function listInvoices(req, res) {
   if (!me) return;
 
   // Admin vidí všechno, ostatní jen své jako sikula nebo zákazník
+  // paid_at se vrací jako čistý ISO timestamp (ne TO_CHAR text jako created/due)
+  // — Výdělky v dashboardu z něj počítají "tento měsíc" a potřebují si ho
+  // spolehlivě naparsovat na Date, ne re-parsovat český formát.
   const rows = me.role === 'admin'
     ? await sql`
         SELECT id, title, amount, customer_name AS customer,
                TO_CHAR(created_date, 'FMDD. FMMM. YYYY') AS created,
                TO_CHAR(due_date,     'FMDD. FMMM. YYYY') AS due,
-               status, sikula_id, customer_id
+               status, paid_at, sikula_id, customer_id
         FROM invoices ORDER BY created_at DESC LIMIT 500
       `
     : await sql`
         SELECT id, title, amount, customer_name AS customer,
                TO_CHAR(created_date, 'FMDD. FMMM. YYYY') AS created,
                TO_CHAR(due_date,     'FMDD. FMMM. YYYY') AS due,
-               status
+               status, paid_at
         FROM invoices
         WHERE sikula_id = ${me.id} OR customer_id = ${me.id}
         ORDER BY created_at DESC LIMIT 200
@@ -98,6 +101,11 @@ async function updateInvoice(req, res) {
 
   if (amount !== null && amount <= 0) return res.status(400).json({ error: 'Částka musí být kladná.' });
 
+  // paid_at se nastaví na NOW() jen v okamžiku přechodu DO stavu 'paid' (ne při
+  // každém uložení zaplacené faktury) a vynuluje se, když se faktura vrátí ze
+  // 'paid' do jiného stavu ("↩ Vrátit") — status v CASE odkazuje na řádek
+  // PŘED update (Postgres v jednom UPDATE ... SET vyhodnocuje výrazy proti
+  // původním hodnotám), takže se nepřepisuje sama sebou.
   const [row] = await sql`
     UPDATE invoices SET
       title         = COALESCE(${title},         title),
@@ -105,6 +113,11 @@ async function updateInvoice(req, res) {
       customer_name = COALESCE(${customer_name}, customer_name),
       due_date      = COALESCE(${due_date},      due_date),
       status        = COALESCE(${status},        status),
+      paid_at       = CASE
+                         WHEN ${status} = 'paid' AND status IS DISTINCT FROM 'paid' THEN NOW()
+                         WHEN ${status} IS NOT NULL AND ${status} != 'paid' THEN NULL
+                         ELSE paid_at
+                       END,
       updated_at    = NOW()
     WHERE id = ${id}
     RETURNING *

@@ -691,7 +691,7 @@ export default function InvoicePage() {
       <div className="stats-grid" style={{ marginBottom:24 }}>
         <div className="stat-card"><div className="stat-val" style={{ color:'#F97316' }}>{fKc(ceka)}</div><div className="stat-label">Čeká na úhradu</div></div>
         <div className="stat-card"><div className="stat-val" style={{ color:'#22C55E' }}>{fKc(zaplaceno)}</div><div className="stat-label">Zaplaceno</div></div>
-        <div className="stat-card"><div className="stat-val">{invoices.length}</div><div className="stat-label">Faktur celkem</div></div>
+        <div className="stat-card"><div className="stat-val">{invoices.length}</div><div className="stat-label">Faktury celkem</div></div>
       </div>
 
       {/* Tabs */}

@@ -138,6 +138,13 @@ CREATE TABLE IF NOT EXISTS invoices (
   updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- paid_at = kdy byla faktura skutečně označena jako zaplacená (ne kdy byla
+-- vystavená) — pro Výdělky, ať "Tento měsíc" počítá podle data zaplacení,
+-- ne vystavení. NULL u nezaplacených faktur i u starších faktur zaplacených
+-- před zavedením tohoto sloupce (api/invoices.js pro ně použije fallback
+-- na created_date).
+ALTER TABLE invoices ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ;
+
 CREATE INDEX IF NOT EXISTS idx_invoices_sikula ON invoices(sikula_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
 

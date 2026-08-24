@@ -154,9 +154,9 @@ function useConversations() {
   return { conversations, unreadTotal }
 }
 
-// "DD. M. YYYY" (Czech formát z TO_CHAR v api/invoices.js) → Date, pro filtr
-// "tento měsíc". Stejná logika jako parseCzechDateToObj v InvoicePage.jsx,
-// zde samostatně (obě komponenty se nesdílí, ať zůstává úprava izolovaná).
+// "DD. M. YYYY" (Czech formát z TO_CHAR v api/invoices.js) → Date. Používá se
+// jen jako fallback pro faktury zaplacené PŘED zavedením sloupce paid_at
+// (ty ho mají NULL) — jinak se pro Výdělky používá přímo paid_at.
 function parseCzechDateToObj(s) {
   const m = String(s || '').match(/(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/)
   if (!m) return null
@@ -164,9 +164,18 @@ function parseCzechDateToObj(s) {
   return new Date(Number(y), Number(mo) - 1, Number(d))
 }
 
+// Datum, podle kterého se faktura řadí do Výdělků — přednostně datum
+// skutečného zaplacení (paid_at), u starších faktur zaplacených ještě před
+// zavedením tohoto sloupce spadne na datum vystavení.
+function earningsDate(inv) {
+  if (inv.paid_at) return new Date(inv.paid_at)
+  return parseCzechDateToObj(inv.created)
+}
+
 // Hook: Výdělky šikuly ze zaplacených faktur — stejný zdroj dat (GET
 // /api/invoices) jako záložka Faktury, endpoint už filtruje jen faktury
-// tohoto šikuly (sikula_id = me.id). Počítá se jen status='paid'.
+// tohoto šikuly (sikula_id = me.id). Počítá se jen status='paid', podle
+// data zaplacení (ne vystavení) — viz earningsDate().
 function useEarnings() {
   const [invoices, setInvoices] = useState([])
   const [loading, setLoading]   = useState(true)
@@ -185,7 +194,7 @@ function useEarnings() {
   const now = new Date()
   const thisMonth = paid
     .filter(i => {
-      const d = parseCzechDateToObj(i.created)
+      const d = earningsDate(i)
       return d && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
     })
     .reduce((sum, i) => sum + (Number(i.amount) || 0), 0)
@@ -193,7 +202,22 @@ function useEarnings() {
   const count = paid.length
   const avg = count > 0 ? Math.round(total / count) : null
 
-  return { loading, paid, thisMonth, total, avg, count }
+  // Příjmy podle měsíců — jen měsíce, ve kterých existuje aspoň jedna
+  // zaplacená faktura (žádné dopočítávání prázdných měsíců), seřazené od
+  // nejnovějšího.
+  const byMonthMap = new Map()
+  for (const i of paid) {
+    const d = earningsDate(i)
+    if (!d) continue
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    const entry = byMonthMap.get(key) || { key, date: d, count: 0, total: 0 }
+    entry.count += 1
+    entry.total += Number(i.amount) || 0
+    byMonthMap.set(key, entry)
+  }
+  const byMonth = [...byMonthMap.values()].sort((a, b) => b.key.localeCompare(a.key))
+
+  return { loading, paid, thisMonth, total, avg, count, byMonth }
 }
 
 // lock: 'plan' = vyžaduje alespoň Aktivní šikula (199 Kč)
@@ -1212,8 +1236,8 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             <div className="stats-grid" style={{ marginBottom: 24 }}>
               <div className="stat-card"><div className="stat-val">{formatCurrencyCz(earnings.thisMonth)}</div><div className="stat-label">Tento měsíc</div></div>
               <div className="stat-card"><div className="stat-val">{formatCurrencyCz(earnings.total)}</div><div className="stat-label">Celkem</div></div>
-              <div className="stat-card"><div className="stat-val">{earnings.avg != null ? formatCurrencyCz(earnings.avg) : '—'}</div><div className="stat-label">Průměr zakázka</div></div>
-              <div className="stat-card"><div className="stat-val">{earnings.count}</div><div className="stat-label">Zakázek celkem</div></div>
+              <div className="stat-card"><div className="stat-val">{earnings.avg != null ? formatCurrencyCz(earnings.avg) : '—'}</div><div className="stat-label">Průměr na fakturu</div></div>
+              <div className="stat-card"><div className="stat-val">{earnings.count}</div><div className="stat-label">Zaplacené faktury</div></div>
             </div>
             {!earnings.loading && earnings.count === 0 && (
               <div className="empty-state" style={{ padding: 40 }}>
@@ -1223,17 +1247,34 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
               </div>
             )}
             {earnings.count > 0 && (
-              <div className="card" style={{ overflow: 'hidden' }}>
-                {earnings.paid.map(i => (
-                  <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: 14 }}>{i.title}</div>
-                      <div style={{ fontSize: 12, color: 'var(--text3)' }}>{i.customer} · {i.created}</div>
-                    </div>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: '#16A34A' }}>{formatCurrencyCz(i.amount)}</div>
+              <>
+                <h3 style={{ fontSize: 14, marginBottom: 10 }}>Příjmy podle měsíců</h3>
+                <div className="card" style={{ overflow: 'hidden', marginBottom: 24 }}>
+                  <div style={{ display: 'flex', padding: '8px 16px', fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>
+                    <div style={{ flex: 1 }}>Měsíc</div>
+                    <div style={{ width: 120, textAlign: 'right' }}>Faktury</div>
+                    <div style={{ width: 140, textAlign: 'right' }}>Zaplaceno</div>
                   </div>
-                ))}
-              </div>
+                  {earnings.byMonth.map(m => (
+                    <div key={m.key} style={{ display: 'flex', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
+                      <div style={{ flex: 1, fontWeight: 600, textTransform: 'capitalize' }}>{m.date.toLocaleDateString('cs-CZ', { month: 'long', year: 'numeric' })}</div>
+                      <div style={{ width: 120, textAlign: 'right', color: 'var(--text3)' }}>{m.count}</div>
+                      <div style={{ width: 140, textAlign: 'right', fontWeight: 700, color: '#16A34A' }}>{formatCurrencyCz(m.total)}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="card" style={{ overflow: 'hidden' }}>
+                  {earnings.paid.map(i => (
+                    <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{i.title}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text3)' }}>{i.customer} · {i.created}</div>
+                      </div>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: '#16A34A' }}>{formatCurrencyCz(i.amount)}</div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         )}

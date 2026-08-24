@@ -100,6 +100,9 @@ export default function App() {
   const [loginModal,  setLoginModal]   = useState(false);
   const [loginPrefillEmail, setLoginPrefillEmail] = useState("");
   const [priority,    setPriority]     = useState(null);
+  // Text z hero vyhledávacího pole ("Co potřebujete doma vyřešit?") — dřív se
+  // nikam nepoužíval, teď se předá jako počáteční popis do formuláře poptávky.
+  const [heroSearch,  setHeroSearch]   = useState("");
   const [dashboardTab, setDashboardTab] = useState("prehled");
   const [currentOrder, setCurrentOrder] = useState(null); // pro SendOffer/OrderDetail navigaci
   // { otherUserId, orderId } pro "Napsat zprávu" u konkrétní nabídky, nebo
@@ -500,9 +503,11 @@ export default function App() {
             <span style={{ display: "flex", alignItems: "center", paddingLeft: 16, paddingRight: 10, color: T.ink4, flexShrink: 0 }}><IcSearch /></span>
             <input style={{ flex: 1, padding: "15px 4px", border: "none", outline: "none", fontSize: 15, color: T.ink, background: "transparent", fontFamily: "inherit", letterSpacing: "-.01em" }}
               placeholder="Co potřebujete doma vyřešit?"
-              onKeyDown={e => e.key === "Enter" && openOrder()} />
+              value={heroSearch}
+              onChange={e => setHeroSearch(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && openOrder(null, heroSearch.trim() ? { desc: heroSearch.trim() } : {})} />
             <div style={{ padding: "6px" }}>
-              <BtnPrimary size="sm" onClick={() => openOrder()}>Najít šikulu</BtnPrimary>
+              <BtnPrimary size="sm" onClick={() => openOrder(null, heroSearch.trim() ? { desc: heroSearch.trim() } : {})}>Najít šikulu</BtnPrimary>
             </div>
           </div>
 
@@ -695,7 +700,7 @@ export default function App() {
       </>)}
       </Layout>
 
-      {orderForm !== null && <OrderForm initialService={orderForm.service} initialCategory={orderForm.category} initialCity={orderForm.city} onClose={() => setOrderForm(null)} onHome={() => { setPage("home"); window.history.replaceState({}, '', '/'); window.scrollTo(0, 0); }} onDashboard={() => { setPage("dashboard"); window.scrollTo(0, 0); }} onLoggedIn={updateSikula} currentUser={sikulaUser} />}
+      {orderForm !== null && <OrderForm initialService={orderForm.service} initialCategory={orderForm.category} initialCity={orderForm.city} initialDesc={orderForm.desc} onClose={() => { setOrderForm(null); setHeroSearch(""); }} onHome={() => { setPage("home"); window.history.replaceState({}, '', '/'); window.scrollTo(0, 0); }} onDashboard={() => { setPage("dashboard"); window.scrollTo(0, 0); }} onLoggedIn={updateSikula} currentUser={sikulaUser} />}
       {regForm   !== null && <RegForm   plan={regForm.plan} onClose={() => setRegForm(null)} onRegistered={loginSikula}
         onLogin={() => setLoginModal(true)}
         onForgot={() => { setPage("forgot-password"); window.scrollTo(0, 0); }} />}

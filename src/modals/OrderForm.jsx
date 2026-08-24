@@ -17,7 +17,7 @@ const TOTAL = 6;
 // priority (krok "Čas") -> přesný termín uložený do orders.preferred_time.
 const TIMING_LABEL = { urgent: "Do 48 hodin", soon: "Do 7 dní", flexible: "Flexibilně" };
 
-export default function OrderForm({ initialService, initialCategory, initialCity, onClose, onHome, onDashboard, onLoggedIn, currentUser }) {
+export default function OrderForm({ initialService, initialCategory, initialCity, initialDesc, onClose, onHome, onDashboard, onLoggedIn, currentUser }) {
   // Přihlášený zákazník už má účet i heslo hotové — poptávka se zadává pod
   // jeho existující identitou, žádné nové heslo/účet se nezakládá.
   const isLoggedInCustomer = currentUser?.role === 'customer';
@@ -30,7 +30,7 @@ export default function OrderForm({ initialService, initialCategory, initialCity
   const [step, setStep]     = useState(initCat ? (initialCity ? 3 : 1) : 0);
   const [category, setCat]  = useState(initCat);
   const [subSvc, setSubSvc] = useState(null);
-  const [desc, setDesc]     = useState("");
+  const [desc, setDesc]     = useState(initialDesc || "");
   const [street, setStreet] = useState("");
   const [psc, setPsc]       = useState("");
   const [city, setCity]     = useState(initialCity || "");
