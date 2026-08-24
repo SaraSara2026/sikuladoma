@@ -154,21 +154,66 @@ function useConversations() {
   return { conversations, unreadTotal }
 }
 
+// "DD. M. YYYY" (Czech formát z TO_CHAR v api/invoices.js) → Date, pro filtr
+// "tento měsíc". Stejná logika jako parseCzechDateToObj v InvoicePage.jsx,
+// zde samostatně (obě komponenty se nesdílí, ať zůstává úprava izolovaná).
+function parseCzechDateToObj(s) {
+  const m = String(s || '').match(/(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/)
+  if (!m) return null
+  const [, d, mo, y] = m
+  return new Date(Number(y), Number(mo) - 1, Number(d))
+}
+
+// Hook: Výdělky šikuly ze zaplacených faktur — stejný zdroj dat (GET
+// /api/invoices) jako záložka Faktury, endpoint už filtruje jen faktury
+// tohoto šikuly (sikula_id = me.id). Počítá se jen status='paid'.
+function useEarnings() {
+  const [invoices, setInvoices] = useState([])
+  const [loading, setLoading]   = useState(true)
+
+  useEffect(() => {
+    let alive = true
+    fetch('/api/invoices', { credentials: 'include' })
+      .then(r => r.ok ? r.json() : Promise.reject(new Error('API ' + r.status)))
+      .then(rows => { if (alive) setInvoices(Array.isArray(rows) ? rows : []) })
+      .catch(() => {})
+      .finally(() => { if (alive) setLoading(false) })
+    return () => { alive = false }
+  }, [])
+
+  const paid = invoices.filter(i => i.status === 'paid')
+  const now = new Date()
+  const thisMonth = paid
+    .filter(i => {
+      const d = parseCzechDateToObj(i.created)
+      return d && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
+    })
+    .reduce((sum, i) => sum + (Number(i.amount) || 0), 0)
+  const total = paid.reduce((sum, i) => sum + (Number(i.amount) || 0), 0)
+  const count = paid.length
+  const avg = count > 0 ? Math.round(total / count) : null
+
+  return { loading, paid, thisMonth, total, avg, count }
+}
+
 // lock: 'plan' = vyžaduje alespoň Aktivní šikula (199 Kč)
 // lock: 'plus'  = vyžaduje Aktivní šikula Plus (299 Kč)
 // 'new-jobs' záměrně bez zámku — náhled poptávek je zdarma, platí se až za reakci (viz SendOfferPage).
+// Pořadí odpovídá pracovnímu toku šikuly: Nové zakázky → Odeslané nabídky →
+// Aktivní zakázky → Dokončené zakázky. Faktury a Výdělky patří k sobě, proto
+// jsou vedle sebe (Faktury před Výdělky); Kalendář je až za nimi.
 const menuItems = [
   { id: 'profile',      icon: '👤', label: 'Profil šikuly' },
   { id: 'overview',     icon: '📊', label: 'Přehled' },
   { id: 'new-jobs',     icon: '🔔', label: 'Nové zakázky' },
   { id: 'offers-sent',  icon: '📤', label: 'Odeslané nabídky',  lock: 'plan' },
   { id: 'active',       icon: '⚡', label: 'Aktivní zakázky',   lock: 'plan' },
-  { id: 'oznameni',     icon: '📣', label: 'Oznámení' },
-  { id: 'calendar',     icon: '📅', label: 'Kalendář',          lock: 'plus' },
-  { id: 'earnings',     icon: '💰', label: 'Výdělky',           lock: 'plus' },
-  { id: 'invoices',     icon: '🧾', label: 'Faktury',           lock: 'plus' },
-  { id: 'reviews',      icon: '⭐', label: 'Recenze',           lock: 'plan' },
   { id: 'history',      icon: '📁', label: 'Dokončené zakázky',  lock: 'plan' },
+  { id: 'oznameni',     icon: '📣', label: 'Oznámení' },
+  { id: 'invoices',     icon: '🧾', label: 'Faktury',           lock: 'plus' },
+  { id: 'earnings',     icon: '💰', label: 'Výdělky',           lock: 'plus' },
+  { id: 'calendar',     icon: '📅', label: 'Kalendář',          lock: 'plus' },
+  { id: 'reviews',      icon: '⭐', label: 'Recenze',           lock: 'plan' },
   { id: 'membership',   icon: '👑', label: 'Aktivace tarifu' },
 ]
 
@@ -687,6 +732,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
   const { offers: myOffers, reload: reloadMyOffers } = useMyOffers()
   const { reviews: myReviews, summary: reviewsSummary, loading: reviewsLoading } = useMyReviews(currentUser?.id)
   const { conversations, unreadTotal } = useConversations()
+  const earnings = useEarnings()
   const conversationForOrder = (orderId) => conversations.find(c => c.order_id === orderId)
   const renderMsgBadge = (orderId) => {
     const conv = conversationForOrder(orderId)
@@ -1164,16 +1210,31 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
           <div className="page-enter">
             <div className="dash-title" style={{ marginBottom: 24 }}>Výdělky</div>
             <div className="stats-grid" style={{ marginBottom: 24 }}>
-              <div className="stat-card"><div className="stat-val">0 Kč</div><div className="stat-label">Tento měsíc</div></div>
-              <div className="stat-card"><div className="stat-val">0 Kč</div><div className="stat-label">Celkem</div></div>
-              <div className="stat-card"><div className="stat-val">—</div><div className="stat-label">Průměr zakázka</div></div>
-              <div className="stat-card"><div className="stat-val">0</div><div className="stat-label">Zakázek celkem</div></div>
+              <div className="stat-card"><div className="stat-val">{formatCurrencyCz(earnings.thisMonth)}</div><div className="stat-label">Tento měsíc</div></div>
+              <div className="stat-card"><div className="stat-val">{formatCurrencyCz(earnings.total)}</div><div className="stat-label">Celkem</div></div>
+              <div className="stat-card"><div className="stat-val">{earnings.avg != null ? formatCurrencyCz(earnings.avg) : '—'}</div><div className="stat-label">Průměr zakázka</div></div>
+              <div className="stat-card"><div className="stat-val">{earnings.count}</div><div className="stat-label">Zakázek celkem</div></div>
             </div>
-            <div className="empty-state" style={{ padding: 40 }}>
-              <div className="empty-icon">💰</div>
-              <h3>Zatím žádné příjmy</h3>
-              <p>Příjmy ze zakázek se zobrazí zde po dokončení první zakázky.</p>
-            </div>
+            {!earnings.loading && earnings.count === 0 && (
+              <div className="empty-state" style={{ padding: 40 }}>
+                <div className="empty-icon">💰</div>
+                <h3>Zatím žádné příjmy</h3>
+                <p>Příjmy se zobrazí zde po zaplacení první faktury.</p>
+              </div>
+            )}
+            {earnings.count > 0 && (
+              <div className="card" style={{ overflow: 'hidden' }}>
+                {earnings.paid.map(i => (
+                  <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 14 }}>{i.title}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text3)' }}>{i.customer} · {i.created}</div>
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#16A34A' }}>{formatCurrencyCz(i.amount)}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
