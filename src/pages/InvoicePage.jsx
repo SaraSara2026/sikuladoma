@@ -36,6 +36,7 @@ function parseCzechDateToObj(s) {
 }
 
 function effectivniStav(inv) {
+  if (inv.status === 'cancelled') return 'cancelled'
   if (inv.status === 'paid') return 'paid'
   const due = parseCzechDateToObj(inv.splatnost || inv.due)
   if (due && due < new Date()) return 'late'
@@ -44,10 +45,11 @@ function effectivniStav(inv) {
 }
 
 const STATUS_STYLE = {
-  paid:  { label: 'Zaplacená',     color: '#16A34A', bg: '#F0FDF4', border: '#BBF7D0' },
-  late:  { label: 'Po splatnosti', color: '#fff',    bg: '#1A1F2E', border: '#1A1F2E' },
-  sent:  { label: 'Posláno',       color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
-  draft: { label: 'Vytvořeno',     color: '#6B7280', bg: '#F9FAFB', border: '#E5E7EB' },
+  paid:      { label: 'Zaplacená',     color: '#16A34A', bg: '#F0FDF4', border: '#BBF7D0' },
+  late:      { label: 'Po splatnosti', color: '#fff',    bg: '#1A1F2E', border: '#1A1F2E' },
+  sent:      { label: 'Posláno',       color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
+  draft:     { label: 'Vytvořeno',     color: '#6B7280', bg: '#F9FAFB', border: '#E5E7EB' },
+  cancelled: { label: 'Stornováno',    color: '#6B7280', bg: '#F3F4F6', border: '#D1D5DB' },
 }
 
 // Inicializuje fakturační profil z přihlášeného uživatele + uloženého localStorage.
@@ -173,7 +175,7 @@ function FakturaView({ inv, profil, onClose, onEdit }) {
           <div style={{ fontWeight:700, fontSize:16, color:'#1A1F2E' }}>Náhled faktury</div>
           <div style={{ display:'flex', gap:8 }}>
             <button style={BG} onClick={onClose}>Zavřít</button>
-            {onEdit && <button style={{ ...BG, color:'#C2410C', borderColor:'#FED7AA' }} onClick={onEdit}>✎ Upravit</button>}
+            {onEdit && <button style={{ ...BG, color:'#C2410C', borderColor:'#FED7AA' }} onClick={onEdit}>✎ Upravit FA</button>}
             <button style={{ ...BG }} onClick={tisk}>🖨 Tisknout</button>
             <button style={BP} onClick={stahnout}>⬇ Stáhnout PDF</button>
           </div>
@@ -610,7 +612,9 @@ export default function InvoicePage() {
     setNahled(inv)
   }
 
-  // PATCH editace draft faktury
+  // PATCH oprava obsahu faktury (koncept i odeslaná/zaplacená — jen ne
+  // stornovaná). Neposílá se status, takže se stav faktury úpravou nemění —
+  // "Upravit FA" nesmí fungovat jako změna stavu úhrady.
   const editInvoice = async (inv) => {
     const res = await fetch(`/api/invoices?id=${encodeURIComponent(inv.id)}`, {
       method: 'PATCH',
@@ -627,7 +631,7 @@ export default function InvoicePage() {
     setEditing(null)
   }
 
-  // PATCH status change (sent / paid)
+  // PATCH status change (sent / paid / cancelled)
   const changeStatus = async (id, status) => {
     const before = invoices.find(i => i.id === id)
     setInvoices(p => p.map(i => i.id === id ? { ...i, status } : i))  // optimistic
@@ -643,6 +647,13 @@ export default function InvoicePage() {
       setInvoices(p => p.map(i => i.id === id ? before : i))  // rollback
       alert('Nepodařilo se změnit stav faktury.')
     }
+  }
+
+  // Storno — na rozdíl od smazání faktura zůstává v evidenci navždy, jen se
+  // označí jako stornovaná a dál se s ní nedá nic dělat (viz api/invoices.js).
+  const stornoInvoice = (id) => {
+    if (!confirm(`Opravdu stornovat fakturu ${id}? Faktura zůstane v evidenci, ale nepůjde dál upravovat ani znovu aktivovat.`)) return
+    changeStatus(id, 'cancelled')
   }
 
   // DELETE draft
@@ -661,7 +672,8 @@ export default function InvoicePage() {
   }
 
   const zaplaceno = invoices.filter(i=>i.status==='paid').reduce((s,i)=>s+(i.castka||0),0)
-  const ceka = invoices.filter(i=>i.status!=='paid').reduce((s,i)=>s+(i.castka||0),0)
+  // Stornovaná faktura už žádnou platbu neočekává, nepatří do "Čeká na úhradu".
+  const ceka = invoices.filter(i=>i.status!=='paid' && i.status!=='cancelled').reduce((s,i)=>s+(i.castka||0),0)
 
   // Unikátní zákazníci z faktur (pro autocomplete + seznam)
   const zakaznici = Object.values(
@@ -751,10 +763,11 @@ export default function InvoicePage() {
                   <td style={{ ...TD, textAlign:'right' }}>
                     <div style={{ display:'flex', gap:5, justifyContent:'flex-end', flexWrap:'wrap' }}>
                       <button title="Náhled / PDF" style={BI} onClick={()=>setNahled(inv)}>👁</button>
-                      {inv.status==='draft' && <button title="Upravit" style={BI} onClick={()=>setEditing(inv)}>✎</button>}
-                      {inv.status!=='paid' && <button title="Označit jako zaplaceno" style={{ ...BI, background:'#FEF2F2', color:'#DC2626', border:'1px solid #FECACA', fontWeight:600 }} onClick={()=>changeStatus(inv.id,'paid')}>✓ Zaplaceno</button>}
-                      {inv.status==='paid' && <button title="Označit jako nezaplaceno" style={{ ...BI, background:'#FFF7ED', color:'#D97706', border:'1px solid #FDE68A' }} onClick={()=>changeStatus(inv.id,'sent')}>↩ Vrátit</button>}
-                      {inv.status==='draft' && <button title="Smazat" style={{ ...BI, background:'#FEF2F2', color:'#B91C1C', border:'1px solid #FECACA' }} onClick={()=>deleteInvoice(inv.id)}>🗑</button>}
+                      {inv.status!=='cancelled' && <button title="Upravit FA" style={BI} onClick={()=>setEditing(inv)}>✎ Upravit FA</button>}
+                      {inv.status!=='paid' && inv.status!=='cancelled' && <button title="Označit jako zaplaceno" style={{ ...BI, background:'#FEF2F2', color:'#DC2626', border:'1px solid #FECACA', fontWeight:600 }} onClick={()=>changeStatus(inv.id,'paid')}>✓ Označit jako zaplaceno</button>}
+                      {inv.status==='paid' && <button title="Zrušit úhradu" style={{ ...BI, background:'#FFF7ED', color:'#D97706', border:'1px solid #FDE68A' }} onClick={()=>changeStatus(inv.id,'sent')}>↩ Zrušit úhradu</button>}
+                      {inv.status==='draft' && <button title="Smazat" style={{ ...BI, background:'#FEF2F2', color:'#B91C1C', border:'1px solid #FECACA' }} onClick={()=>deleteInvoice(inv.id)}>🗑 Smazat</button>}
+                      {inv.status!=='draft' && inv.status!=='cancelled' && <button title="Stornovat FA" style={{ ...BI, background:'#F3F4F6', color:'#374151', border:'1px solid #D1D5DB' }} onClick={()=>stornoInvoice(inv.id)}>⊘ Stornovat FA</button>}
                     </div>
                   </td>
                 </tr>
@@ -805,7 +818,7 @@ export default function InvoicePage() {
       {showNova && <NovaFaktura profil={profil} pocet={invoices.length} zakaznici={zakaznici} onSave={saveInvoice} onClose={()=>setShowNova(false)} />}
       {editing && <NovaFaktura profil={profil} editing={editing} zakaznici={zakaznici} onSave={editInvoice} onClose={()=>setEditing(null)} />}
       {showProfil && <ProfilModal profil={profil} onSave={setProfil} onClose={()=>setShowProfil(false)} />}
-      {nahled && <FakturaView inv={nahled} profil={profil} onClose={()=>setNahled(null)} onEdit={nahled.status==='draft' ? ()=>{ setEditing(nahled); setNahled(null) } : undefined} />}
+      {nahled && <FakturaView inv={nahled} profil={profil} onClose={()=>setNahled(null)} onEdit={nahled.status!=='cancelled' ? ()=>{ setEditing(nahled); setNahled(null) } : undefined} />}
     </div>
   )
 }

@@ -145,6 +145,13 @@ CREATE TABLE IF NOT EXISTS invoices (
 -- na created_date).
 ALTER TABLE invoices ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ;
 
+-- 'cancelled' = stornovaná faktura ("Stornovat FA") — zůstává v evidenci
+-- natrvalo (na rozdíl od smazání konceptu), ale je to konečný, neměnný
+-- stav a nepočítá se do Výdělků (ty počítají jen status='paid').
+ALTER TABLE invoices DROP CONSTRAINT IF EXISTS invoices_status_check;
+ALTER TABLE invoices ADD CONSTRAINT invoices_status_check
+  CHECK (status IN ('draft','sent','paid','late','cancelled'));
+
 CREATE INDEX IF NOT EXISTS idx_invoices_sikula ON invoices(sikula_id);
 CREATE INDEX IF NOT EXISTS idx_invoices_status ON invoices(status);
 

@@ -88,6 +88,12 @@ async function updateInvoice(req, res) {
   if (me.role !== 'admin' && existing.sikula_id !== me.id) {
     return res.status(403).json({ error: 'Nemáš oprávnění upravit tuto fakturu.' });
   }
+  // Stornovaná faktura zůstává v evidenci navždy (na rozdíl od smazání
+  // konceptu), ale je to konečný, uzamčený stav — žádné další úpravy obsahu
+  // ani stavu, ani pro vlastníka, ani pro admina.
+  if (existing.status === 'cancelled') {
+    return res.status(409).json({ error: 'Stornovaná faktura je uzamčená a nelze ji dál upravovat.' });
+  }
 
   const b = req.body ?? {};
   const title         = b.title         != null ? String(b.title) : null;
@@ -96,27 +102,22 @@ async function updateInvoice(req, res) {
   const due_date      = b.due_date      != null ? b.due_date : null;
   const status        = b.status        != null ? String(b.status) : null;
 
-  // Obsah faktury (název, částka, zákazník, splatnost) lze měnit jen u
-  // konceptu — jakmile je faktura odeslaná/zaplacená, je obsahově uzamčená.
-  // Změna STAVU (zaplaceno / vrátit) je ale samostatná akce, ne úprava
-  // obsahu faktury, a musí jít provést i u odeslané/zaplacené faktury jejím
-  // vlastníkem — jinak by šikula nemohl vrátit omylem označenou platbu
-  // (to byl nahlášený bug: "↩ Vrátit" bylo v UI, ale backend ho 409oval).
-  const editsContent = title !== null || amount !== null || customer_name !== null || due_date !== null;
-  if (editsContent && existing.status !== 'draft' && me.role !== 'admin') {
-    return res.status(409).json({ error: 'Lze upravovat jen koncepty. Odeslaná faktura je uzamčená.' });
-  }
-  if (status !== null && !['draft', 'sent', 'paid', 'late'].includes(status)) {
+  // Obsah faktury (název, částka, zákazník, splatnost) lze opravit i u
+  // odeslané/zaplacené faktury — šikula musí umět opravit chybu i po
+  // vystavení, ne jen u konceptu. Uzamčený je jen storno (viz výše).
+  if (status !== null && !['draft', 'sent', 'paid', 'late', 'cancelled'].includes(status)) {
     return res.status(400).json({ error: 'Neplatný stav faktury.' });
   }
 
   if (amount !== null && amount <= 0) return res.status(400).json({ error: 'Částka musí být kladná.' });
 
   // paid_at se nastaví na NOW() jen v okamžiku přechodu DO stavu 'paid' (ne při
-  // každém uložení zaplacené faktury) a vynuluje se, když se faktura vrátí ze
-  // 'paid' do jiného stavu ("↩ Vrátit") — status v CASE odkazuje na řádek
-  // PŘED update (Postgres v jednom UPDATE ... SET vyhodnocuje výrazy proti
-  // původním hodnotám), takže se nepřepisuje sama sebou.
+  // každém uložení zaplacené faktury) a vynuluje se, když faktura opustí
+  // 'paid' — ať už "↩ Zrušit úhradu" (zpět na 'sent'), nebo storno. status
+  // v CASE odkazuje na řádek PŘED update (Postgres v jednom UPDATE ... SET
+  // vyhodnocuje výrazy proti původním hodnotám), takže se nepřepisuje sama
+  // sebou. Výdělky počítají jen status='paid', takže stornovaná i vrácená
+  // faktura z nich automaticky vypadnou bez zvláštní logiky navíc.
   const [row] = await sql`
     UPDATE invoices SET
       title         = COALESCE(${title},         title),
