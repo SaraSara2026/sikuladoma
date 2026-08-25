@@ -169,10 +169,11 @@ export async function sendReviewRequestEmail({ to, name, orderTitle, url }) {
 }
 
 // ─── Faktura zákazníkovi (šikula → zákazník) ────────────────────────────────
-// MVP: čistý souhrn faktury, bez PDF přílohy a bez odkazu do appky — odkaz na
-// fakturu by potřeboval vlastní bezpečnou (tokenovou) autorizaci, ať neotevře
-// data jinému přihlášenému účtu; pro MVP se tomu radši úplně vyhýbáme.
-export async function sendInvoiceEmail({ to, sikulaName, sikulaPhone, sikulaEmail, invoiceId, title, amount, due }) {
+// Faktura chodí jako PDF příloha (attachments) — žádný odkaz do appky, ten by
+// potřeboval vlastní bezpečnou (tokenovou) autorizaci, ať neotevře data
+// jinému přihlášenému účtu; tomu se radši úplně vyhýbáme. PDF generuje
+// frontend (viz api/invoices.js sendInvoice), tahle funkce ho jen přiloží.
+export async function sendInvoiceEmail({ to, sikulaName, sikulaPhone, sikulaEmail, invoiceId, title, amount, due, attachments }) {
   const resend = getResend();
   const { data, error } = await resend.emails.send({
     from: getFromAddress(),
@@ -180,6 +181,7 @@ export async function sendInvoiceEmail({ to, sikulaName, sikulaPhone, sikulaEmai
     subject: 'Faktura k zakázce na ŠikulaDoma',
     html: invoiceTemplate({ sikulaName, sikulaPhone, sikulaEmail, invoiceId, title, amount, due }),
     text: invoiceTextVersion({ sikulaName, sikulaPhone, sikulaEmail, invoiceId, title, amount, due }),
+    attachments,
   });
   if (error) {
     console.error('[email] invoice send failed:', error);
@@ -531,15 +533,15 @@ function invoiceTemplate({ sikulaName, sikulaPhone, sikulaEmail, invoiceId, titl
   const contact = [sikulaPhone, sikulaEmail].filter(Boolean).join(' · ');
   return baseLayout({
     title: 'Faktura k zakázce',
-    intro: `Dobrý den,<br><br>šikula <strong>${escapeHtml(sikulaName || '')}</strong> vám vystavil fakturu k zakázce na ŠikulaDoma.`,
+    intro: 'Dobrý den,<br><br>byla Vám vystavena faktura k zakázce na ŠikulaDoma.',
     box: fieldRows([
       ['Zakázka', title],
       ['Číslo faktury', invoiceId],
-      ['Částka', priceStr ? `${priceStr} Kč` : null],
-      ['Splatnost', due],
+      ['Částka k platbě', priceStr ? `${priceStr} Kč` : null],
+      ['Datum splatnosti', due],
       ['Kontakt na šikulu', contact || null],
     ]),
-    footer: 'Platbu prosím proveďte přímo šikulovi podle údajů uvedených na faktuře. ŠikulaDoma platbu nezpracovává a neúčtuje si provizi ze zakázky.<br><br>Fakturu vám šikula může zároveň předat nebo zaslat jako PDF.',
+    footer: 'Fakturu najdete v příloze tohoto e-mailu ve formátu PDF.<br><br>Platbu prosím proveďte přímo šikulovi podle údajů uvedených na faktuře. ŠikulaDoma platbu nezpracovává a neúčtuje si provizi ze zakázky.<br><br>S pozdravem,<br>ŠikulaDoma',
   });
 }
 
@@ -549,7 +551,7 @@ function invoiceTextVersion({ sikulaName, sikulaPhone, sikulaEmail, invoiceId, t
   const lines = [
     'Dobrý den,',
     '',
-    `šikula ${sikulaName || ''} vám vystavil fakturu k zakázce na ŠikulaDoma.`,
+    'byla Vám vystavena faktura k zakázce na ŠikulaDoma.',
     '',
     'Zakázka:',
     title || '—',
@@ -557,19 +559,20 @@ function invoiceTextVersion({ sikulaName, sikulaPhone, sikulaEmail, invoiceId, t
     'Číslo faktury:',
     invoiceId || '—',
     '',
-    'Částka:',
+    'Částka k platbě:',
     priceStr ? `${priceStr} Kč` : '—',
     '',
-    'Splatnost:',
+    'Datum splatnosti:',
     due || '—',
     contact ? '' : null,
     contact ? 'Kontakt na šikulu:' : null,
     contact || null,
     '',
+    'Fakturu najdete v příloze tohoto e-mailu ve formátu PDF.',
+    '',
     'Platbu prosím proveďte přímo šikulovi podle údajů uvedených na faktuře. ŠikulaDoma platbu nezpracovává a neúčtuje si provizi ze zakázky.',
     '',
-    'Fakturu vám šikula může zároveň předat nebo zaslat jako PDF.',
-    '',
+    'S pozdravem,',
     'ŠikulaDoma',
   ].filter(line => line !== null);
   return lines.join('\n');

@@ -164,11 +164,13 @@ async function deleteInvoice(req, res) {
   return res.status(200).json({ ok: true });
 }
 
-// POST /api/invoices?action=send&id=... — pošle fakturu e-mailem zákazníkovi.
-// MVP: čistý text/HTML e-mail se souhrnem faktury, bez PDF přílohy a bez
-// odkazu do appky (odkaz na fakturu by musel mít vlastní bezpečnostní vrstvu,
-// aby neotevřel data jinému přihlášenému účtu — pro MVP se tomu radši úplně
-// vyhýbáme). Šikula může fakturu doplňkově poslat jako PDF sama (Stáhnout PDF).
+// POST /api/invoices?action=send&id=... — pošle fakturu e-mailem zákazníkovi
+// s PDF fakturou v příloze. PDF generuje frontend (stejnou cestou jako tlačítko
+// "Stáhnout PDF" v náhledu — viz FakturaTisk/generateInvoicePdfBase64 v
+// InvoicePage.jsx) a posílá ho sem jako base64 — bez platné PDF přílohy se
+// e-mail vůbec neposílá (žádný odkaz do appky ani veřejná URL na fakturu).
+const MAX_PDF_BYTES = 8 * 1024 * 1024; // reálná faktura má řádově stovky KB, 8 MB je bezpečná rezerva
+
 async function sendInvoice(req, res) {
   const me = await requireUser(req, res);
   if (!me) return;
@@ -194,6 +196,25 @@ async function sendInvoice(req, res) {
     return res.status(400).json({ error: 'U faktury chybí e-mail zákazníka. Doplňte ho prosím ručně.' });
   }
 
+  // PDF příloha: musí být přítomná, dekódovatelná z base64, v rozumné velikosti
+  // a musí reálně začínat jako PDF (%PDF- hlavička) — jinak se e-mail neposílá.
+  const { pdfBase64 } = req.body ?? {};
+  let pdfBuffer = null;
+  if (typeof pdfBase64 === 'string' && pdfBase64.length > 0) {
+    try {
+      pdfBuffer = Buffer.from(pdfBase64, 'base64');
+    } catch {
+      pdfBuffer = null;
+    }
+  }
+  const looksLikePdf = pdfBuffer
+    && pdfBuffer.length > 0
+    && pdfBuffer.length <= MAX_PDF_BYTES
+    && pdfBuffer.subarray(0, 5).toString('latin1') === '%PDF-';
+  if (!looksLikePdf) {
+    return res.status(400).json({ error: 'PDF faktury se nepodařilo připravit. Zkuste to prosím znovu.' });
+  }
+
   try {
     await sendInvoiceEmail({
       to: existing.customer_email,
@@ -204,6 +225,7 @@ async function sendInvoice(req, res) {
       title: existing.title,
       amount: existing.amount,
       due: existing.due,
+      attachments: [{ filename: `${existing.id}.pdf`, content: pdfBuffer }],
     });
   } catch (err) {
     console.error('[invoices] send email failed:', err);

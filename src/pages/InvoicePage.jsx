@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createRoot } from 'react-dom/client'
 import { useAuth } from '../contexts/AuthContext'
 
 function dnes() {
@@ -70,24 +71,201 @@ function initProfilFor(user) {
   }
 }
 
-// ─── Náhled / tisk faktury ────────────────────────────────────────────────────
-function FakturaView({ inv, profil, onClose, onEdit }) {
+// ─── Obsah faktury (sdílený mezi náhledem a generováním PDF přílohy) ─────────
+// Používá ho jak #f-tisk v náhledu (FakturaView), tak generateInvoicePdfBase64
+// při "Odeslat" — jedna šablona zaručuje, že e-mailová příloha vypadá vždy
+// stejně jako to, co šikula vidí v náhledu / stáhne přes "Stáhnout PDF".
+function FakturaTisk({ inv, profil }) {
   const base = Number(inv.castka || inv.amount || 0)
   const sazba = Number(inv.sazba_dph ?? (profil.platceDph ? 21 : 0))
   const dphC = sazba > 0 ? Math.round(base * sazba / 100) : 0
   const celk = base + dphC
 
+  return (
+    <>
+      {/* Hlavička */}
+      <div style={{ display:'flex', justifyContent:'space-between', marginBottom:24 }}>
+        <div>
+          <div style={{ fontSize:20, fontWeight:800 }}><span style={{ color:'#0066CC' }}>Šikula</span><span style={{ color:'#F07800' }}>Doma</span></div>
+          <div style={{ fontSize:11, color:'#9CA3AF' }}>sikuladoma.cz</div>
+        </div>
+        <div style={{ textAlign:'right' }}>
+          <div style={{ fontSize:18, fontWeight:800 }}>FAKTURA</div>
+          <div style={{ color:'#F07800', fontWeight:700 }}>{inv.id}</div>
+        </div>
+      </div>
+
+      {/* Strany */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:20 }}>
+        {[
+          ['Dodavatel', [profil.jmeno, profil.ulice, [profil.psc, profil.mesto].filter(Boolean).join(' '), profil.ico && `IČO: ${profil.ico}`, profil.platceDph && profil.dic && `DIČ: ${profil.dic}`, profil.platceDph ? 'Plátce DPH' : 'Neplátce DPH'].filter(Boolean)],
+          ['Odběratel', [inv.zakaznik || inv.customer, inv.zakaznikAdresa, [inv.zakaznikPsc, inv.zakaznikMesto].filter(Boolean).join(' '), inv.zakaznikIco && `IČO: ${inv.zakaznikIco}`, inv.zakaznikEmail, inv.zakaznikTel].filter(Boolean)],
+        ].map(([tit, radky]) => (
+          <div key={tit} style={{ background:'#F9FAFB', borderRadius:9, padding:'12px 14px', border:'1px solid #E5E7EB' }}>
+            <div style={{ fontSize:10, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', color:'#9CA3AF', marginBottom:6 }}>{tit}</div>
+            {radky.map((r, i) => <div key={i} style={{ fontSize: i===0?14:12, fontWeight: i===0?700:400, color: i===0?'#1A1F2E':'#4B5563', marginBottom:2 }}>{r}</div>)}
+          </div>
+        ))}
+      </div>
+
+      {/* Datumy */}
+      <div style={{ display:'flex', gap:12, marginBottom:18 }}>
+        {[['Datum vystavení', inv.datumVystaveni||inv.created], ['Datum plnění', inv.datumPlneni||inv.created], ['Splatnost', inv.splatnost||inv.due]].map(([k,v]) => (
+          <div key={k} style={{ flex:1, background:'#EFF6FF', borderRadius:8, padding:'8px 12px' }}>
+            <div style={{ fontSize:10, color:'#6B7280', marginBottom:2 }}>{k}</div>
+            <div style={{ fontWeight:600, fontSize:12 }}>{v}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Položky */}
+      <table style={{ width:'100%', borderCollapse:'collapse', marginBottom:18 }}>
+        <thead>
+          <tr style={{ background:'#EFF6FF', color:'#1E3A5F', borderBottom:'2px solid #BFDBFE' }}>
+            {['Popis', 'Ks', sazba>0?'Základ':'Cena', sazba>0&&`DPH ${sazba}%`, sazba>0&&'S DPH'].filter(Boolean).map(h=>(
+              <th key={h} style={{ padding:'8px 10px', textAlign:h==='Popis'?'left':'right', fontSize:11, fontWeight:700 }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          <tr style={{ borderBottom:'1px solid #E5E7EB' }}>
+            <td style={{ padding:'10px 10px', fontSize:13 }}>{inv.sluzba||inv.title}</td>
+            <td style={{ padding:'10px 10px', textAlign:'right', fontSize:13 }}>1</td>
+            <td style={{ padding:'10px 10px', textAlign:'right', fontSize:13 }}>{fKc(base)}</td>
+            {sazba>0 && <td style={{ padding:'10px 10px', textAlign:'right', fontSize:13 }}>{fKc(dphC)}</td>}
+            {sazba>0 && <td style={{ padding:'10px 10px', textAlign:'right', fontWeight:700, fontSize:13 }}>{fKc(celk)}</td>}
+          </tr>
+        </tbody>
+      </table>
+
+      {/* Rekapitulace */}
+      <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:16 }}>
+        <div style={{ minWidth:220 }}>
+          {sazba > 0 ? (
+            <>
+              <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 0', fontSize:12, color:'#6B7280' }}><span>Základ DPH</span><span>{fKc(base)}</span></div>
+              <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 0', fontSize:12, color:'#6B7280' }}><span>DPH {sazba} %</span><span>{fKc(dphC)}</span></div>
+              <div style={{ height:1, background:'#E5E7EB', margin:'6px 0' }} />
+            </>
+          ) : (
+            <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 0', fontSize:12, color:'#6B7280' }}><span>DPH</span><span>Neplátce DPH</span></div>
+          )}
+          <div style={{ display:'flex', justifyContent:'space-between', padding:'10px 14px', background:'#EFF6FF', border:'1.5px solid #BFDBFE', borderRadius:10 }}>
+            <span style={{ fontWeight:700, color:'#1E3A5F' }}>K úhradě</span>
+            <span style={{ fontWeight:800, color:'#1D4ED8', fontSize:15 }}>{fKc(celk)}</span>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display:'flex', gap:10, marginBottom:10, flexWrap:'wrap' }}>
+        {(inv.zpusobPlatby) && (
+          <div style={{ padding:'8px 12px', background:'#F0FDF4', border:'1px solid #BBF7D0', borderRadius:8, fontSize:12, color:'#166534' }}>
+            <strong>Způsob platby:</strong> {inv.zpusobPlatby}
+          </div>
+        )}
+        {inv.poznamka && (
+          <div style={{ padding:'8px 12px', background:'#FFFBEB', border:'1px solid #FEF08A', borderRadius:8, fontSize:12, color:'#6B7280', flex:1 }}>
+            <strong>Poznámka:</strong> {inv.poznamka}
+          </div>
+        )}
+      </div>
+      <div style={{ marginTop:32, paddingTop:14, borderTop:'1px solid #F3F4F6', fontSize:10, color:'#CBD5E1', textAlign:'center', paddingBottom:8, letterSpacing:'.02em' }}>
+        Vystaveno přes ŠikulaDoma
+      </div>
+    </>
+  )
+}
+
+// Vykreslí DOM uzel do canvasu (html2canvas) — sdíleno mezi "Stáhnout PDF"
+// (klon už otevřeného #f-tisk) a generateInvoicePdfBase64 (mimo obrazovku
+// vykreslený FakturaTisk pro fakturu, jejíž náhled zrovna nemusí být otevřený).
+async function renderInvoiceCanvas(node) {
+  const html2canvas = (await import('html2canvas')).default
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))
+  return html2canvas(node, {
+    scale:           2,
+    useCORS:         true,
+    allowTaint:      true,
+    backgroundColor: '#ffffff',
+    logging:         false,
+    width:           794,
+    windowWidth:     794,
+    scrollX:         0,
+    scrollY:         0,
+  })
+}
+
+// Poskládá canvas (jednu nebo víc A4 stránek) do jsPDF dokumentu.
+async function canvasToPdfDoc(canvas) {
+  const { jsPDF } = await import('jspdf')
+  const doc    = new jsPDF({ unit: 'mm', format: 'a4' })
+  const A4w    = 210
+  const A4h    = 297
+  const ratio  = A4w / canvas.width          // px → mm
+  const imgH   = canvas.height * ratio
+
+  if (imgH <= A4h) {
+    doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, A4w, imgH)
+  } else {
+    const pageHpx = A4h / ratio
+    let y = 0
+    while (y < canvas.height) {
+      const h = Math.min(pageHpx, canvas.height - y)
+      const pg = Object.assign(document.createElement('canvas'), { width: canvas.width, height: Math.ceil(h) })
+      const ctx = pg.getContext('2d')
+      ctx.fillStyle = '#fff'
+      ctx.fillRect(0, 0, pg.width, pg.height)
+      ctx.drawImage(canvas, 0, y, canvas.width, h, 0, 0, canvas.width, h)
+      if (y > 0) doc.addPage()
+      doc.addImage(pg.toDataURL('image/png'), 'PNG', 0, 0, A4w, h * ratio)
+      y += h
+    }
+  }
+  return doc
+}
+
+// Vygeneruje PDF faktury pro e-mailovou přílohu — stejná cesta (renderInvoiceCanvas
+// + canvasToPdfDoc) jako "Stáhnout PDF", jen FakturaTisk vykreslí mimo obrazovku
+// místo klonování otevřeného náhledu. Vrací čistý base64 (bez "data:...;base64," prefixu).
+async function generateInvoicePdfBase64(inv, profil) {
+  const container = document.createElement('div')
+  Object.assign(container.style, {
+    position:   'absolute',
+    top:        '-9999px',
+    left:       '0',
+    width:      '794px',
+    minHeight:  '100px',
+    padding:    '56px 60px 72px',
+    boxSizing:  'border-box',
+    background: '#fff',
+    fontFamily: 'Arial, sans-serif',
+    fontSize:   '13px',
+    lineHeight: '1.6',
+    color:      '#1A1F2E',
+    overflow:   'visible',
+    maxHeight:  'none',
+  })
+  document.body.appendChild(container)
+  const root = createRoot(container)
+  root.render(<FakturaTisk inv={inv} profil={profil} />)
+  try {
+    const canvas = await renderInvoiceCanvas(container)
+    const doc = await canvasToPdfDoc(canvas)
+    return doc.output('datauristring').split(',')[1]
+  } finally {
+    root.unmount()
+    document.body.removeChild(container)
+  }
+}
+
+// ─── Náhled / tisk faktury ────────────────────────────────────────────────────
+function FakturaView({ inv, profil, onClose, onEdit }) {
   const stahnout = async () => {
     try {
-      // 1. Importy – staticky aby Vite správně zbundloval
-      const html2canvas = (await import('html2canvas')).default
-      const { jsPDF }   = await import('jspdf')
-
-      // 2. Zdrojový element
       const source = document.getElementById('f-tisk')
       if (!source) throw new Error('Element #f-tisk nenalezen')
 
-      // 3. Klon do body – viditelný, pevná šířka A4, mimo viewport
+      // Klon do body – viditelný, pevná šířka A4, mimo viewport
       const clone = source.cloneNode(true)
       Object.assign(clone.style, {
         position:   'absolute',
@@ -107,49 +285,10 @@ function FakturaView({ inv, profil, onClose, onEdit }) {
       })
       document.body.appendChild(clone)
 
-      // 4. Počkat na vykreslení
-      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))
-
-      // 5. Renderovat
-      const canvas = await html2canvas(clone, {
-        scale:           2,
-        useCORS:         true,
-        allowTaint:      true,
-        backgroundColor: '#ffffff',
-        logging:         false,
-        width:           794,
-        windowWidth:     794,
-        scrollX:         0,
-        scrollY:         0,
-      })
-
+      const canvas = await renderInvoiceCanvas(clone)
       document.body.removeChild(clone)
 
-      // 6. Sestavit PDF
-      const doc    = new jsPDF({ unit: 'mm', format: 'a4' })
-      const A4w    = 210
-      const A4h    = 297
-      const ratio  = A4w / canvas.width          // px → mm
-      const imgH   = canvas.height * ratio
-
-      if (imgH <= A4h) {
-        doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, A4w, imgH)
-      } else {
-        const pageHpx = A4h / ratio
-        let y = 0
-        while (y < canvas.height) {
-          const h = Math.min(pageHpx, canvas.height - y)
-          const pg = Object.assign(document.createElement('canvas'), { width: canvas.width, height: Math.ceil(h) })
-          const ctx = pg.getContext('2d')
-          ctx.fillStyle = '#fff'
-          ctx.fillRect(0, 0, pg.width, pg.height)
-          ctx.drawImage(canvas, 0, y, canvas.width, h, 0, 0, canvas.width, h)
-          if (y > 0) doc.addPage()
-          doc.addImage(pg.toDataURL('image/png'), 'PNG', 0, 0, A4w, h * ratio)
-          y += h
-        }
-      }
-
+      const doc = await canvasToPdfDoc(canvas)
       doc.save(inv.id + '.pdf')
 
     } catch (err) {
@@ -182,96 +321,7 @@ function FakturaView({ inv, profil, onClose, onEdit }) {
         </div>
         <div style={{ padding:'22px', overflowY:'auto', maxHeight:'75vh' }}>
           <div id="f-tisk" style={{ fontFamily:'Arial,sans-serif', fontSize:13, color:'#1A1F2E', lineHeight:1.55 }}>
-
-            {/* Hlavička */}
-            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:24 }}>
-              <div>
-                <div style={{ fontSize:20, fontWeight:800 }}><span style={{ color:'#0066CC' }}>Šikula</span><span style={{ color:'#F07800' }}>Doma</span></div>
-                <div style={{ fontSize:11, color:'#9CA3AF' }}>sikuladoma.cz</div>
-              </div>
-              <div style={{ textAlign:'right' }}>
-                <div style={{ fontSize:18, fontWeight:800 }}>FAKTURA</div>
-                <div style={{ color:'#F07800', fontWeight:700 }}>{inv.id}</div>
-              </div>
-            </div>
-
-            {/* Strany */}
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:20 }}>
-              {[
-                ['Dodavatel', [profil.jmeno, profil.ulice, [profil.psc, profil.mesto].filter(Boolean).join(' '), profil.ico && `IČO: ${profil.ico}`, profil.platceDph && profil.dic && `DIČ: ${profil.dic}`, profil.platceDph ? 'Plátce DPH' : 'Neplátce DPH'].filter(Boolean)],
-                ['Odběratel', [inv.zakaznik || inv.customer, inv.zakaznikAdresa, [inv.zakaznikPsc, inv.zakaznikMesto].filter(Boolean).join(' '), inv.zakaznikIco && `IČO: ${inv.zakaznikIco}`, inv.zakaznikEmail, inv.zakaznikTel].filter(Boolean)],
-              ].map(([tit, radky]) => (
-                <div key={tit} style={{ background:'#F9FAFB', borderRadius:9, padding:'12px 14px', border:'1px solid #E5E7EB' }}>
-                  <div style={{ fontSize:10, fontWeight:700, letterSpacing:'.1em', textTransform:'uppercase', color:'#9CA3AF', marginBottom:6 }}>{tit}</div>
-                  {radky.map((r, i) => <div key={i} style={{ fontSize: i===0?14:12, fontWeight: i===0?700:400, color: i===0?'#1A1F2E':'#4B5563', marginBottom:2 }}>{r}</div>)}
-                </div>
-              ))}
-            </div>
-
-            {/* Datumy */}
-            <div style={{ display:'flex', gap:12, marginBottom:18 }}>
-              {[['Datum vystavení', inv.datumVystaveni||inv.created], ['Datum plnění', inv.datumPlneni||inv.created], ['Splatnost', inv.splatnost||inv.due]].map(([k,v]) => (
-                <div key={k} style={{ flex:1, background:'#EFF6FF', borderRadius:8, padding:'8px 12px' }}>
-                  <div style={{ fontSize:10, color:'#6B7280', marginBottom:2 }}>{k}</div>
-                  <div style={{ fontWeight:600, fontSize:12 }}>{v}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Položky */}
-            <table style={{ width:'100%', borderCollapse:'collapse', marginBottom:18 }}>
-              <thead>
-                <tr style={{ background:'#EFF6FF', color:'#1E3A5F', borderBottom:'2px solid #BFDBFE' }}>
-                  {['Popis', 'Ks', sazba>0?'Základ':'Cena', sazba>0&&`DPH ${sazba}%`, sazba>0&&'S DPH'].filter(Boolean).map(h=>(
-                    <th key={h} style={{ padding:'8px 10px', textAlign:h==='Popis'?'left':'right', fontSize:11, fontWeight:700 }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <tr style={{ borderBottom:'1px solid #E5E7EB' }}>
-                  <td style={{ padding:'10px 10px', fontSize:13 }}>{inv.sluzba||inv.title}</td>
-                  <td style={{ padding:'10px 10px', textAlign:'right', fontSize:13 }}>1</td>
-                  <td style={{ padding:'10px 10px', textAlign:'right', fontSize:13 }}>{fKc(base)}</td>
-                  {sazba>0 && <td style={{ padding:'10px 10px', textAlign:'right', fontSize:13 }}>{fKc(dphC)}</td>}
-                  {sazba>0 && <td style={{ padding:'10px 10px', textAlign:'right', fontWeight:700, fontSize:13 }}>{fKc(celk)}</td>}
-                </tr>
-              </tbody>
-            </table>
-
-            {/* Rekapitulace */}
-            <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:16 }}>
-              <div style={{ minWidth:220 }}>
-                {sazba > 0 ? (
-                  <>
-                    <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 0', fontSize:12, color:'#6B7280' }}><span>Základ DPH</span><span>{fKc(base)}</span></div>
-                    <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 0', fontSize:12, color:'#6B7280' }}><span>DPH {sazba} %</span><span>{fKc(dphC)}</span></div>
-                    <div style={{ height:1, background:'#E5E7EB', margin:'6px 0' }} />
-                  </>
-                ) : (
-                  <div style={{ display:'flex', justifyContent:'space-between', padding:'4px 0', fontSize:12, color:'#6B7280' }}><span>DPH</span><span>Neplátce DPH</span></div>
-                )}
-                <div style={{ display:'flex', justifyContent:'space-between', padding:'10px 14px', background:'#EFF6FF', border:'1.5px solid #BFDBFE', borderRadius:10 }}>
-                  <span style={{ fontWeight:700, color:'#1E3A5F' }}>K úhradě</span>
-                  <span style={{ fontWeight:800, color:'#1D4ED8', fontSize:15 }}>{fKc(celk)}</span>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display:'flex', gap:10, marginBottom:10, flexWrap:'wrap' }}>
-              {(inv.zpusobPlatby) && (
-                <div style={{ padding:'8px 12px', background:'#F0FDF4', border:'1px solid #BBF7D0', borderRadius:8, fontSize:12, color:'#166534' }}>
-                  <strong>Způsob platby:</strong> {inv.zpusobPlatby}
-                </div>
-              )}
-              {inv.poznamka && (
-                <div style={{ padding:'8px 12px', background:'#FFFBEB', border:'1px solid #FEF08A', borderRadius:8, fontSize:12, color:'#6B7280', flex:1 }}>
-                  <strong>Poznámka:</strong> {inv.poznamka}
-                </div>
-              )}
-            </div>
-            <div style={{ marginTop:32, paddingTop:14, borderTop:'1px solid #F3F4F6', fontSize:10, color:'#CBD5E1', textAlign:'center', paddingBottom:8, letterSpacing:'.02em' }}>
-              Vystaveno přes ŠikulaDoma
-            </div>
+            <FakturaTisk inv={inv} profil={profil} />
           </div>
         </div>
       </div>
@@ -644,10 +694,25 @@ export default function InvoicePage() {
       return
     }
     setSendingId(inv.id)
+
+    // PDF přílohu generujeme stejnou cestou jako "Stáhnout PDF" (viz FakturaTisk
+    // + generateInvoicePdfBase64 výše) — bez PDF se e-mail vůbec nezkouší poslat.
+    let pdfBase64
+    try {
+      pdfBase64 = await generateInvoicePdfBase64(inv, profil)
+    } catch (err) {
+      console.error('PDF pro odeslání faktury se nepodařilo připravit:', err)
+      alert('PDF faktury se nepodařilo připravit. Zkuste to prosím znovu.')
+      setSendingId(null)
+      return
+    }
+
     try {
       const res = await fetch(`/api/invoices?action=send&id=${encodeURIComponent(inv.id)}`, {
         method: 'POST',
         credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pdfBase64 }),
       })
       const data = await res.json().catch(()=>({}))
       if (!res.ok) throw new Error(data.error || 'Fakturu se nepodařilo odeslat. Zkuste to prosím znovu.')
