@@ -791,13 +791,12 @@ export default function InvoicePage() {
                   </td>
                   <td style={{ ...TD, textAlign:'right' }}>
                     <div style={{ display:'flex', gap:5, justifyContent:'flex-end', flexWrap:'wrap' }}>
-                      <button title="Náhled / PDF" style={BI} onClick={()=>setNahled(inv)}>👁</button>
-                      {inv.status!=='cancelled' && <button title="Odeslat zákazníkovi" disabled={sendingId===inv.id} style={{ ...BI, background:'#EFF6FF', color:'#1D4ED8', border:'1px solid #BFDBFE', opacity:sendingId===inv.id?.6:1 }} onClick={()=>sendToCustomer(inv)}>✉ {sendingId===inv.id ? 'Odesílám…' : 'Odeslat zákazníkovi'}</button>}
-                      {inv.status!=='cancelled' && <button title="Upravit FA" style={BI} onClick={()=>setEditing(inv)}>✎ Upravit FA</button>}
+                      <button title="Náhled" style={BI} onClick={()=>setNahled(inv)}>👁</button>
+                      {inv.status!=='cancelled' && <button title="Odeslat" disabled={sendingId===inv.id} style={{ ...BI, background:'#EFF6FF', color:'#1D4ED8', border:'1px solid #BFDBFE', opacity:sendingId===inv.id?.6:1 }} onClick={()=>sendToCustomer(inv)}>✉ {sendingId===inv.id ? 'Odesílám…' : 'Odeslat'}</button>}
+                      {inv.status!=='cancelled' && <button title="Upravit" style={BI} onClick={()=>setEditing(inv)}>✎ Upravit</button>}
                       {inv.status!=='paid' && inv.status!=='cancelled' && <button title="Označit jako zaplaceno" style={{ ...BI, background:'#FEF2F2', color:'#DC2626', border:'1px solid #FECACA', fontWeight:600 }} onClick={()=>changeStatus(inv.id,'paid')}>✓ Označit jako zaplaceno</button>}
-                      {inv.status==='paid' && <button title="Zrušit úhradu" style={{ ...BI, background:'#FFF7ED', color:'#D97706', border:'1px solid #FDE68A' }} onClick={()=>changeStatus(inv.id,'sent')}>↩ Zrušit úhradu</button>}
                       {inv.status==='draft' && <button title="Smazat" style={{ ...BI, background:'#FEF2F2', color:'#B91C1C', border:'1px solid #FECACA' }} onClick={()=>deleteInvoice(inv.id)}>🗑 Smazat</button>}
-                      {inv.status!=='draft' && inv.status!=='cancelled' && <button title="Stornovat FA" style={{ ...BI, background:'#F3F4F6', color:'#374151', border:'1px solid #D1D5DB' }} onClick={()=>stornoInvoice(inv.id)}>⊘ Stornovat FA</button>}
+                      {inv.status!=='draft' && inv.status!=='cancelled' && <button title="Stornovat" style={{ ...BI, background:'#F3F4F6', color:'#374151', border:'1px solid #D1D5DB' }} onClick={()=>stornoInvoice(inv.id)}>⊘ Stornovat</button>}
                     </div>
                   </td>
                 </tr>
