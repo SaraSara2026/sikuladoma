@@ -8,14 +8,14 @@ import { sendInvoiceEmail } from './_email.js';
 
 export default async function handler(req, res) {
   try {
-    if (req.method === 'GET')    return listInvoices(req, res);
+    if (req.method === 'GET')    return await listInvoices(req, res);
     // ?action=send sdílí tenhle jeden soubor místo nového api/invoices/send.js
     // — Vercel Hobby limituje počet serverless funkcí na 12 a ten je už plně
     // vyčerpaný (viz stejný vzorec v api/auth/[action].js).
-    if (req.method === 'POST' && req.query?.action === 'send') return sendInvoice(req, res);
-    if (req.method === 'POST')   return createInvoice(req, res);
-    if (req.method === 'PATCH')  return updateInvoice(req, res);
-    if (req.method === 'DELETE') return deleteInvoice(req, res);
+    if (req.method === 'POST' && req.query?.action === 'send') return await sendInvoice(req, res);
+    if (req.method === 'POST')   return await createInvoice(req, res);
+    if (req.method === 'PATCH')  return await updateInvoice(req, res);
+    if (req.method === 'DELETE') return await deleteInvoice(req, res);
 
     res.setHeader('Allow', 'GET, POST, PATCH, DELETE');
     return res.status(405).json({ error: 'Method not allowed' });
@@ -131,10 +131,10 @@ async function updateInvoice(req, res) {
       customer_name  = COALESCE(${customer_name},  customer_name),
       customer_email = COALESCE(${customer_email}, customer_email),
       due_date       = COALESCE(${due_date},       due_date),
-      status         = COALESCE(${status},         status),
+      status         = COALESCE(${status}::text,         status),
       paid_at       = CASE
-                         WHEN ${status} = 'paid' AND status IS DISTINCT FROM 'paid' THEN NOW()
-                         WHEN ${status} IS NOT NULL AND ${status} != 'paid' THEN NULL
+                         WHEN ${status}::text = 'paid' AND status IS DISTINCT FROM 'paid' THEN NOW()
+                         WHEN ${status}::text IS NOT NULL AND ${status}::text != 'paid' THEN NULL
                          ELSE paid_at
                        END,
       updated_at    = NOW()
