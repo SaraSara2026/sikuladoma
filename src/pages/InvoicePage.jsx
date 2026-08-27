@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { createRoot } from 'react-dom/client'
 import { useAuth } from '../contexts/AuthContext'
 
 function dnes() {
@@ -71,10 +70,9 @@ function initProfilFor(user) {
   }
 }
 
-// ─── Obsah faktury (sdílený mezi náhledem a generováním PDF přílohy) ─────────
-// Používá ho jak #f-tisk v náhledu (FakturaView), tak generateInvoicePdfBase64
-// při "Odeslat" — jedna šablona zaručuje, že e-mailová příloha vypadá vždy
-// stejně jako to, co šikula vidí v náhledu / stáhne přes "Stáhnout PDF".
+// ─── Obsah faktury (náhled + "Stáhnout PDF") ─────────────────────────────────
+// E-mailová příloha PDF vzniká jinak — server-side v api/_invoice-pdf.js
+// (viz sendToCustomer níže) — kvůli limitu velikosti requestu na Vercelu.
 function FakturaTisk({ inv, profil }) {
   const base = Number(inv.castka || inv.amount || 0)
   const sazba = Number(inv.sazba_dph ?? (profil.platceDph ? 21 : 0))
@@ -176,9 +174,8 @@ function FakturaTisk({ inv, profil }) {
   )
 }
 
-// Vykreslí DOM uzel do canvasu (html2canvas) — sdíleno mezi "Stáhnout PDF"
-// (klon už otevřeného #f-tisk) a generateInvoicePdfBase64 (mimo obrazovku
-// vykreslený FakturaTisk pro fakturu, jejíž náhled zrovna nemusí být otevřený).
+// Vykreslí DOM uzel do canvasu (html2canvas) — používá "Stáhnout PDF"
+// (klon už otevřeného #f-tisk).
 async function renderInvoiceCanvas(node) {
   const html2canvas = (await import('html2canvas')).default
   await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))
@@ -222,40 +219,6 @@ async function canvasToPdfDoc(canvas) {
     }
   }
   return doc
-}
-
-// Vygeneruje PDF faktury pro e-mailovou přílohu — stejná cesta (renderInvoiceCanvas
-// + canvasToPdfDoc) jako "Stáhnout PDF", jen FakturaTisk vykreslí mimo obrazovku
-// místo klonování otevřeného náhledu. Vrací čistý base64 (bez "data:...;base64," prefixu).
-async function generateInvoicePdfBase64(inv, profil) {
-  const container = document.createElement('div')
-  Object.assign(container.style, {
-    position:   'absolute',
-    top:        '-9999px',
-    left:       '0',
-    width:      '794px',
-    minHeight:  '100px',
-    padding:    '56px 60px 72px',
-    boxSizing:  'border-box',
-    background: '#fff',
-    fontFamily: 'Arial, sans-serif',
-    fontSize:   '13px',
-    lineHeight: '1.6',
-    color:      '#1A1F2E',
-    overflow:   'visible',
-    maxHeight:  'none',
-  })
-  document.body.appendChild(container)
-  const root = createRoot(container)
-  root.render(<FakturaTisk inv={inv} profil={profil} />)
-  try {
-    const canvas = await renderInvoiceCanvas(container)
-    const doc = await canvasToPdfDoc(canvas)
-    return doc.output('datauristring').split(',')[1]
-  } finally {
-    root.unmount()
-    document.body.removeChild(container)
-  }
 }
 
 // ─── Náhled / tisk faktury ────────────────────────────────────────────────────
@@ -685,6 +648,11 @@ export default function InvoicePage() {
   }
 
   // POST /api/invoices?action=send — pošle fakturu e-mailem zákazníkovi.
+  // PDF přílohu skládá server přímo z dat faktury (viz api/_invoice-pdf.js) —
+  // frontend jen doplní sazbu DPH a fakturační profil dodavatele, co server
+  // v DB nemá (stejná data, co používá Náhled). Dřívější varianta posílala
+  // celý html2canvas screenshot jako base64 a na Vercelu padala na
+  // 413 Payload Too Large — tohle posílá jen pár řádků JSONu.
   // Draft se po úspěchu na serveru přepne na 'sent' (viz api/invoices.js) —
   // to samé se pro okamžitou odezvu promítne i sem, optimisticky.
   const [sendingId, setSendingId] = useState(null)
@@ -694,25 +662,23 @@ export default function InvoicePage() {
       return
     }
     setSendingId(inv.id)
-
-    // PDF přílohu generujeme stejnou cestou jako "Stáhnout PDF" (viz FakturaTisk
-    // + generateInvoicePdfBase64 výše) — bez PDF se e-mail vůbec nezkouší poslat.
-    let pdfBase64
-    try {
-      pdfBase64 = await generateInvoicePdfBase64(inv, profil)
-    } catch (err) {
-      console.error('PDF pro odeslání faktury se nepodařilo připravit:', err)
-      alert('PDF faktury se nepodařilo připravit. Zkuste to prosím znovu.')
-      setSendingId(null)
-      return
-    }
-
     try {
       const res = await fetch(`/api/invoices?action=send&id=${encodeURIComponent(inv.id)}`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pdfBase64 }),
+        body: JSON.stringify({
+          sazba_dph: inv.sazba_dph ?? (profil.platceDph ? 21 : 0),
+          dodavatel: {
+            jmeno: profil.jmeno,
+            ico: profil.ico,
+            dic: profil.dic,
+            ulice: profil.ulice,
+            mesto: profil.mesto,
+            psc: profil.psc,
+            platceDph: profil.platceDph,
+          },
+        }),
       })
       const data = await res.json().catch(()=>({}))
       if (!res.ok) throw new Error(data.error || 'Fakturu se nepodařilo odeslat. Zkuste to prosím znovu.')

@@ -5,6 +5,7 @@
 import { sql } from './_db.js';
 import { requireUser, requireVerifiedUser } from './_auth.js';
 import { sendInvoiceEmail } from './_email.js';
+import { buildInvoicePdf } from './_invoice-pdf.js';
 
 export default async function handler(req, res) {
   try {
@@ -165,12 +166,11 @@ async function deleteInvoice(req, res) {
 }
 
 // POST /api/invoices?action=send&id=... — pošle fakturu e-mailem zákazníkovi
-// s PDF fakturou v příloze. PDF generuje frontend (stejnou cestou jako tlačítko
-// "Stáhnout PDF" v náhledu — viz FakturaTisk/generateInvoicePdfBase64 v
-// InvoicePage.jsx) a posílá ho sem jako base64 — bez platné PDF přílohy se
-// e-mail vůbec neposílá (žádný odkaz do appky ani veřejná URL na fakturu).
-const MAX_PDF_BYTES = 8 * 1024 * 1024; // reálná faktura má řádově stovky KB, 8 MB je bezpečná rezerva
-
+// s PDF fakturou v příloze. PDF se generuje tady na serveru (viz _invoice-pdf.js)
+// přímo z dat faktury — ne jako html2canvas screenshot poslaný z prohlížeče
+// (to na Vercelu padalo na 413 Payload Too Large, viz commit historie).
+// "Náhled" a "Stáhnout PDF" v dashboardu zůstávají beze změny, dál běží přes
+// html2canvas — tahle cesta se týká jen e-mailové přílohy.
 async function sendInvoice(req, res) {
   const me = await requireUser(req, res);
   if (!me) return;
@@ -179,8 +179,9 @@ async function sendInvoice(req, res) {
   if (!id) return res.status(400).json({ error: 'Chybí id faktury.' });
 
   const [existing] = await sql`
-    SELECT id, sikula_id, title, amount, customer_name, customer_email,
-           TO_CHAR(due_date, 'FMDD. FMMM. YYYY') AS due, status
+    SELECT id, sikula_id, title, amount, customer_name, customer_email, status,
+           TO_CHAR(created_date, 'FMDD. FMMM. YYYY') AS created,
+           TO_CHAR(due_date,     'FMDD. FMMM. YYYY') AS due
     FROM invoices WHERE id = ${id}
   `;
   if (!existing) return res.status(404).json({ error: 'Faktura nenalezena.' });
@@ -196,23 +197,38 @@ async function sendInvoice(req, res) {
     return res.status(400).json({ error: 'U faktury chybí e-mail zákazníka. Doplňte ho prosím ručně.' });
   }
 
-  // PDF příloha: musí být přítomná, dekódovatelná z base64, v rozumné velikosti
-  // a musí reálně začínat jako PDF (%PDF- hlavička) — jinak se e-mail neposílá.
-  const { pdfBase64 } = req.body ?? {};
-  let pdfBuffer = null;
-  if (typeof pdfBase64 === 'string' && pdfBase64.length > 0) {
-    try {
-      pdfBuffer = Buffer.from(pdfBase64, 'base64');
-    } catch {
-      pdfBuffer = null;
-    }
-  }
-  const looksLikePdf = pdfBuffer
-    && pdfBuffer.length > 0
-    && pdfBuffer.length <= MAX_PDF_BYTES
-    && pdfBuffer.subarray(0, 5).toString('latin1') === '%PDF-';
-  if (!looksLikePdf) {
-    return res.status(400).json({ error: 'PDF faktury se nepodařilo připravit. Zkuste to prosím znovu.' });
+  // Sazba DPH a fakturační profil dodavatele nejsou (zatím) v DB — dodá je
+  // frontend (má je v paměti stejně jako pro Náhled), s fallbackem na profil
+  // přihlášeného šikuly z users, pro starší klienty / přímé volání API.
+  const b = req.body ?? {};
+  const sazbaDph = Number.isFinite(Number(b.sazba_dph)) ? Number(b.sazba_dph) : (me.platce_dph ? 21 : 0);
+  const d = b.dodavatel ?? {};
+  const dodavatel = {
+    jmeno: String(d.jmeno || me.name || ''),
+    ico: String(d.ico || me.ico || ''),
+    dic: String(d.dic || ''),
+    ulice: String(d.ulice || me.street || ''),
+    mesto: String(d.mesto || [me.city_area, me.city].filter(Boolean).join(' ') || ''),
+    psc: String(d.psc || me.zip || ''),
+    platceDph: d.platceDph != null ? Boolean(d.platceDph) : Boolean(me.platce_dph),
+  };
+
+  let pdfBuffer;
+  try {
+    pdfBuffer = buildInvoicePdf({
+      invoiceId: existing.id,
+      title: existing.title,
+      amount: Number(existing.amount),
+      sazbaDph,
+      customerName: existing.customer_name,
+      customerEmail: existing.customer_email,
+      createdDate: existing.created,
+      dueDate: existing.due,
+      dodavatel,
+    });
+  } catch (err) {
+    console.error('[invoices] PDF build failed:', err);
+    return res.status(500).json({ error: 'PDF faktury se nepodařilo připravit. Zkuste to prosím znovu.' });
   }
 
   try {
