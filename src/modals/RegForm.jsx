@@ -179,7 +179,7 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
             <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
               <div>
                 <label style={lbl}>Typ šikuly *</label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                <div className="rgrid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   {[
                     { id: "zivnostnik_firma", label: "Živnostník / firma", desc: "Vyžaduje IČO" },
                     { id: "prilezitostna_vypomoc", label: "Příležitostná výpomoc", desc: "Bez IČO" },
@@ -211,7 +211,7 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
               <div><label style={lbl}>Heslo * (min. 8 znaků)</label><PasswordField value={form.password} onChange={e => upd("password", e.target.value)} autoComplete="new-password" /></div>
               <div><label style={lbl}>Telefon *</label><input value={form.phone} onChange={e => upd("phone", e.target.value)} placeholder="+420 777 000 000" type="tel" autoComplete="tel" style={inp} /></div>
               <div><label style={lbl}>Ulice a číslo *</label><input value={form.street} onChange={e => upd("street", e.target.value)} placeholder="Hlavní 42" style={inp} /></div>
-              <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
+              <div className="rgrid-2" style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
                 <div><label style={lbl}>Město / oblast *</label><input value={form.cityArea} onChange={e => upd("cityArea", e.target.value)} placeholder="Praha a okolí" style={inp} /></div>
                 <div><label style={lbl}>PSČ *</label><input value={form.zip} onChange={e => upd("zip", e.target.value)} placeholder="110 00" style={inp} /></div>
               </div>

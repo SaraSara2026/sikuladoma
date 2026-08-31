@@ -1451,7 +1451,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                 </div>
                 <div className="form-group">
                   <label className="form-label">Typ šikuly</label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <div className="rgrid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                     {[
                       { id: 'zivnostnik_firma', label: 'Živnostník / firma', desc: 'Vyžaduje IČO' },
                       { id: 'prilezitostna_vypomoc', label: 'Příležitostná výpomoc', desc: 'Bez IČO' },

@@ -146,7 +146,7 @@ export default function OrderDetailPage({ order: orderProp, onNav, currentUser, 
               <p style={{ fontSize: 15, color: 'var(--text2)', lineHeight: 1.8, marginBottom: 20 }}>
                 {order.description || order.desc || 'Žádný popis.'}
               </p>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="rgrid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 {[
                   ['Patro / přístup', order.floor || order.access],
                   ['Parkování',       order.parking],

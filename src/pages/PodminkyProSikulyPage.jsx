@@ -97,6 +97,7 @@ const SECTIONS = [
 export default function PodminkyProSikulyPage({ onBack }) {
   return (
     <div style={{ minHeight: "100vh", background: "#F9FAFB" }}>
+      <style>{`@media (max-width: 480px){ .psp-provoz-grid{grid-template-columns:1fr !important;} }`}</style>
 
       {/* Breadcrumb */}
       <div style={{ background: "#fff", borderBottom: "1px solid #F3F4F6", padding: "10px 24px" }}>
@@ -166,7 +167,7 @@ export default function PodminkyProSikulyPage({ onBack }) {
         {/* Provozovatel */}
         <div style={{ background: "#fff", border: "1px solid #F3F4F6", borderRadius: 16, padding: "24px 28px", marginTop: 8 }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "#6B7280", marginBottom: 14 }}>Provozovatel</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+          <div className="psp-provoz-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
             <div>
               <div style={{ fontSize: 14, fontWeight: 600, color: "#1A1F2E", marginBottom: 4 }}>Stavira s.r.o.</div>
               <div style={{ fontSize: 13, color: "#9CA3AF", lineHeight: 1.75 }}>
