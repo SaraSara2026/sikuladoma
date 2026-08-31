@@ -795,7 +795,7 @@ export default function InvoicePage() {
           radši vodorovně scrolluje, než aby se sloupce ořezaly nebo rozbily. */}
       <div style={{ background:'#fff', border:'1px solid #E5E7EB', borderRadius:14, overflow:'hidden', boxShadow:'0 1px 3px rgba(0,0,0,.04)' }}>
         <div style={{ overflowX:'auto' }}>
-        <table style={{ width:'100%', borderCollapse:'collapse', minWidth:720 }}>
+        <table className="inv-table" style={{ width:'100%', borderCollapse:'collapse', minWidth:720 }}>
           <thead>
             <tr style={{ background:'#F9FAFB', borderBottom:'1px solid #E5E7EB' }}>
               <th style={TH}>Vystavena</th>
@@ -818,21 +818,21 @@ export default function InvoicePage() {
               const st = STATUS_STYLE[stav]
               return (
                 <tr key={inv.id} style={{ borderBottom: idx < arr.length-1 ? '1px solid #F3F4F6' : 'none', background: stav==='late' ? '#FFF5F5' : '#fff' }}>
-                  <td style={TD}><span style={{ fontSize:13, color:'#6B7280' }}>{inv.datumVystaveni||inv.created||'—'}</span></td>
-                  <td style={TD}><span style={{ fontSize:13, fontWeight:600, color:'#1D4ED8' }}>{inv.id}</span></td>
-                  <td style={TD}>
+                  <td style={TD} data-label="Vystavena"><span style={{ fontSize:13, color:'#6B7280' }}>{inv.datumVystaveni||inv.created||'—'}</span></td>
+                  <td style={TD} data-label="Číslo faktury"><span style={{ fontSize:13, fontWeight:600, color:'#1D4ED8' }}>{inv.id}</span></td>
+                  <td style={TD} data-label="Stav">
                     <div style={{ display:'inline-flex', flexDirection:'column', alignItems:'center' }}>
                       <span style={{ fontSize:12, fontWeight:700, color:st.color, background:st.bg, border:`1px solid ${st.border}`, borderRadius:6, padding:'2px 8px', whiteSpace:'nowrap' }}>{st.label}</span>
                       {stav==='paid' && inv.splatnost && <span style={{ fontSize:10, color:'#9CA3AF', marginTop:1 }}>{inv.splatnost}</span>}
                       {stav==='late' && inv.splatnost && <span style={{ fontSize:10, color:'#DC2626', marginTop:1, textDecoration:'underline dotted' }}>{inv.splatnost}</span>}
                     </div>
                   </td>
-                  <td style={TD}><span style={{ fontSize:13, color:'#1A1F2E' }}>{inv.zakaznik||inv.customer||'—'}</span></td>
-                  <td style={{ ...TD, textAlign:'right' }}>
+                  <td style={TD} data-label="Zákazník"><span style={{ fontSize:13, color:'#1A1F2E' }}>{inv.zakaznik||inv.customer||'—'}</span></td>
+                  <td style={{ ...TD, textAlign:'right' }} data-label="Částka">
                     <span style={{ fontSize:14, fontWeight:700, color:stav==='paid'?'#16A34A':'#1A1F2E' }}>{fKc(celk)}</span>
                     {profil.platceDph && <div style={{ fontSize:11, color:'#9CA3AF' }}>základ {fKc(base)}</div>}
                   </td>
-                  <td style={{ ...TD, textAlign:'right' }}>
+                  <td style={{ ...TD, textAlign:'right' }} data-label="Akce">
                     <div style={{ display:'flex', gap:5, justifyContent:'flex-end', flexWrap:'wrap' }}>
                       <button title="Náhled" style={BI} onClick={()=>setNahled(inv)}>👁</button>
                       {inv.status!=='cancelled' && <button title="Odeslat" disabled={sendingId===inv.id} style={{ ...BI, background:'#EFF6FF', color:'#1D4ED8', border:'1px solid #BFDBFE', opacity:sendingId===inv.id?.6:1 }} onClick={()=>sendToCustomer(inv)}>✉ {sendingId===inv.id ? 'Odesílám…' : 'Odeslat'}</button>}
@@ -857,7 +857,7 @@ export default function InvoicePage() {
       {view === 'zakaznici' && (
         <div style={{ background:'#fff', border:'1px solid #E5E7EB', borderRadius:14, overflow:'hidden', boxShadow:'0 1px 3px rgba(0,0,0,.04)' }}>
           <div style={{ overflowX:'auto' }}>
-          <table style={{ width:'100%', borderCollapse:'collapse', minWidth:560 }}>
+          <table className="inv-table" style={{ width:'100%', borderCollapse:'collapse', minWidth:560 }}>
             <thead>
               <tr style={{ background:'#F9FAFB', borderBottom:'1px solid #E5E7EB' }}>
                 <th style={TH}>Zákazník</th>
@@ -874,12 +874,12 @@ export default function InvoicePage() {
               )}
               {zakaznici.map((z, idx, arr) => (
                 <tr key={z.jmeno} style={{ borderBottom: idx < arr.length-1 ? '1px solid #F3F4F6' : 'none' }}>
-                  <td style={TD}><span style={{ fontWeight:600, fontSize:13 }}>{z.jmeno}</span></td>
-                  <td style={TD}><span style={{ fontSize:12, color:'#6B7280' }}>{[z.adresa, z.psc, z.mesto].filter(Boolean).join(', ') || '—'}</span></td>
-                  <td style={TD}><span style={{ fontSize:12, color:'#6B7280' }}>{z.ico || '—'}</span></td>
-                  <td style={{ ...TD, textAlign:'right' }}><span style={{ fontSize:13 }}>{z.pocetFaktur}</span></td>
-                  <td style={{ ...TD, textAlign:'right' }}><span style={{ fontSize:13, fontWeight:600 }}>{fKc(z.celkem)}</span></td>
-                  <td style={{ ...TD, textAlign:'right' }}>
+                  <td style={TD} data-label="Zákazník"><span style={{ fontWeight:600, fontSize:13 }}>{z.jmeno}</span></td>
+                  <td style={TD} data-label="Adresa"><span style={{ fontSize:12, color:'#6B7280' }}>{[z.adresa, z.psc, z.mesto].filter(Boolean).join(', ') || '—'}</span></td>
+                  <td style={TD} data-label="IČO"><span style={{ fontSize:12, color:'#6B7280' }}>{z.ico || '—'}</span></td>
+                  <td style={{ ...TD, textAlign:'right' }} data-label="Faktur"><span style={{ fontSize:13 }}>{z.pocetFaktur}</span></td>
+                  <td style={{ ...TD, textAlign:'right' }} data-label="Celkem"><span style={{ fontSize:13, fontWeight:600 }}>{fKc(z.celkem)}</span></td>
+                  <td style={{ ...TD, textAlign:'right' }} data-label="Akce">
                     <button style={BI} onClick={()=>{ setShowNova(true); }}>+ Faktura</button>
                   </td>
                 </tr>

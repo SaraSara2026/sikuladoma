@@ -529,6 +529,20 @@ footer { background:var(--ink); color:rgba(255,255,255,.5); padding:56px 24px 28
   .order-card { flex-wrap:wrap; }
   .order-actions { width:100%; justify-content:flex-end; }
 }
+@media(max-width:640px){
+  /* Tabulky faktur/zákazníků: místo vodorovného posouvání se řádky
+     rozpadnou na karty (každá buňka = popisek + hodnota pod sebou). */
+  .inv-table { min-width:0 !important; }
+  .inv-table thead { display:none; }
+  .inv-table tbody, .inv-table tr, .inv-table td { display:block; width:100% !important; }
+  .inv-table tr { padding:12px 14px; border-bottom:1px solid #F3F4F6; }
+  .inv-table td { padding:5px 0 !important; text-align:left !important; }
+  .inv-table td[data-label]::before {
+    content:attr(data-label); display:block; font-size:10px; font-weight:700;
+    color:#9CA3AF; text-transform:uppercase; letter-spacing:.05em; margin-bottom:2px;
+  }
+  .inv-table td[data-label="Akce"] > div { justify-content:flex-start !important; }
+}
 @media(max-width:480px){
   .footer-grid { grid-template-columns:1fr; }
   .live-strip-inner { flex-direction:column; align-items:center; gap:4px; }
