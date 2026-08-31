@@ -82,6 +82,14 @@ export default function KontaktPage({ onBack }) {
 
   return (
     <div style={S.page}>
+      <style>{`
+        .kt-grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:28px;align-items:start;}
+        @media (max-width: 860px){ .kt-grid{grid-template-columns:1fr;} }
+        .kt-names{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+        @media (max-width: 420px){ .kt-names{grid-template-columns:1fr;} }
+        .kt-sliby{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+        @media (max-width: 560px){ .kt-sliby{grid-template-columns:1fr;} }
+      `}</style>
       <Breadcrumb onBack={onBack} />
 
       {/* ── HERO ────────────────────────────────────────────────────────── */}
@@ -105,7 +113,7 @@ export default function KontaktPage({ onBack }) {
 
       {/* ── OBSAH ───────────────────────────────────────────────────────── */}
       <section style={{ padding: '64px 24px 72px', background: '#F9FAFB' }}>
-        <div style={{ maxWidth: 1040, margin: '0 auto', display: 'grid', gridTemplateColumns: 'minmax(0,1.45fr) minmax(0,1fr)', gap: 28, alignItems: 'start' }}>
+        <div className="kt-grid" style={{ maxWidth: 1040, margin: '0 auto' }}>
 
           {/* Formulář */}
           <div style={{ background: '#fff', borderRadius: 20, padding: '36px 32px', boxShadow: '0 1px 3px rgba(0,0,0,.05),0 6px 24px rgba(0,0,0,.06)', border: '1px solid #F3F4F6' }}>
@@ -136,7 +144,7 @@ export default function KontaktPage({ onBack }) {
 
             {/* Pole */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="kt-names">
                 <Field label="Jméno" value={form.jmeno} onChange={v => u('jmeno', v)} placeholder="Jana Nováková" />
                 <Field label="E-mail" type="email" value={form.email} onChange={v => u('email', v)} placeholder="vas@email.cz" />
               </div>
@@ -253,7 +261,7 @@ export default function KontaktPage({ onBack }) {
       <section style={{ padding: '56px 24px 72px', background: '#fff' }}>
         <div style={{ maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
+          <div className="kt-sliby">
             {SLIBY.map(({ Icon, bg, color, text }) => (
               <div key={text} style={{ background: bg, borderRadius: 16, padding: '26px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
                 <div style={{ width: 48, height: 48, borderRadius: 14, background: '#fff', color, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,.08)' }}>
