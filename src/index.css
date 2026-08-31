@@ -498,6 +498,7 @@ footer { background:var(--ink); color:rgba(255,255,255,.5); padding:56px 24px 28
 
 /* RESPONSIVE */
 @media(max-width:900px){
+  .how-grid { grid-template-columns:repeat(2,1fr); gap:16px; }
   /* Dashboards na mobilu: postranní/vodorovné menu úplně mizí, nahrazuje ho
      pevná spodní lišta (DashBottomNav) + otevíratelné "Více". Předchozí
      řešení (sidebar jako vodorovně scrollovací pruh) bylo s 8–13 položkami

@@ -590,13 +590,14 @@ export default function App() {
               Poptávku zadáte za pár minut. Vyberete službu, místo, čas a odešlete.
             </p>
           </div>
-          <div className="how-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
+          <div className="how-grid">
             {[
               { n: 1, title: "Vyberete kategorii",       desc: "Například Domácnost, Zahrada, Elektro práce nebo Drobné opravy a montáže.", bg: "#FFF7ED", color: "#F97316" },
               { n: 2, title: "Vyberete konkrétní službu", desc: "Například u kategorie Domácnost zvolíte žehlení, úklid, mytí oken nebo jinou službu.", bg: "#EFF6FF", color: "#3B82F6" },
               { n: 3, title: "Upřesníte požadavek",      desc: "Můžete dopsat vlastní poznámku. Například kolik prádla chcete vyžehlit. Není to ale povinné.", bg: "#F0FDF4", color: "#22C55E" },
               { n: 4, title: "Zadáte místo a čas",       desc: "Vyplníte adresu nebo oblast, kde se má služba provést, a zvolíte, jak rychle ji potřebujete.", bg: "#FAF5FF", color: "#A855F7" },
-              { n: 5, title: "Odešlete poptávku",        desc: "Šikulové z okolí se vám mohou ozvat s nabídkou. Vyberete podle ceny, termínu a recenzí.", bg: "#F0F9FF", color: "#0EA5E9" },
+              { n: 5, title: "Zadáte kontakt",           desc: "Vyplníte telefon a e-mail, aby se s vámi mohli vybraní šikulové rychle spojit.", bg: "#FEF2F2", color: "#EF4444" },
+              { n: 6, title: "Odešlete poptávku",        desc: "Šikulové z okolí se vám mohou ozvat s nabídkou. Vyberete podle ceny, termínu a recenzí.", bg: "#F0F9FF", color: "#0EA5E9" },
             ].map(step => (
               <div key={step.n} style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: 16, padding: "24px 22px", boxShadow: "0 1px 3px rgba(0,0,0,.04)", transition: "all .18s", cursor: "default" }}
                 onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,.09)"; }}
