@@ -450,23 +450,62 @@ footer { background:var(--ink); color:rgba(255,255,255,.5); padding:56px 24px 28
   .rgrid-3 { grid-template-columns:1fr !important; }
 }
 
+/* DASHBOARD — spodní navigace na mobilu (DashBottomNav.jsx) ────────────── */
+.dash-bottom-nav {
+  display:none; position:fixed; bottom:0; left:0; right:0; z-index:60;
+  background:#fff; border-top:1px solid var(--border);
+  padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+  justify-content:space-around; align-items:stretch;
+}
+.dash-bottom-item {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:2px; flex:1; min-width:0; padding:6px 2px; border:none; background:none;
+  border-radius:var(--r-sm); font-family:inherit; font-size:10.5px; font-weight:600;
+  color:var(--ink4); cursor:pointer; transition:color .12s;
+}
+.dash-bottom-item.active { color:var(--orange); }
+.dash-bottom-icon { position:relative; font-size:19px; line-height:1; }
+.dash-bottom-label { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+.dash-bottom-lock { position:absolute; top:-4px; right:-8px; font-size:9px; }
+.dash-bottom-badge {
+  position:absolute; top:-5px; right:-9px; min-width:15px; height:15px; padding:0 3px;
+  border-radius:999px; background:var(--brand,#0EA5A4); color:#fff;
+  font-size:9.5px; font-weight:700; line-height:15px; text-align:center;
+}
+
+.dash-more-backdrop { position:fixed; inset:0; z-index:70; background:rgba(15,23,42,.45); display:flex; align-items:flex-end; }
+.dash-more-sheet {
+  width:100%; max-height:75vh; overflow-y:auto; background:#fff;
+  border-radius:18px 18px 0 0; padding:8px 8px calc(12px + env(safe-area-inset-bottom));
+  animation:moreSheetUp .18s ease;
+}
+@keyframes moreSheetUp { from{ transform:translateY(16px); opacity:.6; } to{ transform:none; opacity:1; } }
+.dash-more-handle { width:36px; height:4px; border-radius:2px; background:var(--border2); margin:6px auto 10px; }
+.dash-more-item {
+  display:flex; align-items:center; gap:12px; width:100%; padding:13px 14px;
+  border:none; background:none; border-radius:var(--r-sm); font-family:inherit;
+  font-size:15px; font-weight:500; color:var(--ink2); cursor:pointer; text-align:left;
+}
+.dash-more-item.active { background:var(--orange-pale); color:var(--orange); font-weight:700; }
+.dash-more-item.dash-more-logout { color:var(--red); margin-top:6px; border-top:1px solid var(--border); border-radius:0; padding-top:16px; }
+.dash-more-icon { font-size:18px; flex-shrink:0; }
+.dash-more-label { flex:1; min-width:0; }
+.dash-more-lock { font-size:12px; flex-shrink:0; }
+.dash-more-badge {
+  flex-shrink:0; min-width:20px; height:20px; padding:0 6px; border-radius:999px;
+  background:var(--brand,#0EA5A4); color:#fff; font-size:11px; font-weight:700; line-height:20px; text-align:center;
+}
+
 /* RESPONSIVE */
 @media(max-width:900px){
-  /* Dashboards: sidebar nahoře jako horizontální menu místo levého sloupce */
+  /* Dashboards na mobilu: postranní/vodorovné menu úplně mizí, nahrazuje ho
+     pevná spodní lišta (DashBottomNav) + otevíratelné "Více". Předchozí
+     řešení (sidebar jako vodorovně scrollovací pruh) bylo s 8–13 položkami
+     nepřehledné — najednou šla vidět jen jedna položka. */
   .dash-layout { flex-direction:column; }
-  .dash-sidebar {
-    width:100%; min-height:auto; height:auto;
-    position:sticky; top:58px; z-index:10;
-    flex-direction:row; flex-wrap:nowrap; overflow-x:auto;
-    padding:10px 12px; gap:6px;
-    background:#fff; border-bottom:1px solid var(--border);
-  }
-  .dash-user { display:none; }
-  /* Základní .dash-nav-item má width:100% pro svislé menu na desktopu —
-     v horizontálním pruhu by se jinak každá položka roztáhla na (skoro)
-     celou šířku obrazovky a bylo by vidět jen jednu najednou. */
-  .dash-nav-item { width:auto; white-space:nowrap; flex-shrink:0; color:var(--ink2); }
-  .dash-nav-item.active { background:var(--orange-pale); color:var(--orange); }
+  .dash-sidebar { display:none; }
+  .dash-content { padding-bottom:88px; }
+  .dash-bottom-nav { display:flex; }
 }
 @media(max-width:768px){
   .topbar-nav { display:none; }
@@ -474,7 +513,7 @@ footer { background:var(--ink); color:rgba(255,255,255,.5); padding:56px 24px 28
   .hero { padding:64px 20px 56px; }
   .how-grid { grid-template-columns:1fr; gap:14px; }
   .form-row { grid-template-columns:1fr; }
-  .dash-content { padding:20px 14px; }
+  .dash-content { padding:20px 14px calc(88px + env(safe-area-inset-bottom)); }
   .dash-header { flex-wrap:wrap; }
   .footer-grid { grid-template-columns:1fr 1fr; }
   .live-item { padding:4px 14px; }

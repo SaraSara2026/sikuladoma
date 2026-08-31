@@ -5,6 +5,7 @@ import { ordersApi, offersApi, reviewsApi, conversationsApi, usersApi } from '..
 import { formatCurrencyCz } from '../../lib/format.js'
 import HodnoceniForm from '../../modals/HodnoceniForm.jsx'
 import LinkAccountMismatch from '../../components/LinkAccountMismatch.jsx'
+import DashBottomNav from '../../components/DashBottomNav.jsx'
 
 const menuItems = [
   { id: 'profile',   icon: '👤', label: 'Profil' },
@@ -305,6 +306,17 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
           </button>
         )}
       </div>
+
+      <DashBottomNav
+        items={menuItems.map(m => ({
+          id: m.id, icon: m.icon, label: m.label,
+          badge: m.id === 'offers' ? pendingOffersCount : 0,
+        }))}
+        primaryIds={['overview', 'orders', 'offers', 'active']}
+        activeId={activePage}
+        onSelect={setActivePage}
+        onLogout={onLogout}
+      />
 
       <div className="dash-content">
 

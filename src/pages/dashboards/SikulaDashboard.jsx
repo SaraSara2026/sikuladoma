@@ -6,6 +6,7 @@ import { ordersApi, offersApi, reviewsApi, usersApi, conversationsApi } from '..
 import { apiMe, apiResendVerification } from '../../lib/auth'
 import VerificationBanner from '../../components/VerificationBanner'
 import AvatarUpload from '../../components/AvatarUpload'
+import DashBottomNav from '../../components/DashBottomNav'
 import { SERVICES } from '../../lib/categories'
 import { formatPhoneCZ, isValidPhoneCZ } from '../../lib/phone'
 import { formatCurrencyCz, formatDateCz, getOrderTiming } from '../../lib/format.js'
@@ -912,6 +913,20 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
           </button>
         )}
       </div>
+
+      {!emailUnverified && (
+        <DashBottomNav
+          items={menuItems.map(m => ({
+            id: m.id, icon: m.icon, label: m.label,
+            locked: m.lock === 'plan' ? !isActivePlan : m.lock === 'plus' ? !hasPlusPlan : false,
+            badge: m.id === 'active' ? acceptedJobs.length : m.id === 'offers-sent' ? pendingOffers.length : 0,
+          }))}
+          primaryIds={['overview', 'new-jobs', 'offers-sent', 'active']}
+          activeId={activePage}
+          onSelect={setActivePage}
+          onLogout={onLogout}
+        />
+      )}
 
       <div className="dash-content">
 
