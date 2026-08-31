@@ -180,10 +180,10 @@ export default function OrderForm({ initialService, initialCategory, initialCity
     <div style={S.overlay} onClick={onClose}>
       <div style={{ ...S.modal, maxWidth: 540 }} onClick={e => e.stopPropagation()}>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "15px 20px", borderBottom: `1px solid ${T.border}` }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "15px 20px", borderBottom: `1px solid ${T.border}`, flexWrap: "wrap", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
             {category && (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 8, background: colCat.bg, fontSize: 12, fontWeight: 600, color: colCat.ic }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 8, background: colCat.bg, fontSize: 12, fontWeight: 600, color: colCat.ic, flexShrink: 0, whiteSpace: "nowrap" }}>
                 <category.Icon size={13} /> {category.label}
               </div>
             )}
@@ -193,8 +193,8 @@ export default function OrderForm({ initialService, initialCategory, initialCity
               </div>
             )}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ fontSize: 12, color: T.ink4, fontWeight: 600 }}>{step + 1} / {TOTAL}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+            <div style={{ fontSize: 12, color: T.ink4, fontWeight: 600, whiteSpace: "nowrap" }}>{step + 1} / {TOTAL}</div>
             <IconBtn onClick={onClose}><IcX /></IconBtn>
           </div>
         </div>
@@ -270,7 +270,7 @@ export default function OrderForm({ initialService, initialCategory, initialCity
               <label style={lbl}>Ulice a číslo popisné</label>
               <input autoFocus value={street} onChange={e => setStreet(e.target.value)}
                 placeholder="Hlavní 42" style={inp} />
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 10, marginTop: 12 }}>
+              <div className="rgrid-2" style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 10, marginTop: 12 }}>
                 <div>
                   <label style={lbl}>PSČ *</label>
                   <input value={psc} onChange={e => setPsc(e.target.value)}
@@ -282,7 +282,7 @@ export default function OrderForm({ initialService, initialCategory, initialCity
                     style={inp} placeholder="Praha 6 – Dejvice" />
                 </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
+              <div className="rgrid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 12 }}>
                 <div>
                   <label style={lbl}>Patro</label>
                   <input value={floor} onChange={e => setFloor(e.target.value)}
