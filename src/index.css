@@ -39,7 +39,7 @@ h1,h2,h3,h4 { font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe U
 button { font-family:inherit; cursor:pointer; }
 input,textarea,select { font-family:inherit; }
 a { text-decoration:none; color:inherit; }
-::-webkit-scrollbar { width:5px; }
+::-webkit-scrollbar { width:5px; height:5px; }
 ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
 
 /* ─── TOKENS ─────────────────────────────── */
@@ -462,7 +462,10 @@ footer { background:var(--ink); color:rgba(255,255,255,.5); padding:56px 24px 28
     background:#fff; border-bottom:1px solid var(--border);
   }
   .dash-user { display:none; }
-  .dash-nav-item { white-space:nowrap; flex-shrink:0; color:var(--ink2); }
+  /* Základní .dash-nav-item má width:100% pro svislé menu na desktopu —
+     v horizontálním pruhu by se jinak každá položka roztáhla na (skoro)
+     celou šířku obrazovky a bylo by vidět jen jednu najednou. */
+  .dash-nav-item { width:auto; white-space:nowrap; flex-shrink:0; color:var(--ink2); }
   .dash-nav-item.active { background:var(--orange-pale); color:var(--orange); }
 }
 @media(max-width:768px){

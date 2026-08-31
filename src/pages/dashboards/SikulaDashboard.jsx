@@ -44,15 +44,26 @@ const PLAN_COLORS = {
   'aktiv-plus': 'var(--purple, #7c3aed)',
 }
 
-function PlanBadge({ plan, expiresAt }) {
+// `plan` je jen typ tarifu (co si šikula naposledy zaplatil) — nezmizí ani po
+// vypršení/zrušení předplatného. Skutečnou aktivitu určuje `active`
+// (isSikulaPlanActive, zohledňuje subscription_status i plan_expires_at).
+// Bez téhle kontroly by odznak klidně hlásil "Aktivní šikula", zatímco banner
+// hned pod ním správně říká "Váš tarif vypršel" — matoucí protimluv.
+function PlanBadge({ plan, expiresAt, active }) {
   const p = plan || 'start'
   const label = PLAN_LABELS[p] || p
-  const color = PLAN_COLORS[p] || 'var(--text3)'
   const expiry = expiresAt ? new Date(expiresAt) : null
   const expStr = expiry ? `do ${expiry.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric' })}` : null
+
+  if (p === 'start') {
+    return <span style={{ color: 'var(--text3)', fontWeight: 700 }}>Bez aktivního tarifu</span>
+  }
+  if (!active) {
+    return <span style={{ color: 'var(--text3)', fontWeight: 700 }}>{label} — tarif vypršel</span>
+  }
   return (
-    <span style={{ color, fontWeight: 700 }}>
-      {p !== 'start' ? '👑 ' : ''}{label}
+    <span style={{ color: PLAN_COLORS[p] || 'var(--text3)', fontWeight: 700 }}>
+      👑 {label}
       {expStr && <span style={{ fontWeight: 400, color: 'var(--text3)', fontSize: 12, marginLeft: 4 }}>({expStr})</span>}
     </span>
   )
@@ -955,7 +966,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
               <div>
                 <div className="dash-title">Váš přehled 🛠️</div>
                 <div className="dash-subtitle">
-                  <PlanBadge plan={currentUser?.plan} expiresAt={currentUser?.plan_expires_at} />
+                  <PlanBadge plan={currentUser?.plan} expiresAt={currentUser?.plan_expires_at} active={isActivePlan} />
                   {' · '}{jobsCount} zakázek celkem
                 </div>
               </div>
@@ -1360,9 +1371,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                   <div className="profile-badges">
                     {currentUser?.email_verified_at && <span className="badge badge-green">✓ Ověřený e-mail</span>}
                     <span className="badge badge-blue">
-                      {currentUser?.plan === 'aktiv' ? '👑 Aktivní šikula'
-                        : currentUser?.plan === 'aktiv-plus' ? '👑 Aktivní šikula Plus'
-                        : 'Bez aktivního tarifu'}
+                      <PlanBadge plan={currentUser?.plan} expiresAt={currentUser?.plan_expires_at} active={isActivePlan} />
                     </span>
                     {currentUser?.rating && <span className="badge badge-orange">⭐ {currentUser.rating} ({reviewsSummary?.total ?? 0} recenzí)</span>}
                   </div>
