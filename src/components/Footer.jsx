@@ -4,8 +4,13 @@ export default function Footer({ onOrder, onReg, onKontakt, onHow, onSikuly, onP
 
   return (
     <footer style={{ background: "#F3F6FA", borderTop: "1px solid #CBD5E1", color: link, padding: "16px 24px 8px" }}>
+      <style>{`
+        .ftr-grid{display:grid;grid-template-columns:1.8fr 1fr 1fr 1fr;gap:24px;margin-bottom:12px;}
+        @media (max-width: 899px){ .ftr-grid{grid-template-columns:1fr 1fr;row-gap:28px;} }
+        @media (max-width: 479px){ .ftr-grid{grid-template-columns:1fr;row-gap:24px;} }
+      `}</style>
       <div style={{ maxWidth: 1060, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1.8fr 1fr 1fr 1fr", gap: 24, marginBottom: 12 }}>
+        <div className="ftr-grid">
           <div>
             <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 6, letterSpacing: "-.03em" }}>
               <span style={{ color: "#0066CC" }}>Šikula</span><span style={{ color: "#F07800" }}>Doma</span>
