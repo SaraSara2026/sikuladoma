@@ -273,17 +273,20 @@ function FakturaView({ inv, profil, onClose, onEdit }) {
   return (
     <div style={OV} onClick={onClose}>
       <div style={{ ...MOD, maxWidth: 660 }} onClick={e => e.stopPropagation()}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'16px 22px', borderBottom:'1px solid #E5E7EB' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'16px 22px', borderBottom:'1px solid #E5E7EB', flexWrap:'wrap', gap:10 }}>
           <div style={{ fontWeight:700, fontSize:16, color:'#1A1F2E' }}>Náhled faktury</div>
-          <div style={{ display:'flex', gap:8 }}>
+          <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
             <button style={BG} onClick={onClose}>Zavřít</button>
             {onEdit && <button style={{ ...BG, color:'#C2410C', borderColor:'#FED7AA' }} onClick={onEdit}>✎ Upravit FA</button>}
             <button style={{ ...BG }} onClick={tisk}>🖨 Tisknout</button>
             <button style={BP} onClick={stahnout}>⬇ Stáhnout PDF</button>
           </div>
         </div>
-        <div style={{ padding:'22px', overflowY:'auto', maxHeight:'75vh' }}>
-          <div id="f-tisk" style={{ fontFamily:'Arial,sans-serif', fontSize:13, color:'#1A1F2E', lineHeight:1.55 }}>
+        <div style={{ padding:'22px', overflowY:'auto', overflowX:'auto', maxHeight:'75vh' }}>
+          {/* min-width drží formát faktury pevný (jde i do PDF/tisku) — na
+              úzkém displeji se místo rozbitého rozházení sloupců radši
+              vodorovně scrolluje, přesně jako u náhledu dokumentu/tabulky. */}
+          <div id="f-tisk" style={{ fontFamily:'Arial,sans-serif', fontSize:13, color:'#1A1F2E', lineHeight:1.55, minWidth:480 }}>
             <FakturaTisk inv={inv} profil={profil} />
           </div>
         </div>
@@ -382,6 +385,12 @@ function NovaFaktura({ profil, pocet, editing, onSave, onClose, zakaznici = [] }
 
   return (
     <div style={OV} onClick={onClose}>
+      <style>{`
+        @media (max-width: 460px){
+          .inv-grid3{ grid-template-columns:1fr !important; }
+          .inv-grid2{ grid-template-columns:1fr !important; }
+        }
+      `}</style>
       <div style={{ ...MOD, maxWidth:520 }} onClick={e=>e.stopPropagation()}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'16px 20px', borderBottom:'1px solid #E5E7EB' }}>
           <div style={{ fontWeight:700, fontSize:16, color:'#1A1F2E' }}>{isEdit ? `Upravit ${editing.id}` : 'Nová faktura'}</div>
@@ -496,20 +505,20 @@ function NovaFaktura({ profil, pocet, editing, onSave, onClose, zakaznici = [] }
 
           {/* Adresa zákazníka */}
           <div><label style={LB}>Ulice a číslo popisné</label><input style={IN} value={f.zakaznikAdresa} onChange={e=>u('zakaznikAdresa',e.target.value)} placeholder="Hlavní 123/4" /></div>
-          <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr', gap:8 }}>
+          <div className="inv-grid3" style={{ display:'grid', gridTemplateColumns:'2fr 1fr 1fr', gap:8 }}>
             <div><label style={LB}>Město</label><input style={IN} value={f.zakaznikMesto} onChange={e=>u('zakaznikMesto',e.target.value)} placeholder="Praha" /></div>
             <div><label style={LB}>PSČ</label><input style={IN} value={f.zakaznikPsc} onChange={e=>u('zakaznikPsc',e.target.value)} placeholder="19000" /></div>
             <div><label style={LB}>IČO</label><input style={IN} value={f.zakaznikIco} onChange={e=>u('zakaznikIco',e.target.value)} placeholder="volitelné" /></div>
           </div>
 
           {/* Email + tel */}
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+          <div className="inv-grid2" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
             <div><label style={LB}>E-mail zákazníka</label><input style={IN} type="email" value={f.zakaznikEmail||''} onChange={e=>u('zakaznikEmail',e.target.value)} placeholder="jana@email.cz" /></div>
             <div><label style={LB}>Telefon zákazníka</label><input style={IN} type="tel" value={f.zakaznikTel||''} onChange={e=>u('zakaznikTel',e.target.value)} placeholder="+420 xxx xxx xxx" /></div>
           </div>
 
           {/* Datumy */}
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+          <div className="inv-grid2" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
             <div><label style={LB}>Datum vystavení</label><input style={IN} type="date" value={datToInput(f.datumVystaveni)} onChange={e=>u('datumVystaveni', inputToDat(e.target.value))} /></div>
             <div><label style={LB}>Datum splatnosti</label><input style={IN} type="date" value={datToInput(f.splatnost)} onChange={e=>u('splatnost', inputToDat(e.target.value))} /></div>
           </div>
@@ -534,6 +543,7 @@ function ProfilModal({ profil, onSave, onClose }) {
   const u = (k,v) => setF(p=>({...p,[k]:v}))
   return (
     <div style={OV} onClick={onClose}>
+      <style>{`@media (max-width: 380px){ .inv-grid2b{ grid-template-columns:1fr !important; } }`}</style>
       <div style={{ ...MOD, maxWidth:460 }} onClick={e=>e.stopPropagation()}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'16px 20px', borderBottom:'1px solid #E5E7EB' }}>
           <div style={{ fontWeight:700, fontSize:16, color:'#1A1F2E' }}>Fakturační údaje</div>
@@ -542,7 +552,7 @@ function ProfilModal({ profil, onSave, onClose }) {
         <div style={{ padding:'18px 20px', display:'flex', flexDirection:'column', gap:12 }}>
           <div><label style={LB}>Jméno / název firmy *</label><input style={IN} value={f.jmeno} onChange={e=>u('jmeno',e.target.value)} placeholder="Jana Nováková" /></div>
           <div><label style={LB}>Ulice a číslo popisné</label><input style={IN} value={f.ulice||''} onChange={e=>u('ulice',e.target.value)} placeholder="Hlavní 123/4" /></div>
-          <div style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:10 }}>
+          <div className="inv-grid2b" style={{ display:'grid', gridTemplateColumns:'2fr 1fr', gap:10 }}>
             <div><label style={LB}>Město</label><input style={IN} value={f.mesto||''} onChange={e=>u('mesto',e.target.value)} placeholder="Praha" /></div>
             <div><label style={LB}>PSČ</label><input style={IN} value={f.psc||''} onChange={e=>u('psc',e.target.value)} placeholder="19000" maxLength={6} /></div>
           </div>
@@ -781,9 +791,11 @@ export default function InvoicePage() {
         ))}
       </div>
 
-      {/* Tabulka */}
+      {/* Tabulka — na užší obrazovce (víc akčních tlačítek než se vejde) se
+          radši vodorovně scrolluje, než aby se sloupce ořezaly nebo rozbily. */}
       <div style={{ background:'#fff', border:'1px solid #E5E7EB', borderRadius:14, overflow:'hidden', boxShadow:'0 1px 3px rgba(0,0,0,.04)' }}>
-        <table style={{ width:'100%', borderCollapse:'collapse' }}>
+        <div style={{ overflowX:'auto' }}>
+        <table style={{ width:'100%', borderCollapse:'collapse', minWidth:720 }}>
           <thead>
             <tr style={{ background:'#F9FAFB', borderBottom:'1px solid #E5E7EB' }}>
               <th style={TH}>Vystavena</th>
@@ -838,12 +850,14 @@ export default function InvoicePage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
       </>}
 
       {view === 'zakaznici' && (
         <div style={{ background:'#fff', border:'1px solid #E5E7EB', borderRadius:14, overflow:'hidden', boxShadow:'0 1px 3px rgba(0,0,0,.04)' }}>
-          <table style={{ width:'100%', borderCollapse:'collapse' }}>
+          <div style={{ overflowX:'auto' }}>
+          <table style={{ width:'100%', borderCollapse:'collapse', minWidth:560 }}>
             <thead>
               <tr style={{ background:'#F9FAFB', borderBottom:'1px solid #E5E7EB' }}>
                 <th style={TH}>Zákazník</th>
@@ -872,6 +886,7 @@ export default function InvoicePage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
