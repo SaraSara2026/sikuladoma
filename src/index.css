@@ -442,6 +442,14 @@ footer { background:var(--ink); color:rgba(255,255,255,.5); padding:56px 24px 28
 .footer-link:hover { color:#fff; }
 .footer-bottom { border-top:1px solid rgba(255,255,255,.08); padding-top:20px; display:flex; justify-content:space-between; align-items:center; font-size:12px; flex-wrap:wrap; gap:8px; }
 
+/* RESPONSIVE UTILITY: dvou/tří-sloupcové inline grid páry (formulářová
+   pole, info-dlaždice) napříč appkou — přidat jako className vedle
+   stávajícího inline gridTemplateColumns, přebije ho přes !important. */
+@media(max-width:420px){
+  .rgrid-2 { grid-template-columns:1fr !important; }
+  .rgrid-3 { grid-template-columns:1fr !important; }
+}
+
 /* RESPONSIVE */
 @media(max-width:900px){
   /* Dashboards: sidebar nahoře jako horizontální menu místo levého sloupce */
@@ -464,6 +472,7 @@ footer { background:var(--ink); color:rgba(255,255,255,.5); padding:56px 24px 28
   .how-grid { grid-template-columns:1fr; gap:14px; }
   .form-row { grid-template-columns:1fr; }
   .dash-content { padding:20px 14px; }
+  .dash-header { flex-wrap:wrap; }
   .footer-grid { grid-template-columns:1fr 1fr; }
   .live-item { padding:4px 14px; }
   .trust-inner { flex-direction:column; align-items:flex-start; padding:0 24px; }
