@@ -469,7 +469,7 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
                   ⭐ Zakázky čekající na hodnocení
                 </div>
                 {completedOrders.filter(o => !reviewedOrderIds.has(o.id)).map(o => (
-                  <div key={o.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--orange-pale, #fff7ed)', border: '1px solid var(--orange, #F07800)', borderRadius: 'var(--radius)', marginBottom: 8 }}>
+                  <div key={o.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--orange-pale, #fff7ed)', border: '1px solid var(--orange, #F07800)', borderRadius: 'var(--radius)', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
                     <div>
                       <div style={{ fontWeight: 600 }}>{o.title}</div>
                       <div style={{ fontSize: 13, color: 'var(--text2)' }}>{o.city} · {relativni(o.updated_at || o.created_at)}</div>

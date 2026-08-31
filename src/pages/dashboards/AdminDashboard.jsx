@@ -202,12 +202,12 @@ export default function AdminDashboard({ currentUser, onLogout }) {
               <div style={{ padding: 40, textAlign: 'center', color: '#9CA3AF' }}>Žádné zprávy.</div>
             ) : contacts.map(c => (
               <div key={c.id} style={{ background: '#fff', borderRadius: 12, border: '1px solid #F3F4F6', padding: '16px 20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
+                  <div style={{ minWidth: 0, overflowWrap: 'break-word' }}>
                     <strong style={{ fontSize: 14 }}>{c.name}</strong>
-                    <span style={{ color: '#6B7280', fontSize: 13, marginLeft: 8 }}>{c.email}</span>
+                    <span style={{ color: '#6B7280', fontSize: 13, marginLeft: 8, overflowWrap: 'break-word' }}>{c.email}</span>
                   </div>
-                  <span style={{ fontSize: 11, color: '#9CA3AF' }}>{new Date(c.created_at).toLocaleString('cs-CZ')}</span>
+                  <span style={{ fontSize: 11, color: '#9CA3AF', whiteSpace: 'nowrap' }}>{new Date(c.created_at).toLocaleString('cs-CZ')}</span>
                 </div>
                 {c.subject && <div style={{ fontSize: 13, color: '#6B7280', marginBottom: 6 }}><strong>Předmět:</strong> {c.subject}</div>}
                 <p style={{ fontSize: 14, color: '#3D4554', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{c.message}</p>
