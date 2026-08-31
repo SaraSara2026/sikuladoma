@@ -957,9 +957,9 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             color: stripeMsg.type === 'success' ? 'var(--green, #15803d)' : 'var(--text2)',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
           }}>
-            <span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
               {stripeMsg.type === 'success'
-                ? `🎉 Platba proběhla úspěšně. Váš tarif${stripeMsg.plan && PLAN_LABELS[stripeMsg.plan] ? ` ${PLAN_LABELS[stripeMsg.plan]}` : ''} se aktivuje během chvíle.`
+                ? <><Icon name="sparkles" size={15} /> {`Platba proběhla úspěšně. Váš tarif${stripeMsg.plan && PLAN_LABELS[stripeMsg.plan] ? ` ${PLAN_LABELS[stripeMsg.plan]}` : ''} se aktivuje během chvíle.`}</>
                 : 'Platba byla zrušena. Váš tarif nebyl změněn.'}
             </span>
             <button onClick={() => setStripeMsg(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: '0 4px', color: 'inherit' }}>×</button>
@@ -1065,7 +1065,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                   margin: 0, borderRadius: 0, border: 'none', borderBottom: '1px solid var(--border)',
                   background: o.has_my_offer ? '#F0FDF4' : undefined, cursor: 'pointer',
                 }}>
-                  <div className="order-cat-icon">{CAT_ICON[o.category] || '🔧'}</div>
+                  <div className="order-cat-icon">{CAT_ICON[o.category] || <Icon name="wrench" size={18} />}</div>
                   <div className="order-info">
                     <div className="order-title">{o.title}</div>
                     <div className="order-meta">
@@ -1125,7 +1125,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
               {!ordersLoading && !ordersError && orders.map(o => (
                 <div key={o.id} className="order-card" onClick={() => onNav('order-detail', o)}
                   style={{ background: o.has_my_offer ? '#F0FDF4' : undefined, cursor: 'pointer' }}>
-                  <div className="order-cat-icon">{CAT_ICON[o.category] || '🔧'}</div>
+                  <div className="order-cat-icon">{CAT_ICON[o.category] || <Icon name="wrench" size={18} />}</div>
                   <div className="order-info">
                     <div className="order-title">{o.title}</div>
                     <div className="order-meta">

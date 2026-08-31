@@ -232,7 +232,7 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
         ...(o.status === 'completed' && { background: '#F8FAFC' }),
         ...(opts.flat && { margin: 0, borderRadius: 0, border: 'none', borderBottom: '1px solid var(--border)' }),
       }}>
-      <div className="order-cat-icon">{CAT_ICON[o.category] || '🔧'}</div>
+      <div className="order-cat-icon">{CAT_ICON[o.category] || <Icon name="wrench" size={18} />}</div>
       <div className="order-info">
         <div className="order-title">{o.title}</div>
         <div className="order-meta">
@@ -332,7 +332,7 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
           <div className="page-enter">
             <div className="dash-header">
               <div>
-                <div className="dash-title">Vítejte, {(currentUser?.name || '').split(' ')[0]}! 👋</div>
+                <div className="dash-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>Vítejte, {(currentUser?.name || '').split(' ')[0]}! <Icon name="sparkles" size={20} /></div>
                 <div className="dash-subtitle">Co potřebujete dnes vyřešit?</div>
               </div>
               <button className="btn btn-primary" onClick={() => onNav('new-order')}><Icon name="plus" size={16} /> Nová poptávka</button>
