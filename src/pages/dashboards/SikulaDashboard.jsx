@@ -397,7 +397,7 @@ function CalendarSection() {
 }
 
 
-function VylepseniProfilu({ currentUser, onLogout }) {
+function VylepseniProfilu({ currentUser, onLogout, onBack }) {
   const subStatus = currentUser?.subscription_status || 'inactive'
   const currentPlan = currentUser?.plan || 'start'
   const renewalEnd = currentUser?.plan_expires_at
@@ -504,6 +504,12 @@ function VylepseniProfilu({ currentUser, onLogout }) {
 
   return (
     <div className="page-enter">
+      {onBack && (
+        <button onClick={onBack}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#6B7280', fontFamily: 'inherit', padding: 0, marginBottom: 14 }}>
+          <Icon name="arrowLeft" size={14} /> Zpět na profil
+        </button>
+      )}
       <div className="dash-title" style={{ marginBottom: 8 }}>Aktivace tarifu</div>
 
       {/* Aktuální stav */}
@@ -1083,7 +1089,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                     )}
                   </div>
                   {isActivePlan ? (
-                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <div className="order-actions" style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                       <button className="btn btn-outline btn-sm" onClick={(e) => { e.stopPropagation(); onNav('order-detail', o) }}>Detail</button>
                       {!o.has_my_offer && (
                         <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); onNav('send-offer', o) }}>
@@ -1092,7 +1098,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                       )}
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end', maxWidth: 170, flexShrink: 0 }}>
+                    <div className="order-actions" style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end', maxWidth: 170, flexShrink: 0 }}>
                       <div style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'right' }}>
                         Pro zobrazení detailu poptávky a odeslání nabídky si aktivujte tarif.
                       </div>
@@ -1143,7 +1149,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                     )}
                   </div>
                   {isActivePlan ? (
-                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <div className="order-actions" style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                       <button className="btn btn-outline btn-sm" onClick={(e) => { e.stopPropagation(); onNav('order-detail', o) }}>Detail</button>
                       {!o.has_my_offer && (
                         <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); onNav('send-offer', o) }}>
@@ -1152,7 +1158,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                       )}
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end', maxWidth: 170, flexShrink: 0 }}>
+                    <div className="order-actions" style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end', maxWidth: 170, flexShrink: 0 }}>
                       <div style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'right' }}>
                         Pro zobrazení detailu poptávky a odeslání nabídky si aktivujte tarif.
                       </div>
@@ -1192,7 +1198,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                     {o.customer_name && <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>Zákazník: {o.customer_name}</div>}
                     {o.customer_phone && <div style={{ fontSize: 13, color: 'var(--text3)' }}>Tel: {o.customer_phone}</div>}
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                  <div className="order-actions" style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
                     <span className="badge badge-green">Přijato</span>
                     <button className="btn btn-outline btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
                       onClick={(e) => { e.stopPropagation(); onNav('chat', { otherUserId: o.customer_id, orderId: o.order_id }) }}>
@@ -1235,7 +1241,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                     {o.customer_phone && <div style={{ fontSize: 13, color: 'var(--text3)' }}>Tel: {o.customer_phone}</div>}
                     {o.message && <p style={{ fontSize: 13, color: 'var(--text2)', marginTop: 6 }}>{o.message}</p>}
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                  <div className="order-actions" style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
                     {/* Konverzace vzniká až po přijetí nabídky — dokud zákazník
                         nerozhodne, tu není s kým chatovat (viz api/conversations.js). */}
                     <span className="badge badge-blue">Čeká na odpověď</span>
@@ -1249,7 +1255,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
 
         {!lockedType && activePage === 'invoices' && <InvoicePage />}
         {!lockedType && activePage === 'calendar' && <CalendarSection />}
-        {activePage === 'membership' && <VylepseniProfilu currentUser={currentUser} onLogout={onLogout} />}
+        {activePage === 'membership' && <VylepseniProfilu currentUser={currentUser} onLogout={onLogout} onBack={() => setActivePage('profile')} />}
         {activePage === 'oznameni' && (
           <div className="page-enter">
             <div className="dash-title" style={{ marginBottom: 24 }}>Oznámení</div>
@@ -1294,30 +1300,28 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             {earnings.count > 0 && (
               <>
                 <h3 style={{ fontSize: 14, marginBottom: 10 }}>Příjmy podle měsíců</h3>
-                <div className="card" style={{ overflow: 'auto', marginBottom: 24 }}>
-                  <div style={{ minWidth: 420 }}>
-                    <div style={{ display: 'flex', padding: '8px 16px', fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>
-                      <div style={{ flex: 1 }}>Měsíc</div>
-                      <div style={{ width: 120, textAlign: 'right' }}>Faktury</div>
-                      <div style={{ width: 140, textAlign: 'right' }}>Zaplaceno</div>
-                    </div>
-                    {earnings.byMonth.map(m => (
-                      <div key={m.key} style={{ display: 'flex', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
-                        <div style={{ flex: 1, fontWeight: 600, textTransform: 'capitalize' }}>{m.date.toLocaleDateString('cs-CZ', { month: 'long', year: 'numeric' })}</div>
-                        <div style={{ width: 120, textAlign: 'right', color: 'var(--text3)' }}>{m.count}</div>
-                        <div style={{ width: 140, textAlign: 'right', fontWeight: 700, color: '#16A34A' }}>{formatCurrencyCz(m.total)}</div>
-                      </div>
-                    ))}
+                <div className="card" style={{ marginBottom: 24 }}>
+                  <div style={{ display: 'flex', padding: '8px 16px', fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', borderBottom: '1px solid var(--border)', gap: 8 }}>
+                    <div style={{ flex: 1 }}>Měsíc</div>
+                    <div style={{ width: 64, textAlign: 'right' }}>Faktury</div>
+                    <div style={{ width: 96, textAlign: 'right' }}>Zaplaceno</div>
                   </div>
+                  {earnings.byMonth.map(m => (
+                    <div key={m.key} style={{ display: 'flex', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid var(--border)', fontSize: 13, gap: 8 }}>
+                      <div style={{ flex: 1, minWidth: 0, fontWeight: 600, textTransform: 'capitalize', overflowWrap: 'break-word' }}>{m.date.toLocaleDateString('cs-CZ', { month: 'long', year: 'numeric' })}</div>
+                      <div style={{ width: 64, textAlign: 'right', color: 'var(--text3)', flexShrink: 0 }}>{m.count}</div>
+                      <div style={{ width: 96, textAlign: 'right', fontWeight: 700, color: '#16A34A', flexShrink: 0, overflowWrap: 'break-word' }}>{formatCurrencyCz(m.total)}</div>
+                    </div>
+                  ))}
                 </div>
                 <div className="card" style={{ overflow: 'hidden' }}>
                   {earnings.paid.map(i => (
-                    <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>{i.title}</div>
-                        <div style={{ fontSize: 12, color: 'var(--text3)' }}>{i.customer} · {i.created}</div>
+                    <div key={i.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: '12px 16px', borderBottom: '1px solid var(--border)' }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: 14, overflowWrap: 'break-word' }}>{i.title}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text3)', overflowWrap: 'break-word' }}>{i.customer} · {i.created}</div>
                       </div>
-                      <div style={{ fontWeight: 700, fontSize: 14, color: '#16A34A' }}>{formatCurrencyCz(i.amount)}</div>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: '#16A34A', flexShrink: 0 }}>{formatCurrencyCz(i.amount)}</div>
                     </div>
                   ))}
                 </div>
@@ -1615,7 +1619,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                       </div>
                       {o.customer_name && <div style={{ fontSize: 13, color: 'var(--text3)', marginTop: 4 }}>Zákazník: {o.customer_name}</div>}
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                    <div className="order-actions" style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
                       <span className="badge badge-gray">Dokončeno</span>
                       {review ? (
                         <div style={{ textAlign: 'right' }}>

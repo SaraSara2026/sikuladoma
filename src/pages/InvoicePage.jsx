@@ -282,10 +282,11 @@ function FakturaView({ inv, profil, onClose, onEdit }) {
             <button style={BP} onClick={stahnout}>⬇ Stáhnout PDF</button>
           </div>
         </div>
-        <div style={{ padding:'22px', overflowY:'auto', overflowX:'auto', maxHeight:'75vh' }}>
-          {/* min-width drží formát faktury pevný (jde i do PDF/tisku) — na
-              úzkém displeji se místo rozbitého rozházení sloupců radši
-              vodorovně scrolluje, přesně jako u náhledu dokumentu/tabulky. */}
+        <div style={{ padding:'22px', overflowX:'auto' }}>
+          {/* Jen vodorovný scroll — svislý řeší MOD o kus výš. Dřívější vlastní
+              maxHeight/overflowY tady + na MOD zároveň dělalo na mobilu
+              "scroll chaining" (dotykem se hýbaly oba scrolly najednou).
+              min-width drží formát faktury pevný (jde i do PDF/tisku). */}
           <div id="f-tisk" style={{ fontFamily:'Arial,sans-serif', fontSize:13, color:'#1A1F2E', lineHeight:1.55, minWidth:480 }}>
             <FakturaTisk inv={inv} profil={profil} />
           </div>
