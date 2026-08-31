@@ -501,12 +501,12 @@ export default function App() {
 
           <div style={{ display: "flex", maxWidth: 640, margin: "0 auto 16px", background: "#fff", borderRadius: 14, border: `1.5px solid ${T.border}`, boxShadow: "0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06)", overflow: "hidden" }}>
             <span style={{ display: "flex", alignItems: "center", paddingLeft: 16, paddingRight: 10, color: T.ink4, flexShrink: 0 }}><IcSearch /></span>
-            <input style={{ flex: 1, padding: "15px 4px", border: "none", outline: "none", fontSize: 15, color: T.ink, background: "transparent", fontFamily: "inherit", letterSpacing: "-.01em" }}
+            <input style={{ flex: 1, minWidth: 0, padding: "15px 4px", border: "none", outline: "none", fontSize: 15, color: T.ink, background: "transparent", fontFamily: "inherit", letterSpacing: "-.01em" }}
               placeholder="Co potřebujete doma vyřešit?"
               value={heroSearch}
               onChange={e => setHeroSearch(e.target.value)}
               onKeyDown={e => e.key === "Enter" && openOrder(null, heroSearch.trim() ? { desc: heroSearch.trim() } : {})} />
-            <div style={{ padding: "6px" }}>
+            <div style={{ padding: "6px", flexShrink: 0 }}>
               <BtnPrimary size="sm" onClick={() => openOrder(null, heroSearch.trim() ? { desc: heroSearch.trim() } : {})}>Najít šikulu</BtnPrimary>
             </div>
           </div>
