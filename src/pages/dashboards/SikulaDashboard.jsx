@@ -917,7 +917,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             background: stripeMsg.type === 'success' ? 'var(--green-pale, #dcfce7)' : 'var(--canvas)',
             border: `1px solid ${stripeMsg.type === 'success' ? 'var(--green, #16a34a)' : 'var(--border)'}`,
             color: stripeMsg.type === 'success' ? 'var(--green, #15803d)' : 'var(--text2)',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
           }}>
             <span>
               {stripeMsg.type === 'success'
@@ -1256,19 +1256,21 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             {earnings.count > 0 && (
               <>
                 <h3 style={{ fontSize: 14, marginBottom: 10 }}>Příjmy podle měsíců</h3>
-                <div className="card" style={{ overflow: 'hidden', marginBottom: 24 }}>
-                  <div style={{ display: 'flex', padding: '8px 16px', fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>
-                    <div style={{ flex: 1 }}>Měsíc</div>
-                    <div style={{ width: 120, textAlign: 'right' }}>Faktury</div>
-                    <div style={{ width: 140, textAlign: 'right' }}>Zaplaceno</div>
-                  </div>
-                  {earnings.byMonth.map(m => (
-                    <div key={m.key} style={{ display: 'flex', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
-                      <div style={{ flex: 1, fontWeight: 600, textTransform: 'capitalize' }}>{m.date.toLocaleDateString('cs-CZ', { month: 'long', year: 'numeric' })}</div>
-                      <div style={{ width: 120, textAlign: 'right', color: 'var(--text3)' }}>{m.count}</div>
-                      <div style={{ width: 140, textAlign: 'right', fontWeight: 700, color: '#16A34A' }}>{formatCurrencyCz(m.total)}</div>
+                <div className="card" style={{ overflow: 'auto', marginBottom: 24 }}>
+                  <div style={{ minWidth: 420 }}>
+                    <div style={{ display: 'flex', padding: '8px 16px', fontSize: 11, color: 'var(--text3)', fontWeight: 700, textTransform: 'uppercase', borderBottom: '1px solid var(--border)' }}>
+                      <div style={{ flex: 1 }}>Měsíc</div>
+                      <div style={{ width: 120, textAlign: 'right' }}>Faktury</div>
+                      <div style={{ width: 140, textAlign: 'right' }}>Zaplaceno</div>
                     </div>
-                  ))}
+                    {earnings.byMonth.map(m => (
+                      <div key={m.key} style={{ display: 'flex', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
+                        <div style={{ flex: 1, fontWeight: 600, textTransform: 'capitalize' }}>{m.date.toLocaleDateString('cs-CZ', { month: 'long', year: 'numeric' })}</div>
+                        <div style={{ width: 120, textAlign: 'right', color: 'var(--text3)' }}>{m.count}</div>
+                        <div style={{ width: 140, textAlign: 'right', fontWeight: 700, color: '#16A34A' }}>{formatCurrencyCz(m.total)}</div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <div className="card" style={{ overflow: 'hidden' }}>
                   {earnings.paid.map(i => (
