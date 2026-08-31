@@ -115,7 +115,7 @@ export default function OrderDetailPage({ order: orderProp, onNav, currentUser, 
       <button className="btn btn-ghost" onClick={() => onNav('back')} style={{ marginBottom: 16 }}>← Zpět</button>
 
       <div className="card" style={{ marginBottom: 20 }}>
-        <div style={{ padding: '24px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+        <div style={{ padding: '24px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <div className="order-cat-icon" style={{ width: 56, height: 56, fontSize: 28 }}>{order.icon || '🔧'}</div>
           <div style={{ flex: 1 }}>
             <h2 style={{ fontSize: 22, marginBottom: 8 }}>{order.title}</h2>

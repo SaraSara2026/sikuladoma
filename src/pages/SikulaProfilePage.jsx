@@ -130,7 +130,7 @@ export default function SikulaProfilePage({ id, onBack, onOrder }) {
 
         {/* REVIEWS */}
         <div style={{ background: '#fff', borderRadius: 16, padding: '24px 28px', border: '1px solid #F3F4F6', boxShadow: '0 1px 3px rgba(0,0,0,.04)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14, flexWrap: 'wrap', gap: 6 }}>
             <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1A1F2E' }}>Recenze</h2>
             <span style={{ fontSize: 13, color: '#6B7280' }}>{summary?.total || 0} celkem</span>
           </div>
@@ -144,18 +144,18 @@ export default function SikulaProfilePage({ id, onBack, onOrder }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {reviews.map(r => (
                 <div key={r.id} style={{ padding: '14px 16px', background: '#F9FAFB', borderRadius: 10, border: '1px solid #F3F4F6' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6, flexWrap: 'wrap', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
                       {r.reviewer_avatar && r.reviewer_avatar.startsWith('data:') ? (
-                        <img src={r.reviewer_avatar} alt={r.reviewer_name} style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }} />
+                        <img src={r.reviewer_avatar} alt={r.reviewer_name} style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                       ) : (
-                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#475569' }}>
+                        <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#475569', flexShrink: 0 }}>
                           {(r.reviewer_name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
                         </div>
                       )}
-                      <span style={{ fontSize: 13, fontWeight: 600, color: '#1A1F2E' }}>{r.reviewer_name}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: '#1A1F2E', overflowWrap: 'break-word' }}>{r.reviewer_name}</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                       <span style={{ color: '#F97316', fontSize: 14 }}>{'★'.repeat(r.stars)}<span style={{ color: '#E5E7EB' }}>{'★'.repeat(5 - r.stars)}</span></span>
                       <span style={{ fontSize: 11, color: '#9CA3AF' }}>{timeAgo(r.created_at)}</span>
                     </div>
