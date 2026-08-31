@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Icon from './Icon'
 
 // Spodní navigace dashboardu pro mobil — nahrazuje vodorovně scrollovací
 // pruh (.dash-sidebar v row layoutu), kde s 8–13 položkami šlo najednou
@@ -22,8 +23,8 @@ export default function DashBottomNav({ items, primaryIds, activeId, onSelect, o
             className={`dash-bottom-item ${activeId === item.id ? 'active' : ''}`}
             onClick={() => select(item.id)}>
             <span className="dash-bottom-icon">
-              {item.icon}
-              {item.locked && <span className="dash-bottom-lock">🔒</span>}
+              <Icon name={item.icon} size={19} />
+              {item.locked && <span className="dash-bottom-lock"><Icon name="lock" size={9} /></span>}
               {!item.locked && item.badge > 0 && <span className="dash-bottom-badge">{item.badge > 9 ? '9+' : item.badge}</span>}
             </span>
             <span className="dash-bottom-label">{item.label}</span>
@@ -33,7 +34,7 @@ export default function DashBottomNav({ items, primaryIds, activeId, onSelect, o
           className={`dash-bottom-item ${moreOpen || moreActive ? 'active' : ''}`}
           aria-expanded={moreOpen}
           onClick={() => setMoreOpen(o => !o)}>
-          <span className="dash-bottom-icon">⋯</span>
+          <span className="dash-bottom-icon"><Icon name="dots" size={19} /></span>
           <span className="dash-bottom-label">Více</span>
         </button>
       </nav>
@@ -46,15 +47,15 @@ export default function DashBottomNav({ items, primaryIds, activeId, onSelect, o
               <button key={item.id}
                 className={`dash-more-item ${activeId === item.id ? 'active' : ''}`}
                 onClick={() => select(item.id)}>
-                <span className="dash-more-icon">{item.icon}</span>
+                <span className="dash-more-icon"><Icon name={item.icon} size={18} /></span>
                 <span className="dash-more-label">{item.label}</span>
-                {item.locked && <span className="dash-more-lock">🔒</span>}
+                {item.locked && <span className="dash-more-lock"><Icon name="lock" size={12} /></span>}
                 {!item.locked && item.badge > 0 && <span className="dash-more-badge">{item.badge}</span>}
               </button>
             ))}
             {onLogout && (
               <button className="dash-more-item dash-more-logout" onClick={() => { setMoreOpen(false); onLogout() }}>
-                <span className="dash-more-icon">🚪</span>
+                <span className="dash-more-icon"><Icon name="logout" size={18} /></span>
                 <span className="dash-more-label">Odhlásit</span>
               </button>
             )}

@@ -8,14 +8,14 @@ import LinkAccountMismatch from '../../components/LinkAccountMismatch.jsx'
 import DashBottomNav from '../../components/DashBottomNav.jsx'
 
 const menuItems = [
-  { id: 'profile',   icon: '👤', label: 'Profil' },
-  { id: 'overview',  icon: '📊', label: 'Přehled' },
-  { id: 'orders',    icon: '📋', label: 'Moje poptávky' },
-  { id: 'offers',    icon: '💬', label: 'Nabídky' },
-  { id: 'active',    icon: '⚡', label: 'Aktivní zakázky' },
-  { id: 'completed', icon: '✅', label: 'Dokončené' },
-  { id: 'reviews',   icon: '⭐', label: 'Hodnocení' },
-  { id: 'oznameni',  icon: '📣', label: 'Oznámení' },
+  { id: 'profile',   icon: 'user',      label: 'Profil' },
+  { id: 'overview',  icon: 'chart',     label: 'Přehled' },
+  { id: 'orders',    icon: 'orders',    label: 'Moje poptávky' },
+  { id: 'offers',    icon: 'chat',      label: 'Nabídky' },
+  { id: 'active',    icon: 'zap',       label: 'Aktivní zakázky' },
+  { id: 'completed', icon: 'check',     label: 'Dokončené' },
+  { id: 'reviews',   icon: 'star',      label: 'Hodnocení' },
+  { id: 'oznameni',  icon: 'megaphone', label: 'Oznámení' },
 ]
 
 const CAT_ICON = Object.fromEntries(CATEGORIES.map(c => [c.id, c.icon]))
@@ -36,8 +36,12 @@ function relativni(iso) {
 
 function Stars({ n, size = 14 }) {
   return (
-    <span style={{ color: '#F07800', fontSize: size }}>
-      {'★'.repeat(n)}{'☆'.repeat(5 - n)}
+    <span style={{ display: 'inline-flex', gap: 1, verticalAlign: 'middle' }}>
+      {Array.from({ length: 5 }, (_, i) => (
+        <span key={i} style={{ color: i < n ? '#F07800' : '#E5E7EB' }}>
+          <Icon name="star" size={size} />
+        </span>
+      ))}
     </span>
   )
 }
@@ -142,8 +146,8 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
     if (unread === 0 && total === 0) return null
     const openChat = (e) => { e.stopPropagation(); onNav('chat', { otherUserId: conv.sikula_id, orderId }) }
     return unread > 0
-      ? <span className="badge badge-orange" style={{ fontSize: 11, cursor: 'pointer' }} onClick={openChat}>✉️ Nová zpráva ({unread})</span>
-      : <span className="badge badge-gray" style={{ fontSize: 11, cursor: 'pointer' }} onClick={openChat}>💬 Zprávy ({total})</span>
+      ? <span className="badge badge-orange" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, cursor: 'pointer' }} onClick={openChat}><Icon name="mail" size={11} /> Nová zpráva ({unread})</span>
+      : <span className="badge badge-gray" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, cursor: 'pointer' }} onClick={openChat}><Icon name="chat" size={11} /> Zprávy ({total})</span>
   }
   const pendingOffersCount = allOffers.filter(o => o.status === 'pending').length
 
@@ -244,9 +248,9 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
         </div>
         {o.offers_count > 0 && <div className="badge badge-orange">{o.offers_count} nabídek</div>}
         {o.status === 'accepted' && sikulaIdForOrder(o.id) && (
-          <button className="btn btn-outline btn-sm"
+          <button className="btn btn-outline btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
             onClick={(e) => { e.stopPropagation(); onNav('chat', { otherUserId: sikulaIdForOrder(o.id), orderId: o.id }) }}>
-            💬 Napsat zprávu
+            <Icon name="chat" size={14} /> Napsat zprávu
           </button>
         )}
         {o.status === 'accepted' && (
@@ -255,8 +259,8 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
           </button>
         )}
         {o.status === 'completed' && !reviewedOrderIds.has(o.id) && (
-          <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); setReviewOrderId(o.id) }}>
-            ⭐ Hodnotit
+          <button className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={(e) => { e.stopPropagation(); setReviewOrderId(o.id) }}>
+            <Icon name="star" size={13} /> Hodnotit
           </button>
         )}
         {o.status === 'completed' && reviewedOrderIds.has(o.id) && (
@@ -290,7 +294,7 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
           const badgeCount = m.id === 'offers' ? pendingOffersCount : 0
           return (
             <button key={m.id} className={`dash-nav-item ${activePage === m.id ? 'active' : ''}`} onClick={() => setActivePage(m.id)}>
-              <span>{m.icon}</span>{m.label}
+              <span><Icon name={m.icon} size={16} /></span>{m.label}
               {badgeCount > 0 && (
                 <span style={{ marginLeft: 'auto', background: 'var(--brand, #0EA5A4)', color: '#fff', fontSize: 11, fontWeight: 700, padding: '1px 7px', borderRadius: 999 }}>
                   {badgeCount}
@@ -302,7 +306,7 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
         {onLogout && (
           <button className="dash-nav-item" onClick={onLogout}
             style={{ marginTop: 'auto', color: 'var(--red, #B91C1C)' }}>
-            <span>🚪</span>Odhlásit
+            <span><Icon name="logout" size={16} /></span>Odhlásit
           </button>
         )}
       </div>
@@ -334,10 +338,10 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
               <button className="btn btn-primary" onClick={() => onNav('new-order')}><Icon name="plus" size={16} /> Nová poptávka</button>
             </div>
             <div className="stats-grid">
-              <div className="stat-card"><div className="stat-icon">📋</div><div className="stat-val">{orders.length}</div><div className="stat-label">Celkem poptávek</div></div>
-              <div className="stat-card"><div className="stat-icon">⚡</div><div className="stat-val">{activeOrders.length}</div><div className="stat-label">Aktivní zakázky</div></div>
-              <div className="stat-card"><div className="stat-icon">✅</div><div className="stat-val">{completedCount}</div><div className="stat-label">Dokončené</div></div>
-              <div className="stat-card"><div className="stat-icon">⭐</div><div className="stat-val">{myReviews.length}</div><div className="stat-label">Moje hodnocení</div></div>
+              <div className="stat-card"><div className="stat-icon" style={{ color: '#2563EB' }}><Icon name="orders" size={20} /></div><div className="stat-val">{orders.length}</div><div className="stat-label">Celkem poptávek</div></div>
+              <div className="stat-card"><div className="stat-icon" style={{ color: '#F97316' }}><Icon name="zap" size={20} /></div><div className="stat-val">{activeOrders.length}</div><div className="stat-label">Aktivní zakázky</div></div>
+              <div className="stat-card"><div className="stat-icon" style={{ color: '#16A34A' }}><Icon name="check" size={20} /></div><div className="stat-val">{completedCount}</div><div className="stat-label">Dokončené</div></div>
+              <div className="stat-card"><div className="stat-icon" style={{ color: '#F07800' }}><Icon name="star" size={20} /></div><div className="stat-val">{myReviews.length}</div><div className="stat-label">Moje hodnocení</div></div>
             </div>
             <div className="table-wrap">
               <div className="table-header">
@@ -366,7 +370,7 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
             {loading && <div style={{ color: 'var(--text3)' }}>Načítám…</div>}
             {!loading && orders.length === 0 && (
               <div className="empty-state">
-                <div className="empty-icon">📭</div>
+                <div className="empty-icon"><Icon name="inbox" size={40} /></div>
                 <h3>Žádné poptávky</h3>
                 <p>Zadejte první poptávku a šikulové vám pošlou nabídky.</p>
               </div>
@@ -383,7 +387,7 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
             <div className="dash-title" style={{ marginBottom: 24 }}>Nabídky od šikulů</div>
             {allOffers.length === 0 && (
               <div className="empty-state">
-                <div className="empty-icon">📨</div>
+                <div className="empty-icon"><Icon name="mail" size={40} /></div>
                 <h3>Žádné nabídky zatím</h3>
                 <p>Jakmile šikulové nabídnou cenu, uvidíte je tady.</p>
               </div>
@@ -413,9 +417,9 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
                   {/* Konverzace vzniká až po přijetí nabídky — u nepřijaté by
                       tlačítko jen skončilo chybou 403 (viz api/conversations.js). */}
                   {offer.status === 'accepted' && (
-                    <button className="btn btn-outline btn-sm"
+                    <button className="btn btn-outline btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
                       onClick={(e) => { e.stopPropagation(); onNav('chat', { otherUserId: offer.sikula_id, orderId: offer.order_id }) }}>
-                      💬 Chat
+                      <Icon name="chat" size={14} /> Chat
                     </button>
                   )}
                   {offer.status === 'pending' && (
@@ -437,7 +441,7 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
             {loading && <div style={{ color: 'var(--text3)' }}>Načítám…</div>}
             {!loading && activeOrders.length === 0 && (
               <div className="empty-state">
-                <div className="empty-icon">⚡</div>
+                <div className="empty-icon"><Icon name="zap" size={40} /></div>
                 <h3>Žádné aktivní zakázky</h3>
                 <p>Aktivní zakázka vznikne po přijetí nabídky od šikuly.</p>
               </div>
@@ -455,7 +459,7 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
             {loading && <div style={{ color: 'var(--text3)' }}>Načítám…</div>}
             {!loading && completedOrders.length === 0 && (
               <div className="empty-state">
-                <div className="empty-icon">✅</div>
+                <div className="empty-icon"><Icon name="check" size={40} /></div>
                 <h3>Žádné dokončené zakázky</h3>
                 <p>Zde se zobrazí zakázky označené jako hotové.</p>
               </div>
@@ -477,8 +481,8 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
             {/* Zakázky čekající na hodnocení */}
             {completedOrders.filter(o => !reviewedOrderIds.has(o.id)).length > 0 && (
               <div style={{ marginBottom: 24 }}>
-                <div style={{ fontWeight: 600, marginBottom: 12, color: 'var(--orange, #F07800)' }}>
-                  ⭐ Zakázky čekající na hodnocení
+                <div style={{ fontWeight: 600, marginBottom: 12, color: 'var(--orange, #F07800)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Icon name="star" size={15} /> Zakázky čekající na hodnocení
                 </div>
                 {completedOrders.filter(o => !reviewedOrderIds.has(o.id)).map(o => (
                   <div key={o.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--orange-pale, #fff7ed)', border: '1px solid var(--orange, #F07800)', borderRadius: 'var(--radius)', marginBottom: 8, flexWrap: 'wrap', gap: 8 }}>
@@ -486,7 +490,7 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
                       <div style={{ fontWeight: 600 }}>{o.title}</div>
                       <div style={{ fontSize: 13, color: 'var(--text2)' }}>{o.city} · {relativni(o.updated_at || o.created_at)}</div>
                     </div>
-                    <button className="btn btn-primary btn-sm" onClick={() => setReviewOrderId(o.id)}>⭐ Hodnotit šikulu</button>
+                    <button className="btn btn-primary btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} onClick={() => setReviewOrderId(o.id)}><Icon name="star" size={13} /> Hodnotit šikulu</button>
                   </div>
                 ))}
               </div>
@@ -496,7 +500,7 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
             {reviewsLoading && <div style={{ color: 'var(--text3)' }}>Načítám hodnocení…</div>}
             {!reviewsLoading && myReviews.length === 0 && completedOrders.filter(o => !reviewedOrderIds.has(o.id)).length === 0 && (
               <div className="empty-state">
-                <div className="empty-icon">⭐</div>
+                <div className="empty-icon"><Icon name="star" size={40} /></div>
                 <h3>Zatím žádná hodnocení</h3>
                 <p>Po dokončení první zakázky budete moci ohodnotit svého šikulu.</p>
               </div>
@@ -522,8 +526,8 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
                       </div>
                       {r.comment && <p style={{ fontSize: 14, color: 'var(--text2)', marginBottom: 0 }}>{r.comment}</p>}
                       {r.recommend !== null && (
-                        <div style={{ fontSize: 12, color: r.recommend ? 'var(--green, #16a34a)' : 'var(--text3)', marginTop: 6 }}>
-                          {r.recommend ? '👍 Doporučuji šikulu' : '👎 Nedoporučuji'}
+                        <div style={{ fontSize: 12, color: r.recommend ? 'var(--green, #16a34a)' : 'var(--text3)', marginTop: 6, display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <Icon name={r.recommend ? 'thumbUp' : 'thumbDown'} size={12} /> {r.recommend ? 'Doporučuji šikulu' : 'Nedoporučuji'}
                         </div>
                       )}
                     </div>
@@ -539,7 +543,7 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
           <div className="page-enter">
             <div className="dash-title" style={{ marginBottom: 24 }}>Oznámení</div>
             <div className="empty-state" style={{ padding: 40 }}>
-              <div className="empty-icon">📣</div>
+              <div className="empty-icon"><Icon name="megaphone" size={40} /></div>
               <p>Zatím nemáte žádná oznámení.</p>
             </div>
           </div>

@@ -4,12 +4,13 @@
 import { useEffect, useState } from 'react';
 import { adminApi } from '../../lib/api';
 import VerificationBanner from '../../components/VerificationBanner';
+import Icon from '../../components/Icon';
 
 const TABS = [
-  { id: 'stats',    label: '📊 Přehled' },
-  { id: 'users',    label: '👥 Uživatelé' },
-  { id: 'orders',   label: '📋 Poptávky' },
-  { id: 'contacts', label: '📨 Kontakty' },
+  { id: 'stats',    icon: 'chart', label: 'Přehled' },
+  { id: 'users',    icon: 'users', label: 'Uživatelé' },
+  { id: 'orders',   icon: 'orders', label: 'Poptávky' },
+  { id: 'contacts', icon: 'mail', label: 'Kontakty' },
 ];
 
 // Veřejné názvy tarifů — technické id (aktiv/aktiv-plus) se nikde v UI nesmí
@@ -86,8 +87,8 @@ export default function AdminDashboard({ currentUser, onLogout }) {
         <div style={{ display: 'flex', gap: 4, background: '#F3F4F6', borderRadius: 12, padding: 4, marginBottom: 24, width: 'fit-content', flexWrap: 'wrap' }}>
           {TABS.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
-              style={{ padding: '8px 16px', borderRadius: 9, border: 'none', background: tab === t.id ? '#fff' : 'transparent', color: tab === t.id ? '#1A1F2E' : '#6B7280', fontWeight: tab === t.id ? 600 : 400, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', boxShadow: tab === t.id ? '0 1px 3px rgba(0,0,0,.08)' : 'none' }}>
-              {t.label}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 16px', borderRadius: 9, border: 'none', background: tab === t.id ? '#fff' : 'transparent', color: tab === t.id ? '#1A1F2E' : '#6B7280', fontWeight: tab === t.id ? 600 : 400, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', boxShadow: tab === t.id ? '0 1px 3px rgba(0,0,0,.08)' : 'none' }}>
+              <Icon name={t.icon} size={15} /> {t.label}
             </button>
           ))}
         </div>

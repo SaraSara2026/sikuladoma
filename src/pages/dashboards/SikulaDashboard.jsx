@@ -63,9 +63,21 @@ function PlanBadge({ plan, expiresAt, active }) {
     return <span style={{ color: 'var(--text3)', fontWeight: 700 }}>{label} — tarif vypršel</span>
   }
   return (
-    <span style={{ color: PLAN_COLORS[p] || 'var(--text3)', fontWeight: 700 }}>
-      👑 {label}
+    <span style={{ color: PLAN_COLORS[p] || 'var(--text3)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+      <Icon name="crown" size={14} /> {label}
       {expStr && <span style={{ fontWeight: 400, color: 'var(--text3)', fontSize: 12, marginLeft: 4 }}>({expStr})</span>}
+    </span>
+  )
+}
+
+function Stars({ n, size = 14 }) {
+  return (
+    <span style={{ display: 'inline-flex', gap: 1, verticalAlign: 'middle' }}>
+      {Array.from({ length: 5 }, (_, i) => (
+        <span key={i} style={{ color: i < n ? '#F07800' : '#E5E7EB' }}>
+          <Icon name="star" size={size} />
+        </span>
+      ))}
     </span>
   )
 }
@@ -246,18 +258,18 @@ function useEarnings(active) {
 // Aktivní zakázky → Dokončené zakázky. Faktury a Výdělky patří k sobě, proto
 // jsou vedle sebe (Faktury před Výdělky); Kalendář je až za nimi.
 const menuItems = [
-  { id: 'profile',      icon: '👤', label: 'Profil šikuly' },
-  { id: 'overview',     icon: '📊', label: 'Přehled' },
-  { id: 'new-jobs',     icon: '🔔', label: 'Nové zakázky' },
-  { id: 'offers-sent',  icon: '📤', label: 'Odeslané nabídky',  lock: 'plan' },
-  { id: 'active',       icon: '⚡', label: 'Aktivní zakázky',   lock: 'plan' },
-  { id: 'history',      icon: '📁', label: 'Dokončené zakázky',  lock: 'plan' },
-  { id: 'oznameni',     icon: '📣', label: 'Oznámení' },
-  { id: 'invoices',     icon: '🧾', label: 'Faktury',           lock: 'plus' },
-  { id: 'earnings',     icon: '💰', label: 'Výdělky',           lock: 'plus' },
-  { id: 'calendar',     icon: '📅', label: 'Kalendář',          lock: 'plus' },
-  { id: 'reviews',      icon: '⭐', label: 'Recenze',           lock: 'plan' },
-  { id: 'membership',   icon: '👑', label: 'Aktivace tarifu' },
+  { id: 'profile',      icon: 'user',      label: 'Profil šikuly' },
+  { id: 'overview',     icon: 'chart',     label: 'Přehled' },
+  { id: 'new-jobs',     icon: 'bell',      label: 'Nové zakázky' },
+  { id: 'offers-sent',  icon: 'send',      label: 'Odeslané nabídky',  lock: 'plan' },
+  { id: 'active',       icon: 'zap',       label: 'Aktivní zakázky',   lock: 'plan' },
+  { id: 'history',      icon: 'folder',    label: 'Dokončené zakázky',  lock: 'plan' },
+  { id: 'oznameni',     icon: 'megaphone', label: 'Oznámení' },
+  { id: 'invoices',     icon: 'invoice',   label: 'Faktury',           lock: 'plus' },
+  { id: 'earnings',     icon: 'wallet',    label: 'Výdělky',           lock: 'plus' },
+  { id: 'calendar',     icon: 'calendar',  label: 'Kalendář',          lock: 'plus' },
+  { id: 'reviews',      icon: 'star',      label: 'Recenze',           lock: 'plan' },
+  { id: 'membership',   icon: 'crown',     label: 'Aktivace tarifu' },
 ]
 
 // Obrazovka pro zamčenou funkci
@@ -274,7 +286,7 @@ function LockedScreen({ type, feature, onActivate }) {
   return (
     <div className="page-enter" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
       <div style={{ maxWidth: 420, textAlign: 'center', padding: '40px 24px' }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
+        <div style={{ color: 'var(--text3)', marginBottom: 16, display: 'flex', justifyContent: 'center' }}><Icon name="lock" size={44} /></div>
         <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1A1F2E', marginBottom: 12 }}>
           {isPlus ? 'Tato funkce je dostupná v tarifu Plus.' : 'Váš profil je připravený.'}
         </h2>
@@ -317,7 +329,7 @@ function VerifyGate({ user }) {
   return (
     <div className="page-enter" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
       <div style={{ maxWidth: 440, textAlign: 'center', padding: '40px 24px' }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>✉️</div>
+        <div style={{ color: 'var(--text3)', marginBottom: 16, display: 'flex', justifyContent: 'center' }}><Icon name="mail" size={48} /></div>
         <h2 style={{ fontSize: 20, fontWeight: 700, color: '#1A1F2E', marginBottom: 12 }}>Ověřte svůj e-mail</h2>
         <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.7, marginBottom: 20 }}>
           Poslali jsme vám ověřovací odkaz na <strong>{user?.email}</strong>.<br />
@@ -785,16 +797,16 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
     if (unread === 0 && total === 0) return null
     const openChat = (e) => { e.stopPropagation(); onNav('chat', { otherUserId: conv.customer_id, orderId }) }
     return unread > 0
-      ? <span className="badge badge-orange" style={{ fontSize: 11, cursor: 'pointer' }} onClick={openChat}>✉️ Nová zpráva ({unread})</span>
-      : <span className="badge badge-gray" style={{ fontSize: 11, cursor: 'pointer' }} onClick={openChat}>💬 Zprávy ({total})</span>
+      ? <span className="badge badge-orange" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, cursor: 'pointer' }} onClick={openChat}><Icon name="mail" size={11} /> Nová zpráva ({unread})</span>
+      : <span className="badge badge-gray" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, cursor: 'pointer' }} onClick={openChat}><Icon name="chat" size={11} /> Zprávy ({total})</span>
   }
-  const TIMING_ICON = { urgent: '🚨', soon: '⚡', flexible: '🕊️' }
+  const TIMING_ICON = { urgent: 'alertTriangle', soon: 'zap', flexible: 'clock' }
   const renderTiming = (o) => {
     const t = getOrderTiming(o)
     if (!t) return null
     return (
-      <span style={{ color: t.tone === 'urgent' ? 'var(--red)' : t.tone === 'soon' ? '#C2410C' : 'var(--text3)' }}>
-        {TIMING_ICON[t.tone]} Termín: {t.label}
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: t.tone === 'urgent' ? 'var(--red)' : t.tone === 'soon' ? '#C2410C' : 'var(--text3)' }}>
+        <Icon name={TIMING_ICON[t.tone]} size={13} /> Termín: {t.label}
       </span>
     )
   }
@@ -895,9 +907,9 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
               className={`dash-nav-item ${activePage === m.id ? 'active' : ''}`}
               style={{ opacity: 1 }}
               onClick={() => setActivePage(m.id)}>
-              <span>{m.icon}</span>
+              <span><Icon name={m.icon} size={16} /></span>
               {menuLabel}
-              {locked && <span style={{ marginLeft: 'auto', fontSize: 11 }}>🔒</span>}
+              {locked && <span style={{ marginLeft: 'auto', display: 'inline-flex' }}><Icon name="lock" size={12} /></span>}
               {!locked && badgeCount > 0 && (
                 <span style={{ marginLeft: 'auto', background: 'var(--brand, #0EA5A4)', color: '#fff', fontSize: 11, fontWeight: 700, padding: '1px 7px', borderRadius: 999 }}>
                   {badgeCount}
@@ -909,7 +921,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
         {onLogout && (
           <button className="dash-nav-item" onClick={onLogout}
             style={{ marginTop: 'auto', color: 'var(--red, #B91C1C)' }}>
-            <span>🚪</span>Odhlásit
+            <span><Icon name="logout" size={16} /></span>Odhlásit
           </button>
         )}
       </div>
@@ -979,7 +991,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
           <div className="page-enter">
             <div className="dash-header">
               <div>
-                <div className="dash-title">Váš přehled 🛠️</div>
+                <div className="dash-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>Váš přehled <Icon name="wrench" size={20} /></div>
                 <div className="dash-subtitle">
                   <PlanBadge plan={currentUser?.plan} expiresAt={currentUser?.plan_expires_at} active={isActivePlan} />
                   {' · '}{jobsCount} zakázek celkem
@@ -992,23 +1004,23 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             </div>
             <div className="stats-grid">
               <div className="stat-card">
-                <div className="stat-icon">📋</div>
+                <div className="stat-icon" style={{ color: '#2563EB' }}><Icon name="orders" size={20} /></div>
                 <div className="stat-val">{jobsCount}</div>
                 <div className="stat-label">Dokončené zakázky</div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon">⚡</div>
+                <div className="stat-icon" style={{ color: '#F97316' }}><Icon name="zap" size={20} /></div>
                 <div className="stat-val">{acceptedJobs.length}</div>
                 <div className="stat-label">Aktivní zakázky</div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon">⭐</div>
+                <div className="stat-icon" style={{ color: '#F07800' }}><Icon name="star" size={20} /></div>
                 <div className="stat-val">{reviewsSummary?.avg_stars || currentUser?.rating || '—'}</div>
                 <div className="stat-label">Průměrné hodnocení</div>
                 {reviewsSummary?.total > 0 && <div className="stat-trend">{reviewsSummary.total} recenzí</div>}
               </div>
               <div className="stat-card">
-                <div className="stat-icon">📤</div>
+                <div className="stat-icon" style={{ color: '#0EA5A4' }}><Icon name="send" size={20} /></div>
                 <div className="stat-val">{pendingOffers.length}</div>
                 <div className="stat-label">Odeslané nabídky</div>
               </div>
@@ -1024,7 +1036,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap',
               }}>
                 <div>
-                  <div style={{ fontWeight: 700, marginBottom: 4 }}>⭐ Aktivní šikula Plus</div>
+                  <div style={{ fontWeight: 700, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="star" size={15} /> Aktivní šikula Plus</div>
                   <div style={{ fontSize: 13, color: 'var(--text2)' }}>S tariferem Aktivní šikula Plus (299 Kč) získáte kalendář, fakturovač a přehled příjmů.</div>
                 </div>
                 <button className="btn btn-primary btn-sm" onClick={() => setActivePage('membership')}>
@@ -1044,7 +1056,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
               )}
               {!ordersLoading && !ordersError && orders.length === 0 && (
                 <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)' }}>
-                  <div style={{ fontSize: 28, marginBottom: 8 }}>🕊️</div>
+                  <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'center' }}><Icon name="inbox" size={26} /></div>
                   Zatím žádné nové poptávky ve vaší lokalitě. Zkontroluju to znovu za 30 s.
                 </div>
               )}
@@ -1104,7 +1116,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             )}
             {!ordersLoading && !ordersError && orders.length === 0 && (
               <div className="empty-state" style={{ padding: 40 }}>
-                <div className="empty-icon">🕊️</div>
+                <div className="empty-icon"><Icon name="inbox" size={40} /></div>
                 <h3>Žádné nové poptávky</h3>
                 <p>Až přijde nová poptávka, ukáže se tu automaticky.</p>
               </div>
@@ -1160,7 +1172,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             <div className="dash-title" style={{ marginBottom: 24 }}>Aktivní zakázky</div>
             {acceptedJobs.length === 0 && (
               <div className="empty-state" style={{ padding: 40 }}>
-                <div className="empty-icon">📭</div>
+                <div className="empty-icon"><Icon name="zap" size={40} /></div>
                 <h3>Žádné aktivní zakázky</h3>
                 <p>Jakmile zákazník přijme některou z vašich nabídek, zobrazí se zde.</p>
               </div>
@@ -1182,9 +1194,9 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
                     <span className="badge badge-green">Přijato</span>
-                    <button className="btn btn-outline btn-sm"
+                    <button className="btn btn-outline btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
                       onClick={(e) => { e.stopPropagation(); onNav('chat', { otherUserId: o.customer_id, orderId: o.order_id }) }}>
-                      💬 Napsat zprávu
+                      <Icon name="chat" size={14} /> Napsat zprávu
                     </button>
                     <button className="btn btn-green btn-sm" onClick={(e) => { e.stopPropagation(); markComplete(o.order_id) }}>
                       ✓ Označit jako hotovou
@@ -1201,7 +1213,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             <div className="dash-title" style={{ marginBottom: 24 }}>Odeslané nabídky</div>
             {pendingOffers.length === 0 && (
               <div className="empty-state" style={{ padding: 40 }}>
-                <div className="empty-icon">📤</div>
+                <div className="empty-icon"><Icon name="send" size={40} /></div>
                 <h3>Žádné odeslané nabídky</h3>
                 <p>Vyberte zakázku ze záložky „Nové zakázky" a pošlete svou první nabídku.</p>
               </div>
@@ -1245,7 +1257,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                 subscription_status/plan_expires_at, nic se neukládá zvlášť. */}
             {currentUser?.subscription_status === 'cancelled' ? (
               <div style={{ padding: '16px 20px', borderRadius: 10, background: '#FFF7ED', border: '1px solid #FED7AA', color: '#9A3412' }}>
-                <div style={{ fontWeight: 700, marginBottom: 6 }}>📣 {isActivePlan ? 'Váš tarif je zrušený.' : 'Váš tarif vypršel.'}</div>
+                <div style={{ fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="megaphone" size={15} /> {isActivePlan ? 'Váš tarif je zrušený.' : 'Váš tarif vypršel.'}</div>
                 <p style={{ fontSize: 14, lineHeight: 1.6, margin: 0 }}>
                   {isActivePlan ? (
                     <>Zůstává aktivní do <strong>{formatDateCz(currentUser.plan_expires_at)}</strong>. Po tomto datu se profil přepne do neaktivního režimu.</>
@@ -1256,7 +1268,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
               </div>
             ) : (
               <div className="empty-state" style={{ padding: 40 }}>
-                <div className="empty-icon">📣</div>
+                <div className="empty-icon"><Icon name="megaphone" size={40} /></div>
                 <p>Zatím nemáte žádná oznámení.</p>
               </div>
             )}
@@ -1274,7 +1286,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             </div>
             {!earnings.loading && earnings.count === 0 && (
               <div className="empty-state" style={{ padding: 40 }}>
-                <div className="empty-icon">💰</div>
+                <div className="empty-icon"><Icon name="wallet" size={40} /></div>
                 <h3>Zatím žádné příjmy</h3>
                 <p>Příjmy se zobrazí zde po zaplacení první faktury.</p>
               </div>
@@ -1323,7 +1335,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
               </div>
               <div>
                 <div className="stars" style={{ fontSize: 20 }}>
-                  {reviewsSummary?.avg_stars ? '★'.repeat(Math.round(reviewsSummary.avg_stars)) : ''}
+                  {reviewsSummary?.avg_stars ? <Stars n={Math.round(reviewsSummary.avg_stars)} size={20} /> : null}
                 </div>
                 <div style={{ fontSize: 14, color: 'var(--text2)', marginTop: 4 }}>
                   {reviewsSummary?.total || 0} hodnocení
@@ -1336,7 +1348,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             {reviewsLoading && <div style={{ color: 'var(--text3)' }}>Načítám…</div>}
             {!reviewsLoading && myReviews.length === 0 && (
               <div className="empty-state" style={{ padding: 40 }}>
-                <div className="empty-icon">⭐</div>
+                <div className="empty-icon"><Icon name="star" size={40} /></div>
                 <h3>Zatím žádné recenze</h3>
                 <p>Po dokončení zakázek dostane zákazník odkaz na hodnocení. Recenze se zobrazí zde.</p>
               </div>
@@ -1352,11 +1364,11 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                       <div className="review-name" style={{ fontSize: 14 }}>{r.reviewer_name}</div>
                       <div className="review-service">{new Date(r.created_at).toLocaleDateString('cs-CZ')}</div>
                     </div>
-                    <div className="stars">{'★'.repeat(r.stars)}</div>
+                    <div className="stars"><Stars n={r.stars} /></div>
                   </div>
                   {r.comment && <div className="review-text">&ldquo;{r.comment}&rdquo;</div>}
                   {r.recommend === false && (
-                    <div style={{ fontSize: 12, color: 'var(--red, #B91C1C)', marginTop: 6 }}>❌ Nedoporučuje</div>
+                    <div style={{ fontSize: 12, color: 'var(--red, #B91C1C)', marginTop: 6, display: 'flex', alignItems: 'center', gap: 5 }}><Icon name="thumbDown" size={12} /> Nedoporučuje</div>
                   )}
                 </div>
               ))}
@@ -1369,8 +1381,9 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             <div className="dash-title" style={{ marginBottom: 24 }}>Profil šikuly</div>
             {!currentUser?.phone && (
               <div style={{ marginBottom: 16, padding: '12px 16px', borderRadius: 10,
-                background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C', fontSize: 13 }}>
-                📞 Chybí vám telefon — doplňte ho níže. Bez telefonu nejde poslat nabídku ani zprávu, zákazník se s vámi jinak nedomluví.
+                background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C', fontSize: 13, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                <span style={{ flexShrink: 0, marginTop: 1 }}><Icon name="phone" size={14} /></span>
+                Chybí vám telefon — doplňte ho níže. Bez telefonu nejde poslat nabídku ani zprávu, zákazník se s vámi jinak nedomluví.
               </div>
             )}
             <div className="card" style={{ marginBottom: 16 }}>
@@ -1382,13 +1395,13 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                 />
                 <div className="profile-info">
                   <h2>{profileForm.name || '—'}</h2>
-                  <p>📍 {profileForm.city_area || '—'}</p>
+                  <p style={{ display: 'flex', alignItems: 'center', gap: 5 }}><Icon name="map" size={13} /> {profileForm.city_area || '—'}</p>
                   <div className="profile-badges">
                     {currentUser?.email_verified_at && <span className="badge badge-green">✓ Ověřený e-mail</span>}
                     <span className="badge badge-blue">
                       <PlanBadge plan={currentUser?.plan} expiresAt={currentUser?.plan_expires_at} active={isActivePlan} />
                     </span>
-                    {currentUser?.rating && <span className="badge badge-orange">⭐ {currentUser.rating} ({reviewsSummary?.total ?? 0} recenzí)</span>}
+                    {currentUser?.rating && <span className="badge badge-orange" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Icon name="star" size={11} /> {currentUser.rating} ({reviewsSummary?.total ?? 0} recenzí)</span>}
                   </div>
                 </div>
               </div>
@@ -1571,7 +1584,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
 
         {!['overview','new-jobs','invoices','earnings','calendar','profile','membership','reviews','oznameni','offers-sent','active','history'].includes(activePage) && (
           <div className="empty-state">
-            <div className="empty-icon">🚧</div>
+            <div className="empty-icon"><Icon name="wrench" size={40} /></div>
             <h3>Tato sekce se připravuje</h3>
             <p>Bude napojena v dalším kroku.</p>
           </div>
@@ -1581,7 +1594,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
             <div className="dash-title" style={{ marginBottom: 24 }}>Dokončené zakázky</div>
             {completedJobs.length === 0 && (
               <div className="empty-state" style={{ padding: 40 }}>
-                <div className="empty-icon">📚</div>
+                <div className="empty-icon"><Icon name="folder" size={40} /></div>
                 <h3>Zatím žádné dokončené zakázky</h3>
                 <p>Jakmile zakázku označíte jako hotovou, zobrazí se tady.</p>
               </div>
@@ -1606,7 +1619,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                       <span className="badge badge-gray">Dokončeno</span>
                       {review ? (
                         <div style={{ textAlign: 'right' }}>
-                          <div className="stars" style={{ fontSize: 13 }}>{'★'.repeat(review.stars)}</div>
+                          <div className="stars"><Stars n={review.stars} size={13} /></div>
                           {review.comment && <div style={{ fontSize: 12, color: 'var(--text3)', maxWidth: 200 }}>&ldquo;{review.comment}&rdquo;</div>}
                         </div>
                       ) : (
