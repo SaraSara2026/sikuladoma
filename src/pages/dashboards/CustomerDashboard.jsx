@@ -397,8 +397,8 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
                 onClick={() => onNav('order-detail', orders.find(x => x.id === offer.order_id) || { id: offer.order_id, title: offer.order_title })}>
                 <div className="offer-header">
                   <div className="offer-avatar">{offer.sikula_avatar || offer.sikula_name?.[0] || '?'}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: 16 }}>{offer.sikula_name}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 16, overflowWrap: 'break-word' }}>{offer.sikula_name}</div>
                     <div style={{ fontSize: 13, color: 'var(--text2)', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                       <span>Na poptávku: {offer.order_title}</span>
                       {renderMsgBadge(offer.order_id)}
@@ -511,15 +511,15 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {myReviews.map(r => (
                     <div key={r.id} className="card card-pad" style={{ padding: '16px 20px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                        <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--purple-pale, #f5f3ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8, flexWrap: 'wrap' }}>
+                        <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--purple-pale, #f5f3ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, flexShrink: 0 }}>
                           {r.target_avatar || r.target_name?.[0] || '?'}
                         </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 600 }}>{r.target_name}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 600, overflowWrap: 'break-word' }}>{r.target_name}</div>
                           <div style={{ fontSize: 12, color: 'var(--text3)' }}>{r.order_title}</div>
                         </div>
-                        <div style={{ textAlign: 'right' }}>
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
                           <Stars n={r.stars} />
                           <div style={{ fontSize: 12, color: 'var(--text3)' }}>{relativni(r.created_at)}</div>
                         </div>

@@ -190,7 +190,7 @@ export default function OrderDetailPage({ order: orderProp, onNav, currentUser, 
                 <div key={offer.id} className="offer-card">
                   <div className="offer-header">
                     <div className="offer-avatar">{offer.sikula_avatar || offer.sikula_name?.[0] || '?'}</div>
-                    <div style={{ flex: 1 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={fieldLabel}>Nabídka od</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontWeight: 700, fontSize: 16 }}>{offer.sikula_name}</span>
