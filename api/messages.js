@@ -2,6 +2,7 @@ import { sql } from './_db.js';
 import { requireUser } from './_auth.js';
 import { sendNewMessageNotificationEmail } from './_email.js';
 import { isSikulaPlanActive } from './_plan.js';
+import { rateLimit } from './_rate-limit.js';
 
 export default async function handler(req, res) {
   try {
@@ -57,6 +58,9 @@ async function sendMessage(req, res) {
   // Ověření e-mailu se vyžaduje jen od šikuly — zákazník smí psát bez ověření.
   const me = await requireUser(req, res);
   if (!me) return;
+  // Bez limitu by šlo přihlášeným účtem zahltit zprávami druhou stranu
+  // konverzace — 30 zpráv/5 min pokryje běžnou rychlou konverzaci.
+  if (rateLimit(req, res, { key: 'send-message', limit: 30, windowMs: 5 * 60 * 1000 })) return;
   if (me.role === 'sikula' && !me.email_verified_at) {
     return res.status(403).json({
       error: 'Nejdřív si ověř e-mail. Pošli si nový ověřovací odkaz z dashboardu.',

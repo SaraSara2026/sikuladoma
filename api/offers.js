@@ -5,6 +5,7 @@ import { sql } from './_db.js';
 import { requireUser, requireVerifiedUser } from './_auth.js';
 import { sendNewOfferNotificationEmail } from './_email.js';
 import { isSikulaPlanActive } from './_plan.js';
+import { rateLimit } from './_rate-limit.js';
 
 export default async function handler(req, res) {
   try {
@@ -22,6 +23,9 @@ async function createOffer(req, res) {
   const me = await requireVerifiedUser(req, res);
   if (!me) return;
   if (me.role !== 'sikula') return res.status(403).json({ error: 'Nabídku může poslat jen šikula.' });
+  // Bez limitu by šlo hromadně zaplavit poptávky nabídkami — 30/10 min
+  // pokryje i aktivního šikulu, co reaguje na víc poptávek najednou.
+  if (rateLimit(req, res, { key: 'create-offer', limit: 30, windowMs: 10 * 60 * 1000 })) return;
 
   // Reakce na poptávku vyžaduje aktivní placený tarif — žádné reakce zdarma, žádné kredity.
   // Zrušený tarif zůstává funkční až do konce zaplaceného období (viz _plan.js).

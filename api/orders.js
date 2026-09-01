@@ -26,6 +26,10 @@ export default async function handler(req, res) {
 }
 
 async function createOrder(req, res) {
+  // Každá nová poptávka pošle e-mail všem šikulům v oboru — bez limitu by
+  // jedno zaplavení tímhle endpointem mělo zesílený dopad (spam navíc na
+  // desítky cizích schránek, ne jen na appku samotnou).
+  if (rateLimit(req, res, { key: 'create-order', limit: 5, windowMs: 10 * 60 * 1000 })) return;
   const b = req.body ?? {};
   const title       = String(b.title || '').trim();
   const category    = String(b.category || '').trim();
