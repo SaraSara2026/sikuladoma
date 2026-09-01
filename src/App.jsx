@@ -324,6 +324,7 @@ export default function App() {
         onCookies={() => { setPage("cookies"); window.scrollTo(0,0); }}
         onCookiesPage={() => { setPage("cookies"); window.scrollTo(0,0); }}
         onHow={() => { setPage("home"); window.scrollTo(0,0); setTimeout(() => document.getElementById("how")?.scrollIntoView({ behavior: "smooth" }), 100); }}
+        showFooter={!["dashboard", "send-offer", "order-detail", "chat"].includes(page)}
       >
 
       {profileId ? (
