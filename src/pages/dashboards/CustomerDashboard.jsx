@@ -8,8 +8,8 @@ import LinkAccountMismatch from '../../components/LinkAccountMismatch.jsx'
 import DashBottomNav from '../../components/DashBottomNav.jsx'
 
 const menuItems = [
-  { id: 'profile',   icon: 'user',      label: 'Profil' },
   { id: 'overview',  icon: 'chart',     label: 'Přehled' },
+  { id: 'profile',   icon: 'user',      label: 'Profil' },
   { id: 'orders',    icon: 'orders',    label: 'Moje poptávky' },
   { id: 'offers',    icon: 'chat',      label: 'Nabídky' },
   { id: 'active',    icon: 'zap',       label: 'Aktivní zakázky' },
