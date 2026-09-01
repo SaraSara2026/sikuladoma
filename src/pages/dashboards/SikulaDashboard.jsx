@@ -352,45 +352,85 @@ function VerifyGate({ user }) {
   )
 }
 
-function CalendarSection() {
+// available_date je DATE sloupec (bez času) — čteme přes UTC gettery, ať
+// datum neujede o den kvůli časové zóně prohlížeče (stejně jako formatDateCz).
+function CalendarSection({ acceptedJobs = [] }) {
   const days = ['Po','Út','St','Čt','Pá','So','Ne']
   const today = new Date()
-  const year = today.getFullYear()
-  const month = today.getMonth()
-  const firstDay = new Date(year, month, 1).getDay()
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const eventDays = [3, 7, 12, 15, 18, 22, 25]
+  const [viewYear, setViewYear]   = useState(today.getFullYear())
+  const [viewMonth, setViewMonth] = useState(today.getMonth()) // 0-11
+
+  const goPrev = () => setViewMonth(m => { if (m === 0) { setViewYear(y => y - 1); return 11 } return m - 1 })
+  const goNext = () => setViewMonth(m => { if (m === 11) { setViewYear(y => y + 1); return 0 } return m + 1 })
+
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay()
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
+  const isCurrentMonth = viewYear === today.getFullYear() && viewMonth === today.getMonth()
+
+  const jobsWithDate = acceptedJobs.filter(o => o.available_date && !isNaN(new Date(o.available_date).getTime()))
+  const jobsByDay = {} // den v měsíci -> zakázky (jen pro aktuálně zobrazený měsíc)
+  jobsWithDate.forEach(o => {
+    const d = new Date(o.available_date)
+    if (d.getUTCFullYear() === viewYear && d.getUTCMonth() === viewMonth) {
+      (jobsByDay[d.getUTCDate()] ??= []).push(o)
+    }
+  })
+
   const cells = []
   for (let i = 0; i < (firstDay || 7) - 1; i++) cells.push(null)
   for (let i = 1; i <= daysInMonth; i++) cells.push(i)
+
+  const upcoming = jobsWithDate
+    .filter(o => new Date(o.available_date).getTime() >= new Date(new Date().toDateString()).getTime())
+    .sort((a, b) => new Date(a.available_date) - new Date(b.available_date))
+    .slice(0, 8)
 
   return (
     <div className="page-enter">
       <div className="dash-title" style={{ marginBottom: 24 }}>Kalendář</div>
       <div className="card card-pad" style={{ maxWidth: 480 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-          <h3>{today.toLocaleDateString('cs', { month: 'long', year: 'numeric' })}</h3>
+          <h3 style={{ textTransform: 'capitalize' }}>{new Date(viewYear, viewMonth, 1).toLocaleDateString('cs', { month: 'long', year: 'numeric' })}</h3>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btn-ghost btn-sm">←</button>
-            <button className="btn btn-ghost btn-sm">→</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={goPrev} aria-label="Předchozí měsíc">←</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={goNext} aria-label="Následující měsíc">→</button>
           </div>
         </div>
         <div className="calendar-grid" style={{ marginBottom: 8 }}>
           {days.map(d => <div key={d} style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: 'var(--text3)', padding: '4px 0' }}>{d}</div>)}
         </div>
         <div className="calendar-grid">
-          {cells.map((d, i) => (
-            <div key={i} className={`cal-day ${d === today.getDate() ? 'today' : eventDays.includes(d) ? 'has-event' : d ? '' : 'other-month'}`}>
-              {d ?? ''}
-            </div>
-          ))}
+          {cells.map((d, i) => {
+            const dayJobs = d ? jobsByDay[d] : null
+            const isToday = isCurrentMonth && d === today.getDate()
+            const title = dayJobs?.map(j => j.order_title).join(', ')
+            return (
+              <div key={i} title={title} className={`cal-day ${isToday ? 'today' : dayJobs ? 'has-event' : d ? '' : 'other-month'}`}>
+                {d ?? ''}
+              </div>
+            )
+          })}
         </div>
       </div>
       <div style={{ marginTop: 20 }}>
         <h3 style={{ marginBottom: 12 }}>Nadcházející zakázky</h3>
-        <div style={{ padding: '20px 16px', background: '#F8FAFC', border: '1px solid #E5E7EB', borderRadius: 12, textAlign: 'center', color: '#94A3B8', fontSize: 13 }}>
-          Zatím nemáte naplánované žádné zakázky.
-        </div>
+        {upcoming.length === 0 ? (
+          <div style={{ padding: '20px 16px', background: '#F8FAFC', border: '1px solid #E5E7EB', borderRadius: 12, textAlign: 'center', color: '#94A3B8', fontSize: 13 }}>
+            Zatím nemáte naplánované žádné zakázky.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {upcoming.map(o => (
+              <div key={o.order_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: '12px 16px', background: '#F8FAFC', border: '1px solid #E5E7EB', borderRadius: 12 }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, overflowWrap: 'break-word' }}>{o.order_title || 'Zakázka'}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text3)' }}>{o.order_city}</div>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand, #0EA5A4)', flexShrink: 0 }}>{formatDateCz(o.available_date)}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -1254,7 +1294,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
         )}
 
         {!lockedType && activePage === 'invoices' && <InvoicePage />}
-        {!lockedType && activePage === 'calendar' && <CalendarSection />}
+        {!lockedType && activePage === 'calendar' && <CalendarSection acceptedJobs={acceptedJobs} />}
         {activePage === 'membership' && <VylepseniProfilu currentUser={currentUser} onLogout={onLogout} onBack={() => setActivePage('profile')} />}
         {activePage === 'oznameni' && (
           <div className="page-enter">
