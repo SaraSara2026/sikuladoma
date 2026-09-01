@@ -56,10 +56,15 @@ async function stripeRequest(method, path, data) {
 
 function constructStripeEvent(rawBody, sig, secret) {
   const parts = Object.fromEntries(sig.split(',').map(s => s.split('=')));
+  if (!parts.t || !parts.v1) throw new Error('Webhook signature malformed');
   const expected = crypto.createHmac('sha256', secret)
     .update(`${parts.t}.${rawBody}`)
     .digest('hex');
-  if (expected !== parts.v1) throw new Error('Webhook signature mismatch');
+  const expectedBuf = Buffer.from(expected, 'hex');
+  const actualBuf = Buffer.from(parts.v1, 'hex');
+  if (expectedBuf.length !== actualBuf.length || !crypto.timingSafeEqual(expectedBuf, actualBuf)) {
+    throw new Error('Webhook signature mismatch');
+  }
   return JSON.parse(rawBody);
 }
 
@@ -311,7 +316,11 @@ async function handleWebhook(req, res, sql) {
     }
 
     const rawStr = rawBody.toString('utf8');
-    if (webhookSecret && sig) {
+    if (webhookSecret) {
+      // Secret je nastavený → podpis je POVINNÝ. Chybějící Stripe-Signature
+      // hlavička se nesmí tiše propustit jako neověřená událost (jinak by
+      // šlo webhook podvrhnout jen tím, že se hlavička vynechá).
+      if (!sig) throw new Error('Chybí Stripe-Signature hlavička.');
       event = constructStripeEvent(rawStr, sig, webhookSecret);
     } else {
       event = typeof req.body === 'object' ? req.body : JSON.parse(rawStr);
