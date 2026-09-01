@@ -71,14 +71,14 @@ export default function AdminDashboard({ currentUser, onLogout }) {
 
         <VerificationBanner user={currentUser} />
 
-        <div style={{ background: '#fff', borderRadius: 16, padding: '20px 24px', border: '1px solid #F3F4F6', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
+        <div style={{ background: '#fff', borderRadius: 16, padding: '20px 24px', border: '1px solid #F3F4F6', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+          <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: '#A855F7', letterSpacing: '.08em', textTransform: 'uppercase', marginBottom: 2 }}>Admin</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#1A1F2E' }}>{currentUser?.name || 'Administrátor'}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#1A1F2E', overflowWrap: 'break-word' }}>{currentUser?.name || 'Administrátor'}</div>
           </div>
           {onLogout && (
             <button onClick={onLogout}
-              style={{ padding: '8px 16px', borderRadius: 9, border: '1px solid #E5E7EB', background: 'none', fontSize: 13, color: '#6B7280', cursor: 'pointer', fontFamily: 'inherit' }}>
+              style={{ padding: '8px 16px', borderRadius: 9, border: '1px solid #E5E7EB', background: 'none', fontSize: 13, color: '#6B7280', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
               Odhlásit
             </button>
           )}
@@ -126,7 +126,7 @@ export default function AdminDashboard({ currentUser, onLogout }) {
 
         {tab === 'users' && (
           <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #F3F4F6', overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 720 }}>
+            <table className="inv-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 720 }}>
               <thead style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
                 <tr>
                   <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: '#6B7280' }}>Jméno</th>
@@ -141,17 +141,17 @@ export default function AdminDashboard({ currentUser, onLogout }) {
               <tbody>
                 {users.map(u => (
                   <tr key={u.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
-                    <td style={{ padding: '10px 16px', fontWeight: 600 }}>{u.name}</td>
-                    <td style={{ padding: '10px 16px', color: '#6B7280' }}>{u.email}</td>
-                    <td style={{ padding: '10px 16px' }}>
+                    <td style={{ padding: '10px 16px', fontWeight: 600 }} data-label="Jméno">{u.name}</td>
+                    <td style={{ padding: '10px 16px', color: '#6B7280' }} data-label="E-mail">{u.email}</td>
+                    <td style={{ padding: '10px 16px' }} data-label="Role">
                       <span style={{ padding: '2px 8px', borderRadius: 999, background: u.role === 'admin' ? '#FAF5FF' : u.role === 'sikula' ? '#FFF7ED' : '#EFF6FF', color: u.role === 'admin' ? '#A855F7' : u.role === 'sikula' ? '#C2410C' : '#1D4ED8', fontSize: 11, fontWeight: 600 }}>
                         {u.role}
                       </span>
                     </td>
-                    <td style={{ padding: '10px 16px', color: '#6B7280' }}>{u.city || '—'}</td>
-                    <td style={{ padding: '10px 16px', color: '#6B7280' }}>{(u.plan && PLAN_LABELS[u.plan]) || u.plan || '—'}</td>
-                    <td style={{ padding: '10px 16px', textAlign: 'center' }}>{u.verified ? '✓' : '—'}</td>
-                    <td style={{ padding: '10px 16px' }}>
+                    <td style={{ padding: '10px 16px', color: '#6B7280' }} data-label="Město">{u.city || '—'}</td>
+                    <td style={{ padding: '10px 16px', color: '#6B7280' }} data-label="Plan">{(u.plan && PLAN_LABELS[u.plan]) || u.plan || '—'}</td>
+                    <td style={{ padding: '10px 16px', textAlign: 'center' }} data-label="Verified">{u.verified ? '✓' : '—'}</td>
+                    <td style={{ padding: '10px 16px' }} data-label="Akce">
                       {u.role === 'sikula' && !u.verified && (
                         <button onClick={() => verify(u.id)}
                           style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid #22C55E', background: '#F0FDF4', color: '#16A34A', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -168,7 +168,7 @@ export default function AdminDashboard({ currentUser, onLogout }) {
 
         {tab === 'orders' && (
           <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #F3F4F6', overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 720 }}>
+            <table className="inv-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 720 }}>
               <thead style={{ background: '#F9FAFB', borderBottom: '1px solid #E5E7EB' }}>
                 <tr>
                   <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: 700, color: '#6B7280' }}>ID</th>
@@ -182,14 +182,14 @@ export default function AdminDashboard({ currentUser, onLogout }) {
               <tbody>
                 {orders.map(o => (
                   <tr key={o.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
-                    <td style={{ padding: '10px 16px', color: '#9CA3AF' }}>#{o.id}</td>
-                    <td style={{ padding: '10px 16px', fontWeight: 600 }}>{o.title}</td>
-                    <td style={{ padding: '10px 16px', color: '#6B7280' }}>{o.customer_name}</td>
-                    <td style={{ padding: '10px 16px', color: '#6B7280' }}>{o.city}</td>
-                    <td style={{ padding: '10px 16px' }}>
+                    <td style={{ padding: '10px 16px', color: '#9CA3AF' }} data-label="ID">#{o.id}</td>
+                    <td style={{ padding: '10px 16px', fontWeight: 600 }} data-label="Titulek">{o.title}</td>
+                    <td style={{ padding: '10px 16px', color: '#6B7280' }} data-label="Zákazník">{o.customer_name}</td>
+                    <td style={{ padding: '10px 16px', color: '#6B7280' }} data-label="Město">{o.city}</td>
+                    <td style={{ padding: '10px 16px' }} data-label="Stav">
                       <span style={{ padding: '2px 8px', borderRadius: 999, background: '#F3F4F6', fontSize: 11, fontWeight: 600 }}>{o.status}</span>
                     </td>
-                    <td style={{ padding: '10px 16px', color: '#9CA3AF', fontSize: 12 }}>{new Date(o.created_at).toLocaleDateString('cs-CZ')}</td>
+                    <td style={{ padding: '10px 16px', color: '#9CA3AF', fontSize: 12 }} data-label="Vytvořeno">{new Date(o.created_at).toLocaleDateString('cs-CZ')}</td>
                   </tr>
                 ))}
               </tbody>
