@@ -7,6 +7,7 @@ import { sendOrderConfirmationEmail, sendNewOrderNotificationEmail } from './_em
 import { expandCategories, CATEGORY_LABELS } from './_relatedCategories.js';
 import { isSikulaPlanActive } from './_plan.js';
 import { locationMatches, generalOrderArea } from './_location.js';
+import { rateLimit } from './_rate-limit.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const STATUS_NEW = 'new';
@@ -100,6 +101,9 @@ async function createOrder(req, res) {
   if (!customerId) {
     const [existing] = await sql`SELECT id, role, password_hash FROM users WHERE email = ${customer_email}`;
     if (existing) {
+      // Stejný limit jako u /api/auth/login — bez něj by tahle větev fungovala
+      // jako neomezená hádačka hesla k cizímu účtu (obchází login rate limit).
+      if (rateLimit(req, res, { key: 'order-password-check', limit: 5, windowMs: 5 * 60 * 1000 })) return;
       const matches = existing.role === 'customer' && await verifyPassword(password, existing.password_hash);
       if (matches) {
         customerId = existing.id;
