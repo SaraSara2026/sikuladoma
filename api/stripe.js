@@ -149,7 +149,7 @@ export default async function handler(req, res) {
     requireUser = auth.requireUser;
   } catch (err) {
     console.error('[/api/stripe] module init failed:', err);
-    return res.status(500).json({ error: `Inicializace selhala: ${err.message}` });
+    return res.status(500).json({ error: 'Server error' });
   }
 
   try {
@@ -168,7 +168,10 @@ export default async function handler(req, res) {
     return res.status(404).json({ error: 'Neznámá akce.' });
   } catch (err) {
     console.error('[/api/stripe]', action, err);
-    return res.status(500).json({ error: err.message || 'Server error' });
+    // Checkout/portal odpovídá přímo přihlášenému šikulovi v prohlížeči —
+    // syrová err.message (klidně detail z sql/Stripe API) se nesmí posílat
+    // ven, jen do serverového logu výše.
+    return res.status(500).json({ error: 'Server error' });
   }
 }
 
