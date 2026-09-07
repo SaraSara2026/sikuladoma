@@ -2,7 +2,7 @@ import Header from './Header'
 import CookieBanner from './CookieBanner.jsx'
 import Footer from './Footer'
 
-export default function Layout({ children, T, BtnPrimary, onHome, onScrollTo, onOrder, onLogin, onReg, onKontakt, onHow, onSikuly, onSikulove, onFAQ, onFAQSikuly, onPodminkySikuly, onPodporaSikuly, onOchrana, onPodminkyPouziti, onCookies, onCookiesPage, sikulaUser, onDashboard, onProfil, onLogout, showFooter = true }) {
+export default function Layout({ children, T, BtnPrimary, onHome, onScrollTo, onOrder, onLogin, onReg, onHow, onNavigate, sikulaUser, onDashboard, onProfil, onLogout, showFooter = true }) {
   return (
     <>
       <Header
@@ -12,7 +12,7 @@ export default function Layout({ children, T, BtnPrimary, onHome, onScrollTo, on
         onScrollTo={onScrollTo}
         onOrder={onOrder}
         onLogin={onLogin}
-        onSikuly={onSikuly}
+        onNavigate={onNavigate}
         sikulaUser={sikulaUser}
         onDashboard={onDashboard}
         onProfil={onProfil}
@@ -23,20 +23,11 @@ export default function Layout({ children, T, BtnPrimary, onHome, onScrollTo, on
         <Footer
           onOrder={onOrder}
           onReg={onReg}
-          onKontakt={onKontakt}
           onHow={onHow}
-          onSikuly={onSikuly}
-          onSikulove={onSikulove}
-          onFAQ={onFAQ}
-          onFAQSikuly={onFAQSikuly}
-          onPodminkySikuly={onPodminkySikuly}
-          onPodporaSikuly={onPodporaSikuly}
-          onOchrana={onOchrana}
-          onPodminkyPouziti={onPodminkyPouziti}
-          onCookies={onCookies}
+          onNavigate={onNavigate}
         />
       )}
-      <CookieBanner onCookiesPage={onCookiesPage} />
+      <CookieBanner onCookiesPage={() => onNavigate("cookies")} />
     </>
   )
 }

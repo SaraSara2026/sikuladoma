@@ -89,6 +89,14 @@ export default function App() {
       if (p === 'verify-email' || p === 'reset-password' || p === 'forgot-password') return p;
       if (p === 'sikulove' || p === 'kontakt' || p === 'sikuly' || p === 'pricing') return p;
       if (p === 'chat' || p === 'dashboard') return p;
+      // Statické obsahové stránky beze zvláštního payloadu — bezpečné načíst
+      // přímo z URL (na rozdíl od dashboard/chat/faktury apod., které čekají
+      // extra stav, jenž na studeném loadu není k dispozici). Bez týhle větve
+      // by odkaz/reload/Google crawl na tyhle stránky vždycky skončil na
+      // homepage, i kdyby sitemap/odkaz mířil přesně sem.
+      if (p === 'faq' || p === 'faq-sikuly' || p === 'cookies' || p === 'gdpr'
+          || p === 'ochrana-soukromi' || p === 'podminky-pouziti'
+          || p === 'podminky-sikuly' || p === 'podpora-sikuly') return p;
     } catch {}
     return "home";
   });
@@ -187,6 +195,33 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Navigace na hlavní obsahové/statické stránky (Header/Footer odkazy) —
+  // na rozdíl od handleNav/setPage tohle taky reálně mění URL v adresním
+  // řádku (pushState), aby šlo dané stránky sdílet/reloadnout a fungovalo
+  // tlačítko zpět v prohlížeči (viz popstate efekt níže). Pro Google je
+  // klíčové hlavně to, že odkazy v Header/Footer teď mají skutečný href
+  // vedoucí přesně sem (viz Footer.jsx/Header.jsx onNavigate).
+  const navigate = (pageKey) => {
+    setPage(pageKey);
+    const url = pageKey === "home" ? "/" : `/?page=${pageKey}`;
+    window.history.pushState({ page: pageKey }, "", url);
+    window.scrollTo(0, 0);
+  };
+
+  // Tlačítko zpět/vpřed v prohlížeči — dosynchronizuje `page` s URL, kterou
+  // pushState výše přidal do historie. Bez tohohle by po navigate() zpátky
+  // tlačítko změnilo URL, ale ne to, co appka reálně vykresluje.
+  useEffect(() => {
+    const onPopState = () => {
+      try {
+        const p = new URL(window.location.href).searchParams.get('page');
+        setPage(p && Object.prototype.hasOwnProperty.call(PAGE_META, p) ? p : "home");
+      } catch { setPage("home"); }
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
   // Navigace ze sub-stránek (dashboard, send-offer apod.).
   // Konvence: onNav('cílová-stránka', payload)
   const handleNav = (target, payload) => {
@@ -275,7 +310,8 @@ export default function App() {
 
   return (
     <>
-      <PageMeta title={meta.title} description={meta.description} noindex={meta.noindex} />
+      <PageMeta title={meta.title} description={meta.description} noindex={meta.noindex}
+        path={page === "home" ? "/" : `/?page=${page}`} />
       <style>{`
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
         html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
@@ -303,26 +339,16 @@ export default function App() {
       <Layout
         T={T}
         BtnPrimary={BtnPrimary}
-        onHome={() => { setPage("home"); window.scrollTo(0,0); }}
+        onHome={() => navigate("home")}
         onScrollTo={scrollTo}
         onOrder={() => openOrder()}
         onLogin={() => setLoginModal(true)}
         onReg={() => openReg()}
-        onKontakt={() => { setPage("kontakt"); window.scrollTo(0,0); }}
-        onSikuly={() => { setPage("sikuly"); window.scrollTo(0,0); }}
-        onSikulove={() => { setPage("home"); window.scrollTo(0,0); }}
-        onFAQ={() => { setPage("faq"); window.scrollTo(0,0); }}
-        onFAQSikuly={() => { setPage("faq-sikuly"); window.scrollTo(0,0); }}
-        onPodminkySikuly={() => { setPage("podminky-sikuly"); window.scrollTo(0,0); }}
-        onPodporaSikuly={() => { setPage("podpora-sikuly"); window.scrollTo(0,0); }}
+        onNavigate={navigate}
         sikulaUser={sikulaUser}
         onDashboard={() => { setDashboardTab("prehled"); setPage("dashboard"); window.scrollTo(0,0); }}
         onProfil={() => { setDashboardTab("profil"); setPage("dashboard"); window.scrollTo(0,0); }}
         onLogout={logoutSikula}
-        onOchrana={() => { setPage("ochrana-soukromi"); window.scrollTo(0,0); }}
-        onPodminkyPouziti={() => { setPage("podminky-pouziti"); window.scrollTo(0,0); }}
-        onCookies={() => { setPage("cookies"); window.scrollTo(0,0); }}
-        onCookiesPage={() => { setPage("cookies"); window.scrollTo(0,0); }}
         onHow={() => { setPage("home"); window.scrollTo(0,0); setTimeout(() => document.getElementById("how")?.scrollIntoView({ behavior: "smooth" }), 100); }}
         showFooter={!["dashboard", "send-offer", "order-detail", "chat"].includes(page)}
       >
@@ -427,43 +453,43 @@ export default function App() {
           onLogin={() => { setPage("home"); window.history.replaceState({}, '', '/'); setLoginModal(true); }} />
       ) : page === "sikulove" ? (
         <SikuloveListPage
-          onBack={() => { setPage("home"); window.scrollTo(0,0); }}
+          onBack={() => { navigate("home"); }}
           onProfile={(id) => { setProfileId(String(id)); window.history.replaceState({}, '', `/?sikula=${id}`); }}
           onOrder={({ category, city }) => openOrder(null, { category, city })} />
       ) : page === "faq" ? (
         <FAQPage
           section="customers"
-          onBack={() => { setPage("home"); window.scrollTo(0,0); }}
+          onBack={() => { navigate("home"); }}
           onOrder={() => openOrder()}
           onReg={() => openReg()} />
       ) : page === "faq-sikuly" ? (
         <FAQPage
           section="sikuly"
-          onBack={() => { setPage("home"); window.scrollTo(0,0); }}
+          onBack={() => { navigate("home"); }}
           onOrder={() => openOrder()}
           onReg={() => openReg()} />
       ) : page === "cookies" ? (
-        <CookiesPage onBack={() => { setPage("home"); window.scrollTo(0,0); }} />
+        <CookiesPage onBack={() => { navigate("home"); }} />
       ) : page === "gdpr" ? (
-        <GDPRPage onBack={() => { setPage("home"); window.scrollTo(0,0); }} />
+        <GDPRPage onBack={() => { navigate("home"); }} />
       ) : page === "podminky-pouziti" ? (
-        <PodminkyPouzitiPage onBack={() => { setPage("home"); window.scrollTo(0,0); }}
-          onPodminkySikuly={() => { setPage("podminky-sikuly"); window.scrollTo(0,0); }} />
+        <PodminkyPouzitiPage onBack={() => { navigate("home"); }}
+          onPodminkySikuly={() => navigate("podminky-sikuly")} />
       ) : page === "ochrana-soukromi" ? (
-        <OchranaSoukromiPage onBack={() => { setPage("home"); window.scrollTo(0,0); }} />
+        <OchranaSoukromiPage onBack={() => { navigate("home"); }} />
       ) : page === "podpora-sikuly" ? (
-        <PodporaProSikulyPage onBack={() => { setPage("home"); window.scrollTo(0,0); }} />
+        <PodporaProSikulyPage onBack={() => { navigate("home"); }} />
       ) : page === "podminky-sikuly" ? (
-        <PodminkyProSikulyPage onBack={() => { setPage("home"); window.scrollTo(0,0); }} />
+        <PodminkyProSikulyPage onBack={() => { navigate("home"); }} />
       ) : page === "sikuly" ? (
-        <ProSikulyPage onBack={() => { setPage("home"); window.scrollTo(0,0); }} onReg={openReg} />
+        <ProSikulyPage onBack={() => { navigate("home"); }} onReg={openReg} />
       ) : page === "kontakt" ? (
-        <KontaktPage onBack={() => { setPage("home"); window.scrollTo(0,0); }} />
+        <KontaktPage onBack={() => { navigate("home"); }} />
       ) : page === "faktury" ? (
         <div style={{ minHeight: "100vh", background: "#F8FAFC" }}>
           <div style={{ background: "#fff", borderBottom: `1px solid ${T.border}`, padding: "10px 24px" }}>
             <div style={{ maxWidth: 1060, margin: "0 auto" }}>
-              <button onClick={() => { setPage("home"); window.scrollTo(0,0); }}
+              <button onClick={() => { navigate("home"); }}
                 style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", fontSize: 13, color: T.ink3, fontFamily: "inherit", padding: 0 }}
                 onMouseEnter={e => e.currentTarget.style.color = T.ink}
                 onMouseLeave={e => e.currentTarget.style.color = T.ink3}>

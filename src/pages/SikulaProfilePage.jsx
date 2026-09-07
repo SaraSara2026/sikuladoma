@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { usersApi } from '../lib/api';
 import { CATEGORIES } from '../lib/categories';
+import PageMeta from '../components/PageMeta';
 
 const SVC_LABEL = Object.fromEntries(CATEGORIES.map(c => [c.id, c.label]));
 
@@ -38,16 +39,29 @@ export default function SikulaProfilePage({ id, onBack, onOrder }) {
     return () => { alive = false; };
   }, [id]);
 
+  const profilePath = `/?sikula=${id}`;
+
   if (loading) return <div style={{ padding: 60, textAlign: 'center', color: '#6B7280' }}>Načítám profil…</div>;
-  if (err)     return <div style={{ padding: 60, textAlign: 'center', color: '#B91C1C' }}>Chyba: {err}</div>;
-  if (!data?.user) return null;
+  if (err)     return <><PageMeta title="Profil nenalezen" noindex path={profilePath} /><div style={{ padding: 60, textAlign: 'center', color: '#B91C1C' }}>Chyba: {err}</div></>;
+  if (!data?.user) return <PageMeta title="Profil nenalezen" noindex path={profilePath} />;
 
   const { user, reviews, summary } = data;
   const initials = (user.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
   const avatar = user.avatar || initials;
 
+  // Dlouhý-ocas SEO title/description — jméno + služby + lokalita + hodnocení,
+  // tohle je ten obsah, co má appku podle byznys strategie táhnout z Google.
+  const serviceLabels = (user.services || []).map(s => SVC_LABEL[s]).filter(Boolean);
+  const profileTitle = [user.name, user.city_area].filter(Boolean).join(' – ');
+  const profileDesc = [
+    `${user.name}${serviceLabels.length ? ` — ${serviceLabels.slice(0, 3).join(', ')}` : ''}${user.city_area ? ` v okolí ${user.city_area}` : ''}.`,
+    summary?.total > 0 ? `${summary.avg_stars}★ (${summary.total} recenzí).` : null,
+    'Napište poptávku zdarma na ŠikulaDoma.',
+  ].filter(Boolean).join(' ');
+
   return (
     <div style={{ minHeight: '100vh', background: '#F9FAFB' }}>
+      <PageMeta title={profileTitle} description={profileDesc} path={profilePath} />
       <div style={{ background: '#fff', borderBottom: '1px solid #E5E7EB', padding: '10px 24px' }}>
         <div style={{ maxWidth: 1060, margin: '0 auto' }}>
           <button onClick={onBack}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-export default function Header({ T, BtnPrimary, onHome, onScrollTo, onOrder, onLogin, onDashboard, onProfil, onLogout, onSikuly, sikulaUser }) {
+export default function Header({ T, BtnPrimary, onHome, onScrollTo, onOrder, onLogin, onDashboard, onProfil, onLogout, onNavigate, sikulaUser }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -37,13 +37,15 @@ export default function Header({ T, BtnPrimary, onHome, onScrollTo, onOrder, onL
 
         {/* Left: Logo + odkazy (desktop) */}
         <div style={{ display: "flex", alignItems: "center", gap: 32, minWidth: 0 }}>
-          <div style={{ fontWeight: 800, fontSize: 24, letterSpacing: "-.03em", cursor: "pointer", flexShrink: 0 }} onClick={onHome}>
+          <a href="/" style={{ fontWeight: 800, fontSize: 24, letterSpacing: "-.03em", textDecoration: "none", flexShrink: 0 }}
+            onClick={e => { e.preventDefault(); onHome(); }}>
             <span style={{ color: T.blue }}>Šikula</span><span style={{ color: T.orange }}>Doma</span>
-          </div>
+          </a>
           <div className="hdr-links">
             <button className="nav-link" onClick={() => onScrollTo("how")}>Jak to funguje</button>
             <button className="nav-link" onClick={() => onScrollTo("services")}>Služby</button>
-            {onSikuly && <button className="nav-link" onClick={onSikuly}>Pro šikuly</button>}
+            <a className="nav-link" href="/?page=sikuly" style={{ textDecoration: "none", display: "inline-block" }}
+              onClick={e => { e.preventDefault(); onNavigate("sikuly"); }}>Pro šikuly</a>
           </div>
         </div>
 
@@ -151,7 +153,8 @@ export default function Header({ T, BtnPrimary, onHome, onScrollTo, onOrder, onL
         <div style={{ padding: "8px 16px 16px", display: "flex", flexDirection: "column" }}>
           <button className="nav-link" style={{ textAlign: "left", padding: "12px 8px", fontSize: 15 }} onClick={() => go(() => onScrollTo("how"))}>Jak to funguje</button>
           <button className="nav-link" style={{ textAlign: "left", padding: "12px 8px", fontSize: 15 }} onClick={() => go(() => onScrollTo("services"))}>Služby</button>
-          {onSikuly && <button className="nav-link" style={{ textAlign: "left", padding: "12px 8px", fontSize: 15 }} onClick={() => go(onSikuly)}>Pro šikuly</button>}
+          <a className="nav-link" href="/?page=sikuly" style={{ textAlign: "left", padding: "12px 8px", fontSize: 15, textDecoration: "none", display: "block" }}
+            onClick={e => { e.preventDefault(); go(() => onNavigate("sikuly")); }}>Pro šikuly</a>
           {!sikulaUser && (
             <button className="nav-link" style={{ textAlign: "left", padding: "12px 8px", fontSize: 15 }} onClick={() => go(onLogin)}>Přihlášení</button>
           )}

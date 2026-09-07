@@ -1,4 +1,26 @@
-export default function Footer({ onOrder, onReg, onKontakt, onHow, onSikuly, onPodminkySikuly, onOchrana, onPodminkyPouziti, onCookies, onFAQ, onFAQSikuly, onSikulove }) {
+// href pro odkazy vedoucí na jinou "stránku" appky (viz PAGE_META v App.jsx).
+// `null` u položky = akce mimo routing (otevře modal/scroll), zůstává button.
+const pageHref = page => page === "home" ? "/" : `/?page=${page}`;
+
+function FooterLink({ label, page, onNavigate, onClick, link, hover }) {
+  const style = { fontSize: 12, marginBottom: 3, display: "inline-block", color: link, lineHeight: 1.5, textDecoration: "none", cursor: "pointer", transition: "color .12s" };
+  if (page) {
+    return (
+      <a href={pageHref(page)} style={style}
+        onMouseEnter={e => e.currentTarget.style.color = hover}
+        onMouseLeave={e => e.currentTarget.style.color = link}
+        onClick={e => { e.preventDefault(); onNavigate(page); }}>{label}</a>
+    );
+  }
+  return (
+    <div style={style}
+      onMouseEnter={e => { if (onClick) e.currentTarget.style.color = hover }}
+      onMouseLeave={e => e.currentTarget.style.color = link}
+      onClick={() => onClick && onClick()}>{label}</div>
+  );
+}
+
+export default function Footer({ onOrder, onReg, onHow, onNavigate }) {
   const link = "#334155"
   const hover = "#0B66D8"
 
@@ -24,50 +46,29 @@ export default function Footer({ onOrder, onReg, onKontakt, onHow, onSikuly, onP
             {[
               { label: "Zadat poptávku",  onClick: onOrder },
               { label: "Jak to funguje",  onClick: onHow },
-              { label: "Najít šikulu",    onClick: onSikulove },
-              { label: "Časté dotazy",    onClick: onFAQ },
-              { label: "Kontakt",         onClick: onKontakt },
-            ].map(({ label, onClick }) => (
-              <div key={label}
-                style={{ fontSize: 12, marginBottom: 3, cursor: onClick ? "pointer" : "default", transition: "color .12s", color: link, lineHeight: 1.5 }}
-                onMouseEnter={e => { if (onClick) e.currentTarget.style.color = hover }}
-                onMouseLeave={e => e.currentTarget.style.color = link}
-                onClick={() => onClick && onClick()}
-              >{label}</div>
-            ))}
+              { label: "Najít šikulu",    page: "sikulove" },
+              { label: "Časté dotazy",    page: "faq" },
+              { label: "Kontakt",         page: "kontakt" },
+            ].map(item => <FooterLink key={item.label} {...item} onNavigate={onNavigate} link={link} hover={hover} />)}
           </div>
           <div>
             <h4 style={{ color: "#0F172A", fontSize: 10, fontWeight: 700, marginBottom: 8, letterSpacing: ".08em", textTransform: "uppercase" }}>Pro šikuly</h4>
             {[
               { label: "Zaregistrovat se",    onClick: onReg },
-              { label: "Jak to funguje",      onClick: onSikuly },
-              { label: "Podmínky pro šikuly", onClick: onPodminkySikuly },
-              { label: "Časté dotazy",        onClick: onFAQSikuly },
-              { label: "Kontakt",             onClick: onKontakt },
-            ].map(({ label, onClick }) => (
-              <div key={label}
-                style={{ fontSize: 12, marginBottom: 3, cursor: onClick ? "pointer" : "default", transition: "color .12s", color: link, lineHeight: 1.5 }}
-                onMouseEnter={e => { if (onClick) e.currentTarget.style.color = hover }}
-                onMouseLeave={e => e.currentTarget.style.color = link}
-                onClick={() => onClick && onClick()}
-              >{label}</div>
-            ))}
+              { label: "Jak to funguje",      page: "sikuly" },
+              { label: "Podmínky pro šikuly", page: "podminky-sikuly" },
+              { label: "Časté dotazy",        page: "faq-sikuly" },
+              { label: "Kontakt",             page: "kontakt" },
+            ].map(item => <FooterLink key={item.label} {...item} onNavigate={onNavigate} link={link} hover={hover} />)}
           </div>
           <div>
             <h4 style={{ color: "#0F172A", fontSize: 10, fontWeight: 700, marginBottom: 8, letterSpacing: ".08em", textTransform: "uppercase" }}>Právní</h4>
             {[
-              { label: "Ochrana osobních údajů", onClick: onOchrana },
-              { label: "Obchodní podmínky",       onClick: onPodminkyPouziti },
-              { label: "Podmínky pro šikuly",     onClick: onPodminkySikuly },
-              { label: "Cookies",                 onClick: onCookies },
-            ].map(({ label, onClick }) => (
-              <div key={label}
-                style={{ fontSize: 12, marginBottom: 3, cursor: onClick ? "pointer" : "default", transition: "color .12s", color: link, lineHeight: 1.5 }}
-                onMouseEnter={e => { if (onClick) e.currentTarget.style.color = hover }}
-                onMouseLeave={e => e.currentTarget.style.color = link}
-                onClick={() => onClick && onClick()}
-              >{label}</div>
-            ))}
+              { label: "Ochrana osobních údajů", page: "ochrana-soukromi" },
+              { label: "Obchodní podmínky",       page: "podminky-pouziti" },
+              { label: "Podmínky pro šikuly",     page: "podminky-sikuly" },
+              { label: "Cookies",                 page: "cookies" },
+            ].map(item => <FooterLink key={item.label} {...item} onNavigate={onNavigate} link={link} hover={hover} />)}
           </div>
         </div>
         <div style={{ borderTop: "1px solid #CBD5E1", paddingTop: 8, display: "flex", justifyContent: "space-between", fontSize: 11, flexWrap: "wrap", gap: 6, color: "#64748B" }}>

@@ -3,7 +3,6 @@
 
 import { useState } from 'react';
 import { T } from '../ui/theme';
-import PageMeta from '../components/PageMeta';
 
 const FAQ_CUSTOMERS = [
   {
@@ -64,7 +63,6 @@ export default function FAQPage({ onBack, onReg, onOrder, section }) {
   const showSikuly = !section || section === 'sikuly';
   return (
     <>
-      <PageMeta title="Často kladené dotazy" description="Odpovědi na nejčastější otázky o ŠikulaDoma — pro zákazníky i šikuly." />
       <div style={{ minHeight: '100vh', background: T.bg }}>
         {/* Hero */}
         <div style={{ background: '#fff', borderBottom: `1px solid ${T.border}`, padding: '32px 24px 32px' }}>
