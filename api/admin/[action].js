@@ -82,7 +82,39 @@ async function stats(req, res) {
     SELECT COUNT(*) FILTER (WHERE handled = FALSE)::int AS unhandled
     FROM contact_messages
   `;
-  return res.status(200).json({ users, orders, reviews, contacts });
+
+  // Platící šikulové — zrcadlí isSikulaPlanActive() z src/lib/plan.js.
+  // 'cancelled_pending' = tarif zrušen, ale zaplacené období ještě neskončilo.
+  const [paying] = await sql`
+    SELECT
+      COUNT(*) FILTER (WHERE plan = 'aktiv'      AND subscription_status = 'active')::int AS aktiv_active,
+      COUNT(*) FILTER (WHERE plan = 'aktiv-plus' AND subscription_status = 'active')::int AS aktiv_plus_active,
+      COUNT(*) FILTER (WHERE subscription_status = 'cancelled' AND plan_expires_at > NOW())::int AS cancelled_pending
+    FROM users
+    WHERE role = 'sikula'
+  `;
+
+  // Geografie — city_area je preferované (bez ulice/PSC), city je legacy fallback.
+  const cities = await sql`
+    SELECT COALESCE(NULLIF(TRIM(city_area), ''), NULLIF(TRIM(city), ''), 'Neuvedeno') AS city,
+           COUNT(*)::int AS count
+    FROM users
+    WHERE role IN ('customer', 'sikula')
+    GROUP BY 1
+    ORDER BY count DESC
+    LIMIT 10
+  `;
+
+  // IČO vs bez IČO — jen šikulové (fakturační údaj, zákazníci ho nemají).
+  const [ico] = await sql`
+    SELECT
+      COUNT(*) FILTER (WHERE ico IS NOT NULL AND TRIM(ico) <> '')::int AS with_ico,
+      COUNT(*) FILTER (WHERE ico IS NULL OR TRIM(ico) = '')::int       AS without_ico
+    FROM users
+    WHERE role = 'sikula'
+  `;
+
+  return res.status(200).json({ users, orders, reviews, contacts, paying, cities, ico });
 }
 
 // GET /api/admin/users → seznam uživatelů

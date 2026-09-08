@@ -21,6 +21,10 @@ const PLAN_LABELS = {
   'aktiv-plus': 'Aktivní šikula Plus',
 };
 
+// Ceny tarifů (měsíčně) — zrcadlí EXPECTED_AMOUNT_CZK v api/stripe.js, jen pro
+// odhad MRR v admin přehledu. Nepočítá s ročním předplatným zvlášť.
+const PLAN_PRICE_CZK = { aktiv: 199, 'aktiv-plus': 299 };
+
 function StatCard({ label, value, color }) {
   return (
     <div style={{ background: '#fff', border: '1px solid #F3F4F6', borderRadius: 14, padding: '20px 22px', boxShadow: '0 1px 3px rgba(0,0,0,.04)' }}>
@@ -116,10 +120,44 @@ export default function AdminDashboard({ currentUser, onLogout }) {
             </div>
 
             <h2 style={{ fontSize: 14, fontWeight: 700, color: '#6B7280', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '.05em' }}>Aktivita</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: 12, marginBottom: 28 }}>
               <StatCard label="Recenze celkem"     value={stats.reviews?.total}      color="#F97316" />
               <StatCard label="Průměrné hodnocení" value={stats.reviews?.avg_stars}  color="#F97316" />
               <StatCard label="Neřešené kontakty"  value={stats.contacts?.unhandled} color="#EF4444" />
+            </div>
+
+            <h2 style={{ fontSize: 14, fontWeight: 700, color: '#6B7280', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '.05em' }}>Platící šikulové</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: 12, marginBottom: 28 }}>
+              <StatCard label="Aktivní šikula"        value={stats.paying?.aktiv_active}      color="#F97316" />
+              <StatCard label="Aktivní šikula Plus"   value={stats.paying?.aktiv_plus_active} color="#F97316" />
+              <StatCard label="Zrušeno, doběhne"      value={stats.paying?.cancelled_pending} color="#9CA3AF" />
+              <StatCard label="Odhad MRR"
+                value={stats.paying ? `${((stats.paying.aktiv_active || 0) * PLAN_PRICE_CZK.aktiv + (stats.paying.aktiv_plus_active || 0) * PLAN_PRICE_CZK['aktiv-plus']).toLocaleString('cs-CZ')} Kč` : '—'}
+                color="#22C55E" />
+            </div>
+            <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: -18, marginBottom: 28 }}>
+              Odhad MRR počítá s měsíční sazbou i pro roční předplatitele — u ročních plánů je proto orientační, ne přesný.
+            </p>
+
+            <h2 style={{ fontSize: 14, fontWeight: 700, color: '#6B7280', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '.05em' }}>IČO (šikulové)</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: 12, marginBottom: 28 }}>
+              <StatCard label="Na IČO"  value={stats.ico?.with_ico}    color="#3B82F6" />
+              <StatCard label="Bez IČO" value={stats.ico?.without_ico} color="#9CA3AF" />
+            </div>
+
+            <h2 style={{ fontSize: 14, fontWeight: 700, color: '#6B7280', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '.05em' }}>Odkud jsou (top 10 měst)</h2>
+            <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #F3F4F6', padding: '8px 0' }}>
+              {(stats.cities || []).length === 0 ? (
+                <div style={{ padding: '16px 20px', color: '#9CA3AF', fontSize: 13 }}>Zatím žádná data.</div>
+              ) : stats.cities.map((c, i) => (
+                <div key={c.city} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 20px' }}>
+                  <div style={{ width: 120, fontSize: 13, fontWeight: 600, color: '#1A1F2E', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.city}</div>
+                  <div style={{ flex: 1, background: '#F3F4F6', borderRadius: 999, height: 8, overflow: 'hidden' }}>
+                    <div style={{ width: `${Math.max(4, (c.count / stats.cities[0].count) * 100)}%`, background: '#F97316', height: '100%', borderRadius: 999 }} />
+                  </div>
+                  <div style={{ width: 32, textAlign: 'right', fontSize: 13, color: '#6B7280', flexShrink: 0 }}>{c.count}</div>
+                </div>
+              ))}
             </div>
           </div>
         )}
