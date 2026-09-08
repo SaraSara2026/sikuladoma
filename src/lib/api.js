@@ -9,8 +9,12 @@ async function unwrap(res) {
     let msg = `HTTP ${res.status}`;
     let code;
     try { const d = await res.json(); msg = d.error || msg; code = d.code; } catch {}
+    // 401 vždy znamená chybějící/vypršelou session (viz requireUser v api/_auth.js)
+    // — server posílá jen technické "Unauthorized", to se nesmí ukázat uživateli.
+    if (res.status === 401) msg = 'Přihlášení vypršelo. Přihlaste se prosím znovu.';
     const err = new Error(msg);
     if (code) err.code = code;
+    err.status = res.status;
     throw err;
   }
   return res.json();

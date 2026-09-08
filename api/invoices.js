@@ -80,6 +80,14 @@ async function createInvoice(req, res) {
   if (!id || !title || amount == null || !customer_name || !due_date) {
     return res.status(400).json({ error: 'Vyplň všechna povinná pole: ID, název, částka, zákazník, splatnost.' });
   }
+  // Číslo faktury zadává klient (stává se PDF názvem souboru a primárním
+  // klíčem) — omezit na bezpečnou znakovou sadu a rozumnou délku, ať se
+  // nedá poslat cokoliv (whitespace, dlouhý řetězec apod.).
+  if (!/^[A-Za-z0-9/_-]{1,40}$/.test(String(id))) {
+    return res.status(400).json({ error: 'Číslo faktury smí obsahovat jen písmena, číslice, - _ / a max. 40 znaků.' });
+  }
+  if (String(title).length > 200) return res.status(400).json({ error: 'Název je příliš dlouhý.' });
+  if (String(customer_name).length > 150) return res.status(400).json({ error: 'Jméno zákazníka je příliš dlouhé.' });
   if (Number(amount) <= 0) return res.status(400).json({ error: 'Částka musí být kladná.' });
 
   try {
@@ -255,7 +263,6 @@ async function sendInvoice(req, res) {
   try {
     await sendInvoiceEmail({
       to: existing.customer_email,
-      sikulaName: me.name,
       sikulaPhone: me.phone,
       sikulaEmail: me.email,
       invoiceId: existing.id,

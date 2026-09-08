@@ -173,14 +173,14 @@ export async function sendReviewRequestEmail({ to, name, orderTitle, url }) {
 // potřeboval vlastní bezpečnou (tokenovou) autorizaci, ať neotevře data
 // jinému přihlášenému účtu; tomu se radši úplně vyhýbáme. PDF generuje
 // frontend (viz api/invoices.js sendInvoice), tahle funkce ho jen přiloží.
-export async function sendInvoiceEmail({ to, sikulaName, sikulaPhone, sikulaEmail, invoiceId, title, amount, due, attachments }) {
+export async function sendInvoiceEmail({ to, sikulaPhone, sikulaEmail, invoiceId, title, amount, due, attachments }) {
   const resend = getResend();
   const { data, error } = await resend.emails.send({
     from: getFromAddress(),
     to,
     subject: 'Faktura k zakázce na ŠikulaDoma',
-    html: invoiceTemplate({ sikulaName, sikulaPhone, sikulaEmail, invoiceId, title, amount, due }),
-    text: invoiceTextVersion({ sikulaName, sikulaPhone, sikulaEmail, invoiceId, title, amount, due }),
+    html: invoiceTemplate({ sikulaPhone, sikulaEmail, invoiceId, title, amount, due }),
+    text: invoiceTextVersion({ sikulaPhone, sikulaEmail, invoiceId, title, amount, due }),
     attachments,
   });
   if (error) {
@@ -528,7 +528,7 @@ function reviewRequestTextVersion({ name, orderTitle, url }) {
   return lines.join('\n');
 }
 
-function invoiceTemplate({ sikulaName, sikulaPhone, sikulaEmail, invoiceId, title, amount, due }) {
+function invoiceTemplate({ sikulaPhone, sikulaEmail, invoiceId, title, amount, due }) {
   const priceStr = formatPriceKc(amount);
   const contact = [sikulaPhone, sikulaEmail].filter(Boolean).join(' · ');
   return baseLayout({
@@ -545,7 +545,7 @@ function invoiceTemplate({ sikulaName, sikulaPhone, sikulaEmail, invoiceId, titl
   });
 }
 
-function invoiceTextVersion({ sikulaName, sikulaPhone, sikulaEmail, invoiceId, title, amount, due }) {
+function invoiceTextVersion({ sikulaPhone, sikulaEmail, invoiceId, title, amount, due }) {
   const priceStr = formatPriceKc(amount);
   const contact = [sikulaPhone, sikulaEmail].filter(Boolean).join(' · ');
   const lines = [

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 
-export default function Header({ T, BtnPrimary, onHome, onScrollTo, onOrder, onLogin, onDashboard, onProfil, onLogout, onNavigate, sikulaUser }) {
+export default function Header({ T, onHome, onScrollTo, onLogin, onDashboard, onProfil, onLogout, onNavigate, sikulaUser }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 

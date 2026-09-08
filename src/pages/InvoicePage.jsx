@@ -583,8 +583,12 @@ export default function InvoicePage() {
   const { user } = useAuth()
   const [invoices, setInvoices] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(null)
+  const [reloadTick, setReloadTick] = useState(0)
 
   useEffect(() => {
+    setLoading(true)
+    setLoadError(null)
     fetch('/api/invoices')
       .then(r => r.ok ? r.json() : Promise.reject(new Error('API ' + r.status)))
       .then(rows => setInvoices(rows.map(i => ({
@@ -595,9 +599,12 @@ export default function InvoicePage() {
         datumVystaveni: i.created, datumPlneni: i.created, splatnost: i.due,
         poznamka: '', zakaznikAdresa: '', zakaznikMesto: '', zakaznikPsc: '', zakaznikIco: '',
       }))))
-      .catch(err => console.error('Načítání faktur selhalo:', err))
+      .catch(err => {
+        console.error('Načítání faktur selhalo:', err)
+        setLoadError('Faktury se nepodařilo načíst. Zkontrolujte připojení a zkuste to znovu.')
+      })
       .finally(() => setLoading(false))
-  }, [])
+  }, [reloadTick])
 
   const [profil, setProfilState] = useState(() => initProfilFor(user))
 
@@ -771,6 +778,16 @@ export default function InvoicePage() {
         </div>
       </div>
 
+      {loadError && (
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, flexWrap:'wrap', background:'#FEF2F2', border:'1px solid #FECACA', borderRadius:10, padding:'12px 16px', marginBottom:16, fontSize:13, color:'#B91C1C' }}>
+          <span>{loadError}</span>
+          <button onClick={() => setReloadTick(t => t + 1)}
+            style={{ height:32, padding:'0 14px', borderRadius:8, border:'1px solid #FECACA', background:'#fff', color:'#B91C1C', fontWeight:600, fontSize:12, cursor:'pointer', fontFamily:'inherit', flexShrink:0 }}>
+            Zkusit znovu
+          </button>
+        </div>
+      )}
+
       <div className="stats-grid" style={{ marginBottom:24 }}>
         <div className="stat-card"><div className="stat-val" style={{ color:'#F97316' }}>{fKc(ceka)}</div><div className="stat-label">Čeká na úhradu</div></div>
         <div className="stat-card"><div className="stat-val" style={{ color:'#22C55E' }}>{fKc(zaplaceno)}</div><div className="stat-label">Zaplaceno</div></div>
@@ -847,7 +864,7 @@ export default function InvoicePage() {
               )
             })}
             {invoices.filter(inv => filter==='paid'?inv.status==='paid':filter==='unpaid'?inv.status!=='paid':true).length === 0 && (
-              <tr><td colSpan={6} style={{ padding:'32px', textAlign:'center', color:'#9CA3AF', fontSize:13 }}>Žádné faktury</td></tr>
+              <tr><td colSpan={6} style={{ padding:'32px', textAlign:'center', color:'#9CA3AF', fontSize:13 }}>{loading ? 'Načítám faktury…' : 'Žádné faktury'}</td></tr>
             )}
           </tbody>
         </table>
@@ -905,8 +922,7 @@ const IN = { width:'100%', padding:'10px 13px', border:'1.5px solid #E5E7EB', bo
 const LB = { display:'block', fontSize:11, fontWeight:700, color:'#6B7280', marginBottom:5, letterSpacing:'.04em', textTransform:'uppercase' }
 const BP = { display:'inline-flex', alignItems:'center', gap:6, height:38, padding:'0 16px', borderRadius:10, border:'none', background:'#F07800', color:'#fff', fontWeight:600, fontSize:13, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }
 const BG = { display:'inline-flex', alignItems:'center', gap:6, height:38, padding:'0 14px', borderRadius:10, border:'1.5px solid #E5E7EB', background:'transparent', color:'#6B7280', fontWeight:500, fontSize:13, cursor:'pointer', fontFamily:'inherit' }
-const BC = { width:28, height:28, borderRadius:7, border:'none', background:'#F1F5F9', color:'#6B7280', cursor:'pointer', fontFamily:'inherit' }
-const BS = { display:'inline-flex', alignItems:'center', gap:5, height:30, padding:'0 11px', borderRadius:8, border:'1px solid #E5E7EB', background:'#F9FAFB', color:'#4B5563', fontWeight:500, fontSize:12, cursor:'pointer', fontFamily:'inherit' }
+const BC = { width:36, height:36, borderRadius:7, border:'none', background:'#F1F5F9', color:'#6B7280', cursor:'pointer', fontFamily:'inherit' }
 const TH = { padding:'10px 14px', fontSize:11, fontWeight:700, color:'#6B7280', textAlign:'left', textTransform:'uppercase', letterSpacing:'.05em', whiteSpace:'nowrap' }
 const TD = { padding:'12px 14px', verticalAlign:'middle' }
-const BI = { display:'inline-flex', alignItems:'center', gap:4, height:28, padding:'0 9px', borderRadius:7, border:'1px solid #E5E7EB', background:'#F9FAFB', color:'#4B5563', fontWeight:500, fontSize:12, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }
+const BI = { display:'inline-flex', alignItems:'center', gap:4, height:36, padding:'0 9px', borderRadius:7, border:'1px solid #E5E7EB', background:'#F9FAFB', color:'#4B5563', fontWeight:500, fontSize:12, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }

@@ -27,7 +27,7 @@ export const ORDER_STATUS_MAP = {
 }
 
 // ─── CATEGORIES ─────────────────────────────────────────────────────────────
-// Tvar pro HomePage (emoji ikona) a NewOrderPage. SVG ikony pro register form
+// Tvar pro HomePage (emoji ikona). SVG ikony pro register form
 // jsou v App.jsx (CATEGORIES tam má .Icon komponentu).
 // „seniori" (Péče o seniory) se od 2026-08 veřejně nenabízí — viz src/lib/categories.js.
 export const CATEGORIES = [
@@ -62,7 +62,7 @@ export const REVIEWS = [
 ]
 
 // ─── USERS (demo přihlašování) ──────────────────────────────────────────────
-// USERS[role] vrací výchozí profil pro daný typ uživatele. RegisterPage
+// USERS[role] vrací výchozí profil pro daný typ uživatele — modals/RegForm.jsx
 // kopíruje a přepisuje name/city/avatar.
 export const USERS = {
   customer: {

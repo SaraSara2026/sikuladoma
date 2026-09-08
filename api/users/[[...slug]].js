@@ -44,20 +44,22 @@ async function updateMe(req, res) {
   if (!me) return;
 
   const b = req.body ?? {};
-  const name = b.name != null ? String(b.name).trim() : null;
+  // Horní meze délky (slice, ne error) — stejná konvence jako bio/avatar níže,
+  // jen brání zbytečnému zaplnění DB / poškozeným datům v PDF fakturách.
+  const name = b.name != null ? String(b.name).trim().slice(0, 150) : null;
   const bio  = b.bio  != null ? String(b.bio).slice(0, 1000) : null;
-  const ico  = b.ico  != null ? String(b.ico).trim() : null;
-  const phone = b.phone != null ? String(b.phone).trim() : null;
-  const city = b.city != null ? String(b.city).trim() : null;
+  const ico  = b.ico  != null ? String(b.ico).trim().slice(0, 20) : null;
+  const phone = b.phone != null ? String(b.phone).trim().slice(0, 30) : null;
+  const city = b.city != null ? String(b.city).trim().slice(0, 100) : null;
   const hourly_rate = b.hourly_rate != null && b.hourly_rate !== ''
     ? Math.max(0, Math.min(99999, Number(b.hourly_rate) || 0)) : null;
   const services = Array.isArray(b.services) ? b.services.filter(s => typeof s === 'string').slice(0, 30) : null;
   const avatar = b.avatar != null ? String(b.avatar).slice(0, 500000) : null;  // base64 do ~500KB
   const platce_dph = b.platce_dph != null ? Boolean(b.platce_dph) : null;
   const worker_type = b.worker_type != null ? String(b.worker_type).trim() : null;
-  const street       = b.street    != null ? String(b.street).trim()    : null;
-  const zip          = b.zip       != null ? String(b.zip).trim()       : null;
-  const city_area    = b.city_area != null ? String(b.city_area).trim() : null;
+  const street       = b.street    != null ? String(b.street).trim().slice(0, 150) : null;
+  const zip          = b.zip       != null ? String(b.zip).trim().slice(0, 10)     : null;
+  const city_area    = b.city_area != null ? String(b.city_area).trim().slice(0, 100) : null;
 
   // Validace jména pokud je posláno
   if (name !== null && name.length > 0 && !/^\S+\s+\S+/.test(name)) {

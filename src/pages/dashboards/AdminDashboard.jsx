@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { adminApi } from '../../lib/api';
+import { ORDER_STATUS_MAP } from '../../data';
 import VerificationBanner from '../../components/VerificationBanner';
 import Icon from '../../components/Icon';
 
@@ -150,7 +151,7 @@ export default function AdminDashboard({ currentUser, onLogout }) {
             <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #F3F4F6', padding: '8px 0' }}>
               {(stats.cities || []).length === 0 ? (
                 <div style={{ padding: '16px 20px', color: '#9CA3AF', fontSize: 13 }}>Zatím žádná data.</div>
-              ) : stats.cities.map((c, i) => (
+              ) : stats.cities.map((c) => (
                 <div key={c.city} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 20px' }}>
                   <div style={{ width: 120, fontSize: 13, fontWeight: 600, color: '#1A1F2E', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.city}</div>
                   <div style={{ flex: 1, background: '#F3F4F6', borderRadius: 999, height: 8, overflow: 'hidden' }}>
@@ -226,7 +227,7 @@ export default function AdminDashboard({ currentUser, onLogout }) {
                     <td style={{ padding: '10px 16px', color: '#6B7280' }} data-label="Zákazník">{o.customer_name}</td>
                     <td style={{ padding: '10px 16px', color: '#6B7280' }} data-label="Město">{o.city}</td>
                     <td style={{ padding: '10px 16px' }} data-label="Stav">
-                      <span style={{ padding: '2px 8px', borderRadius: 999, background: '#F3F4F6', fontSize: 11, fontWeight: 600 }}>{o.status}</span>
+                      <span style={{ padding: '2px 8px', borderRadius: 999, background: '#F3F4F6', fontSize: 11, fontWeight: 600 }}>{ORDER_STATUS_MAP[o.status]?.label || o.status}</span>
                     </td>
                     <td style={{ padding: '10px 16px', color: '#9CA3AF', fontSize: 12 }} data-label="Vytvořeno">{new Date(o.created_at).toLocaleDateString('cs-CZ')}</td>
                   </tr>

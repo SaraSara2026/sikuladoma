@@ -6,7 +6,7 @@ import { T, S, inp, lbl } from "../ui/theme";
 import { IconBtn, BtnGhost } from "../ui/Button";
 import {
   IcX, IcCheck, IcArrow, IcCheckCircle,
-  IcMapPin, IcTag, IcClock, IcFlame, IcZap, IcCalendar, IcShield,
+  IcMapPin, IcTag, IcClock, IcFlame, IcZap, IcCalendar,
 } from "../ui/icons/UIIcons";
 import { CATEGORIES, SUBCATEGORIES, CAT_COLORS } from "../lib/categories";
 import PasswordField from "../components/PasswordField";

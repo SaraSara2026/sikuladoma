@@ -614,7 +614,7 @@ function VylepseniProfilu({ currentUser, onLogout, onBack }) {
               <div style={{ fontSize: 16, fontWeight: 700, color: '#1A1F2E', marginBottom: 8 }}>{t.name}</div>
 
               <div style={{ marginBottom: 4 }}>
-                <span style={{ fontSize: 32, fontWeight: 800, color: t.color }}>{price(t).toLocaleString('cs-CZ')}</span>
+                <span style={{ fontSize: 'clamp(24px, 6vw, 32px)', fontWeight: 800, color: t.color }}>{price(t).toLocaleString('cs-CZ')}</span>
                 <span style={{ fontSize: 14, color: '#9CA3AF', marginLeft: 4 }}>Kč {unit}</span>
               </div>
 
@@ -667,7 +667,7 @@ function VylepseniProfilu({ currentUser, onLogout, onBack }) {
   )
 }
 
-export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdateUser }) {
+export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdateUser, initialTab }) {
   // Návrat ze Stripe checkoutu (success i cancel) míří rovnou na Aktivaci
   // tarifu, ať je tam vidět stavová hláška a šikula nemusí nikam přecházet sám.
   const [activePage, setActivePage] = useState(() => {
@@ -676,6 +676,10 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
     } catch {}
     return 'overview'
   })
+  // Header "Přehled"/"Profil" odkazy nemění `page` (appka zůstává na
+  // dashboardu, komponenta se neremountuje) — proto reagujeme na změnu
+  // initialTab efektem, ne jen lazy initial state.
+  useEffect(() => { if (initialTab) setActivePage(initialTab) }, [initialTab])
   const [available, setAvailable] = useState(true)
   const [stripeMsg, setStripeMsg] = useState(null)   // { type: 'success'|'cancel', plan? }
 
@@ -1374,7 +1378,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
           <div className="page-enter">
             <div className="dash-title" style={{ marginBottom: 8 }}>Moje recenze</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-              <div style={{ fontFamily: 'Syne', fontSize: 48, fontWeight: 800, color: 'var(--brand)' }}>
+              <div style={{ fontFamily: 'Syne', fontSize: 'clamp(32px, 9vw, 48px)', fontWeight: 800, color: 'var(--brand)' }}>
                 {reviewsSummary?.avg_stars || '—'}
               </div>
               <div>

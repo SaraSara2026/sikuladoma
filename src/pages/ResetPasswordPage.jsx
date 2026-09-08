@@ -2,7 +2,7 @@
 // URL: /?page=reset-password&token=XXX
 
 import { useEffect, useState } from 'react';
-import { T, inp, lbl } from '../ui/theme';
+import { T, lbl } from '../ui/theme';
 import { apiResetPassword } from '../lib/auth.js';
 import PasswordField from '../components/PasswordField';
 

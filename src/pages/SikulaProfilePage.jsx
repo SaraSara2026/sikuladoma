@@ -47,7 +47,6 @@ export default function SikulaProfilePage({ id, onBack, onOrder }) {
 
   const { user, reviews, summary } = data;
   const initials = (user.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-  const avatar = user.avatar || initials;
 
   // Dlouhý-ocas SEO title/description — jméno + služby + lokalita + hodnocení,
   // tohle je ten obsah, co má appku podle byznys strategie táhnout z Google.

@@ -256,6 +256,7 @@ export default function OrderDetailPage({ order: orderProp, onNav, currentUser, 
                     )}
                     {offer.status === 'accepted' && <span className="badge badge-green">Přijato</span>}
                     {offer.status === 'rejected' && <span className="badge badge-gray">Odmítnuto</span>}
+                    {offer.status === 'withdrawn' && <span className="badge badge-gray">Staženo šikulou</span>}
                   </div>
                 </div>
               ))}

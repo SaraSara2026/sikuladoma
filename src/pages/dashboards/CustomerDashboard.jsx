@@ -132,8 +132,12 @@ function useConversations() {
   return { conversations, unreadTotal }
 }
 
-export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpdateUser, initialReviewOrderId }) {
+export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpdateUser, initialReviewOrderId, initialTab }) {
   const [activePage, setActivePage] = useState('overview')
+  // Header "Přehled"/"Profil" odkazy nemění `page` (appka zůstává na
+  // dashboardu, komponenta se neremountuje) — proto reagujeme na změnu
+  // initialTab efektem, ne jen lazy initial state.
+  useEffect(() => { if (initialTab) setActivePage(initialTab) }, [initialTab])
   const { orders, loading, error, reload } = useMyOrders()
   const { offers: allOffers } = useAllMyOffers(orders)
   const { reviews: myReviews, loading: reviewsLoading, reload: reloadReviews } = useMyReviews()
@@ -428,6 +432,7 @@ export default function CustomerDashboard({ currentUser, onNav, onLogout, onUpda
                   {offer.status === 'accepted' && offer.order_status === 'completed' && <span className="badge badge-gray">Dokončeno</span>}
                   {offer.status === 'accepted' && offer.order_status !== 'completed' && <span className="badge badge-green">✓ Přijato</span>}
                   {offer.status === 'rejected' && <span className="badge badge-gray">Odmítnuto</span>}
+                  {offer.status === 'withdrawn' && <span className="badge badge-gray">Staženo šikulou</span>}
                 </div>
               </div>
             ))}

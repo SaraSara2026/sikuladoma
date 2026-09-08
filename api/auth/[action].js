@@ -115,6 +115,16 @@ async function doRegister(req, res) {
   // Telefon je pro šikulu povinný — bez něj se s ním zákazník nedomluví.
   if (role === 'sikula' && !String(phone || '').trim()) return res.status(400).json({ error: 'Zadejte telefonní číslo.' });
 
+  // Horní meze délky — žádné z těchto polí nemá důvod být delší, jen brání
+  // zbytečnému zaplnění DB / poškozeným datům v PDF fakturách a e-mailech.
+  if (name.trim().length > 150)               return res.status(400).json({ error: 'Jméno je příliš dlouhé.' });
+  if (phone && String(phone).length > 30)     return res.status(400).json({ error: 'Telefonní číslo je příliš dlouhé.' });
+  if (city && String(city).length > 100)      return res.status(400).json({ error: 'Město je příliš dlouhé.' });
+  if (street && String(street).length > 150)  return res.status(400).json({ error: 'Ulice je příliš dlouhá.' });
+  if (zip && String(zip).length > 10)         return res.status(400).json({ error: 'PSČ je příliš dlouhé.' });
+  if (city_area && String(city_area).length > 100) return res.status(400).json({ error: 'Město / oblast je příliš dlouhé.' });
+  if (ico && String(ico).length > 20)         return res.status(400).json({ error: 'IČO je příliš dlouhé.' });
+
   const svc = Array.isArray(services) ? services.filter(s => typeof s === 'string').slice(0, 30) : [];
 
   const WORKER_TYPES = new Set(['zivnostnik_firma', 'prilezitostna_vypomoc']);

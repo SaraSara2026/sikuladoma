@@ -14,7 +14,7 @@ const WORKER_TYPE_LABEL = {
   prilezitostna_vypomoc: 'Příležitostná výpomoc',
 };
 
-export default function SikuloveListPage({ onBack, onProfile, onReg, onOrder }) {
+export default function SikuloveListPage({ onBack, onProfile, onOrder }) {
   const [sikulove, setSikulove] = useState([]);
   const [loading, setLoading] = useState(true);
   const initial = { category: '', city: '', minRating: 0 };
@@ -78,13 +78,19 @@ export default function SikuloveListPage({ onBack, onProfile, onReg, onOrder }) 
             <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
               Min. hodnocení:
               <select value={filters.minRating} onChange={e => setFilters(f => ({ ...f, minRating: Number(e.target.value) }))}
-                style={{ height: 32, padding: '0 8px', borderRadius: 8, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit' }}>
+                style={{ height: 38, padding: '0 8px', borderRadius: 8, border: `1.5px solid ${T.border}`, fontSize: 13, fontFamily: 'inherit' }}>
                 <option value="0">vše</option>
                 <option value="3">3⭐+</option>
                 <option value="4">4⭐+</option>
                 <option value="5">jen 5⭐</option>
               </select>
             </label>
+            {(appliedFilters.category || appliedFilters.city || appliedFilters.minRating > 0) && (
+              <button onClick={reset}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: T.ink3, textDecoration: 'underline', fontFamily: 'inherit', padding: 0 }}>
+                Zrušit filtry
+              </button>
+            )}
           </div>
 
           {/* CTA: rovnou zadat poptávku s pre-fillem kategorie + města */}

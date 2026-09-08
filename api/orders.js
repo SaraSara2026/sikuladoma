@@ -31,25 +31,27 @@ async function createOrder(req, res) {
   // desítky cizích schránek, ne jen na appku samotnou).
   if (rateLimit(req, res, { key: 'create-order', limit: 5, windowMs: 10 * 60 * 1000 })) return;
   const b = req.body ?? {};
-  const title       = String(b.title || '').trim();
+  // Horní meze délky — brání zbytečnému zaplnění DB / poškozeným datům
+  // v e-mailech odesílaných šikulům k téhle poptávce.
+  const title       = String(b.title || '').trim().slice(0, 200);
   const category    = String(b.category || '').trim();
-  const description = b.description != null ? String(b.description) : (b.desc != null ? String(b.desc) : null);
+  const description = b.description != null ? String(b.description).slice(0, 5000) : (b.desc != null ? String(b.desc).slice(0, 5000) : null);
   // Lokalita se od šikuly zadává odděleně (PSČ + obec/město/oblast +
   // volitelná přesnější adresa/ulice), ať jde spolehlivěji párovat s
   // oblastí, kde šikula pracuje (viz api/_location.js). `city` zůstává
   // legacy sloupec s plným textem pro zákazníka/admina/přijatou zakázku —
   // dopočítá se z těchto tří polí, pokud nepřijde přímo (starší volání API).
   const zip      = String(b.zip || '').replace(/\s+/g, '');
-  const cityArea = String(b.city_area || '').trim();
-  const street   = b.street != null ? String(b.street).trim() : '';
+  const cityArea = String(b.city_area || '').trim().slice(0, 100);
+  const street   = b.street != null ? String(b.street).trim().slice(0, 150) : '';
   const city     = cityArea
     ? [street, zip, cityArea].filter(Boolean).join(', ')
-    : String(b.city || '').trim();
-  const budget      = b.budget ? String(b.budget) : null;
-  const floor       = b.floor ? String(b.floor) : null;
-  const parking     = b.parking ? String(b.parking) : null;
-  const note        = b.note ? String(b.note) : null;
-  const subcategory = b.subcategory ? String(b.subcategory) : null;
+    : String(b.city || '').trim().slice(0, 150);
+  const budget      = b.budget ? String(b.budget).slice(0, 100) : null;
+  const floor       = b.floor ? String(b.floor).slice(0, 100) : null;
+  const parking     = b.parking ? String(b.parking).slice(0, 100) : null;
+  const note        = b.note ? String(b.note).slice(0, 2000) : null;
+  const subcategory = b.subcategory ? String(b.subcategory).slice(0, 100) : null;
   const urgent      = !!b.urgent;
   const preferred_date = b.preferred_date || b.date || null;
   const preferred_time = b.preferred_time || b.time || null;
@@ -70,9 +72,9 @@ async function createOrder(req, res) {
   // šikulu, co si zadává vlastní poptávku pod stejným účtem.
   const useExistingSession = !!me && (!customer_email_typed || (me.email && me.email.toLowerCase() === customer_email_typed));
 
-  const customer_name  = String((b.customer_name || b.name || (useExistingSession ? me?.name : '') || '')).trim();
+  const customer_name  = String((b.customer_name || b.name || (useExistingSession ? me?.name : '') || '')).trim().slice(0, 150);
   const customer_email = customer_email_typed || (useExistingSession ? String(me?.email || '').toLowerCase() : '');
-  const customer_phone = b.customer_phone || b.phone || (useExistingSession ? me?.phone : null) || null;
+  const customer_phone = (b.customer_phone || b.phone || (useExistingSession ? me?.phone : null) || null)?.toString().slice(0, 30) || null;
   // Heslo se řeší jen když session nepoužíváme — přihlášený uživatel se stejným
   // e-mailem má účet a heslo už dávno hotové.
   const password = useExistingSession ? null : String(b.password || '');

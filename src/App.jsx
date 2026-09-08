@@ -25,7 +25,6 @@ import VerifyEmailPage from "./pages/VerifyEmailPage.jsx";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 import SikuloveListPage from "./pages/SikuloveListPage.jsx";
-import NotFoundPage from "./pages/NotFoundPage.jsx";
 import PageMeta from "./components/PageMeta.jsx";
 import FAQPage from "./pages/FAQPage.jsx";
 
@@ -87,7 +86,7 @@ export default function App() {
     try {
       const p = new URL(window.location.href).searchParams.get('page');
       if (p === 'verify-email' || p === 'reset-password' || p === 'forgot-password') return p;
-      if (p === 'sikulove' || p === 'kontakt' || p === 'sikuly' || p === 'pricing') return p;
+      if (p === 'sikulove' || p === 'kontakt' || p === 'sikuly') return p;
       if (p === 'chat' || p === 'dashboard') return p;
       // Statické obsahové stránky beze zvláštního payloadu — bezpečné načíst
       // přímo z URL (na rozdíl od dashboard/chat/faktury apod., které čekají
@@ -111,7 +110,11 @@ export default function App() {
   // Text z hero vyhledávacího pole ("Co potřebujete doma vyřešit?") — dřív se
   // nikam nepoužíval, teď se předá jako počáteční popis do formuláře poptávky.
   const [heroSearch,  setHeroSearch]   = useState("");
-  const [dashboardTab, setDashboardTab] = useState("prehled");
+  // null = žádná vynucená navigace (dashboard si drží vlastní výchozí tab —
+  // důležité hlavně pro SikulaDashboard, který po návratu ze Stripe checkoutu
+  // sám otevře "Aktivace tarifu"; kdyby tu byla defaultně "overview", header
+  // odkaz by tenhle stav při každém mountu přepsal).
+  const [dashboardTab, setDashboardTab] = useState(null);
   const [currentOrder, setCurrentOrder] = useState(null); // pro SendOffer/OrderDetail navigaci
   // { otherUserId, orderId } pro "Napsat zprávu" u konkrétní nabídky, nebo
   // { conversationId } při otevření z e-mailového odkazu (?page=chat&conversation=)
@@ -130,7 +133,7 @@ export default function App() {
   });
   // orderId z e-mailového odkazu "Ohodnotit šikulu" (?page=dashboard&review=) —
   // po přihlášení rovnou otevře formulář hodnocení k té zakázce.
-  const [reviewOrderStart, setReviewOrderStart] = useState(() => {
+  const [reviewOrderStart] = useState(() => {
     try {
       const url = new URL(window.location.href);
       if (url.searchParams.get('page') === 'dashboard') {
@@ -346,8 +349,8 @@ export default function App() {
         onReg={() => openReg()}
         onNavigate={navigate}
         sikulaUser={sikulaUser}
-        onDashboard={() => { setDashboardTab("prehled"); setPage("dashboard"); window.scrollTo(0,0); }}
-        onProfil={() => { setDashboardTab("profil"); setPage("dashboard"); window.scrollTo(0,0); }}
+        onDashboard={() => { setDashboardTab("overview"); setPage("dashboard"); window.scrollTo(0,0); }}
+        onProfil={() => { setDashboardTab("profile"); setPage("dashboard"); window.scrollTo(0,0); }}
         onLogout={logoutSikula}
         onHow={() => { setPage("home"); window.scrollTo(0,0); setTimeout(() => document.getElementById("how")?.scrollIntoView({ behavior: "smooth" }), 100); }}
         showFooter={!["dashboard", "send-offer", "order-detail", "chat"].includes(page)}
@@ -394,9 +397,9 @@ export default function App() {
         ) : sikulaUser?.role === "admin"
           ? <AdminDashboard     currentUser={sikulaUser} onLogout={logoutSikula} />
           : sikulaUser?.role === "customer"
-            ? <CustomerDashboard currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} onUpdateUser={updateSikula} initialReviewOrderId={reviewOrderStart} />
+            ? <CustomerDashboard currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} onUpdateUser={updateSikula} initialReviewOrderId={reviewOrderStart} initialTab={dashboardTab} />
             : sikulaUser?.role === "sikula"
-              ? <SikulaDashboard currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} onUpdateUser={updateSikula} />
+              ? <SikulaDashboard currentUser={sikulaUser} onNav={handleNav} onLogout={logoutSikula} onUpdateUser={updateSikula} initialTab={dashboardTab} />
               : (
                 <div style={{ minHeight: "60vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: 24, textAlign: "center" }}>
                   <div style={{ fontSize: 17, fontWeight: 700, color: T.ink }}>Nejste přihlášeni</div>
@@ -732,7 +735,7 @@ export default function App() {
       {regForm   !== null && <RegForm   plan={regForm.plan} onClose={() => setRegForm(null)} onRegistered={loginSikula}
         onLogin={() => setLoginModal(true)}
         onForgot={() => { setPage("forgot-password"); window.scrollTo(0, 0); }} />}
-      {loginModal && <LoginModal initialEmail={loginPrefillEmail} onClose={() => { setLoginModal(false); setLoginPrefillEmail(""); }} onReg={openReg} onOrder={openOrder} onFaktury={() => { setLoginModal(false); setPage("faktury"); window.scrollTo(0,0); }} onDemoLogin={loginSikula} onForgot={() => { setLoginModal(false); setPage("forgot-password"); window.scrollTo(0,0); }} />}
+      {loginModal && <LoginModal initialEmail={loginPrefillEmail} onClose={() => { setLoginModal(false); setLoginPrefillEmail(""); }} onReg={openReg} onOrder={openOrder} onDemoLogin={loginSikula} onForgot={() => { setLoginModal(false); setPage("forgot-password"); window.scrollTo(0,0); }} />}
 
     </>
   );

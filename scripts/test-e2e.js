@@ -85,7 +85,7 @@ log(`   ${new Date().toISOString()}\n`);
 log('AUTH');
 
 await test('Login jana (customer)', async () => {
-  const { status, data } = await request('POST', '/api/auth/login', {
+  const { data } = await request('POST', '/api/auth/login', {
     user: 'jana', body: { email: 'jana@example.com', password: 'demo1234' }, expectStatus: 200,
   });
   assert(data?.user?.role === 'customer', 'role != customer');
@@ -94,7 +94,7 @@ await test('Login jana (customer)', async () => {
 });
 
 await test('Login pavel (sikula)', async () => {
-  const { status, data } = await request('POST', '/api/auth/login', {
+  const { data } = await request('POST', '/api/auth/login', {
     user: 'pavel', body: { email: 'pavel@example.com', password: 'demo1234' }, expectStatus: 200,
   });
   assert(data?.user?.role === 'sikula', 'role != sikula');
@@ -102,7 +102,7 @@ await test('Login pavel (sikula)', async () => {
 });
 
 await test('Login admin', async () => {
-  const { status, data } = await request('POST', '/api/auth/login', {
+  const { data } = await request('POST', '/api/auth/login', {
     user: 'admin', body: { email: 'admin@sikuladoma.cz', password: 'demo1234' }, expectStatus: 200,
   });
   assert(data?.user?.role === 'admin', 'role != admin');
@@ -133,7 +133,7 @@ log('\nREGISTRACE');
 const testEmail = `test_${Date.now()}@example.com`;
 
 await test('Registrace nového šikuly', async () => {
-  const { status, data } = await request('POST', '/api/auth/register', {
+  const { data } = await request('POST', '/api/auth/register', {
     user: 'newuser',
     body: { email: testEmail, password: 'Heslo1234', name: 'Testovací Šikula', role: 'sikula', city: 'Brno' },
     expectStatus: 201,
