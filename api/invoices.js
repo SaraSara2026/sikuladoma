@@ -6,6 +6,13 @@ import { sql } from './_db.js';
 import { requireUser, requireVerifiedUser } from './_auth.js';
 import { sendInvoiceEmail } from './_email.js';
 import { buildInvoicePdf } from './_invoice-pdf.js';
+import { isSikulaPlanActive } from './_plan.js';
+
+// Fakturovač je součástí tarifu Aktivní šikula Plus (299 Kč/měsíc) — obyčejný
+// tarif Aktivní šikula (199 Kč) na něj nestačí. Admin kontrolu obchází vždy.
+function requiresPlusPlan(me) {
+  return me.role === 'sikula' && !(me.plan === 'aktiv-plus' && isSikulaPlanActive(me));
+}
 
 export default async function handler(req, res) {
   try {
@@ -57,10 +64,16 @@ async function listInvoices(req, res) {
 }
 
 async function createInvoice(req, res) {
-  const me = await requireUser(req, res);
+  const me = await requireVerifiedUser(req, res);
   if (!me) return;
   if (me.role !== 'sikula' && me.role !== 'admin') {
     return res.status(403).json({ error: 'Faktury může vystavovat jen šikula.' });
+  }
+  if (requiresPlusPlan(me)) {
+    return res.status(402).json({
+      error: 'Fakturovač je součástí tarifu Aktivní šikula Plus za 299 Kč / měsíc.',
+      code: 'plus_required',
+    });
   }
 
   const { id, title, amount, customer_name, customer_email, due_date, status = 'draft' } = req.body ?? {};
@@ -85,7 +98,7 @@ async function createInvoice(req, res) {
 }
 
 async function updateInvoice(req, res) {
-  const me = await requireUser(req, res);
+  const me = await requireVerifiedUser(req, res);
   if (!me) return;
 
   const id = req.query?.id || req.body?.id;
@@ -148,7 +161,7 @@ async function updateInvoice(req, res) {
 }
 
 async function deleteInvoice(req, res) {
-  const me = await requireUser(req, res);
+  const me = await requireVerifiedUser(req, res);
   if (!me) return;
 
   const id = req.query?.id;
@@ -174,8 +187,14 @@ async function deleteInvoice(req, res) {
 // "Náhled" a "Stáhnout PDF" v dashboardu zůstávají beze změny, dál běží přes
 // html2canvas — tahle cesta se týká jen e-mailové přílohy.
 async function sendInvoice(req, res) {
-  const me = await requireUser(req, res);
+  const me = await requireVerifiedUser(req, res);
   if (!me) return;
+  if (requiresPlusPlan(me)) {
+    return res.status(402).json({
+      error: 'Fakturovač je součástí tarifu Aktivní šikula Plus za 299 Kč / měsíc.',
+      code: 'plus_required',
+    });
+  }
 
   const id = req.query?.id || req.body?.id;
   if (!id) return res.status(400).json({ error: 'Chybí id faktury.' });

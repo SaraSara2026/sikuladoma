@@ -308,6 +308,14 @@ async function handleWebhook(req, res, sql) {
   const sig = req.headers['stripe-signature'];
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
+  // Bez secretu nejde podpis ověřit vůbec — dřív se v tom případě událost
+  // tiše přijala bez verifikace, což by šlo zneužít k podvržení platby
+  // (aktivace tarifu zdarma). Radši selhat nahlas (503) než věřit nepodepsaným datům.
+  if (!webhookSecret) {
+    console.error('[stripe/webhook] STRIPE_WEBHOOK_SECRET není nastaven — webhook odmítnut.');
+    return res.status(503).json({ error: 'Webhook není nakonfigurován.' });
+  }
+
   let event;
   try {
     let rawBody;
@@ -319,16 +327,11 @@ async function handleWebhook(req, res, sql) {
     }
 
     const rawStr = rawBody.toString('utf8');
-    if (webhookSecret) {
-      // Secret je nastavený → podpis je POVINNÝ. Chybějící Stripe-Signature
-      // hlavička se nesmí tiše propustit jako neověřená událost (jinak by
-      // šlo webhook podvrhnout jen tím, že se hlavička vynechá).
-      if (!sig) throw new Error('Chybí Stripe-Signature hlavička.');
-      event = constructStripeEvent(rawStr, sig, webhookSecret);
-    } else {
-      event = typeof req.body === 'object' ? req.body : JSON.parse(rawStr);
-      console.warn('[stripe/webhook] Webhook secret není nastaven — podpis se neverifikuje!');
-    }
+    // Chybějící Stripe-Signature hlavička se nesmí tiše propustit jako
+    // neověřená událost (jinak by šlo webhook podvrhnout jen tím, že se
+    // hlavička vynechá).
+    if (!sig) throw new Error('Chybí Stripe-Signature hlavička.');
+    event = constructStripeEvent(rawStr, sig, webhookSecret);
   } catch (err) {
     console.error('[stripe/webhook] Signature verification failed:', err.message);
     return res.status(400).json({ error: `Webhook Error: ${err.message}` });
