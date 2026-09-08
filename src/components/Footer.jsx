@@ -3,7 +3,7 @@
 const pageHref = page => page === "home" ? "/" : `/?page=${page}`;
 
 function FooterLink({ label, page, onNavigate, onClick, link, hover }) {
-  const style = { fontSize: 12, marginBottom: 3, display: "inline-block", color: link, lineHeight: 1.5, textDecoration: "none", cursor: "pointer", transition: "color .12s" };
+  const style = { fontSize: 12, marginBottom: 3, display: "block", color: link, lineHeight: 1.5, textDecoration: "none", cursor: "pointer", transition: "color .12s" };
   if (page) {
     return (
       <a href={pageHref(page)} style={style}
