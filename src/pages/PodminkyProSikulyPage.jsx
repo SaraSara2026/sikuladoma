@@ -54,7 +54,7 @@ const SECTIONS = [
     title: "Tarify",
     items: [
       "Registrace a náhled poptávek jsou zdarma.",
-      "Pro odesílání nabídek a odpovídání na poptávky je nutné aktivovat tarif Aktivní šikula (299 Kč / měsíc) nebo Aktivní šikula Plus (399 Kč / měsíc).",
+      "Pro odesílání nabídek a odpovídání na poptávky je nutné aktivovat tarif Aktivní šikula (299 Kč / měsíc, vč. 21% DPH) nebo Aktivní šikula Plus (399 Kč / měsíc, vč. 21% DPH).",
       "Některé funkce (například online fakturovač) mohou být dostupné jen u vybraných tarifů.",
       "Tarify se automaticky obnovují za zvolené období, dokud je šikula nezruší.",
       "Zrušení lze provést kdykoliv v uživatelském účtu; zaplacené období zůstává funkční až do svého konce.",

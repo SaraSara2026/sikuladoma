@@ -103,10 +103,12 @@ Dashboard se vybírá výhradně podle role (`admin` → AdminDashboard, `custom
 ## Ceny / tarify (aktuální model, nahradil starý start/plus/profi/top 999 Kč)
 
 - **Registrace zdarma** — šikula i zákazník. Šikula vidí poptávky ve svém okolí hned po registraci.
-- **Aktivní šikula — 299 Kč/měsíc** (2 990 Kč/rok) — odemyká odesílání nabídek/reakce na poptávky, bez omezení počtu
-- **Aktivní šikula Plus — 399 Kč/měsíc** (3 990 Kč/rok) — navíc fakturovač (PDF faktury)
+- **Aktivní šikula — 299 Kč/měsíc** (2 990 Kč/rok), **vč. 21% DPH** — odemyká odesílání nabídek/reakce na poptávky, bez omezení počtu
+- **Aktivní šikula Plus — 399 Kč/měsíc** (3 990 Kč/rok), **vč. 21% DPH** — navíc fakturovač (PDF faktury)
 - Plán `'top'` (99 Kč zvýraznění profilu) a `'profi'` jsou od 2026-08 v kódu **vypnuté** (viz komentář v `api/stripe.js`)
 - Zdroj pravdy pro ceny/plan mapping: `api/stripe.js` (`PLAN_PRICES`, `PLAN_ENV_VARS`)
+- **DPH:** 21% je nastavené jako ruční Inclusive Tax Rate ve Stripe (ne automatický Stripe Tax) — ID uložené v env `STRIPE_TAX_RATE_ID`, připojuje se k předplatnému přes `subscription_data.default_tax_rates` v `handleCheckout` (`api/stripe.js`). Bez nastavené env proměnné checkout odmítne pokračovat (503).
+- **Stripe je od 2026-09-08 v produkci na živém režimu** (`sk_live_...`), webhook nastavený na `https://sikuladoma.cz/api/stripe?action=webhook` — starý blokátor "klíče jsou testovací" už neplatí.
 
 ## E-maily
 
@@ -140,9 +142,9 @@ Aplikováno na: `POST /api/auth/login` (5/5min), `POST /api/auth/register` (3/10
 
 ## Blokátory před spuštěním (live stav)
 
-1. **🔴 Resend doména neověřená** — viz [E-maily](#e-maily). Nejkritičtější, protože appka teď na e-mailech reálně závisí.
+1. **🔴 Resend doména neověřená** — viz [E-maily](#e-maily). Teď ještě kritičtější než dřív: appka je od 2026-09-08 na živém Stripe a bere reálné platby, ale ověřovací e-mail (nutný přes `requireVerifiedUser`, aby šikula mohl odesílat nabídky/vidět faktury), reset hesla a notifikace pořád nikam nedojdou kromě sara.ulahel@gmail.com. Reálně placící šikula se tak může zaseknout hned po platbě, neschopný ověřit e-mail.
 2. **Neon DB heslo** — sdílené dřív v chatu, rotace vědomě odložena na těsně před launch.
-3. **Stripe klíče jsou testovací** (`sk_test_...`) — před launchem přepnout na live klíče a live price ID.
+3. ~~Stripe klíče jsou testovací~~ — **vyřešeno 2026-09-08**, appka běží na živém Stripe (`sk_live_...`), s ostrými cenami a DPH přes `STRIPE_TAX_RATE_ID`.
 4. **`db/schema.sql` řádek 19** — CHECK constraint na `plan` neodpovídá kódu, ověřit skutečný stav na Neonu (viz sekce Databáze).
 5. Mobilní responzivita — stav nekontrolován v této revizi, dřív označeno jako needs work.
 

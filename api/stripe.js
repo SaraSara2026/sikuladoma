@@ -193,6 +193,16 @@ async function handleCheckout(req, res, me, sql) {
     return res.status(503).json({ error: `${ENV_NAMES[plan]?.(billing) || 'STRIPE_PRICE_?'} není nastaven v env.` });
   }
 
+  // 21% DPH je na cenách (299/399/2990/3990 Kč) nastavená jako Inclusive
+  // ruční Tax Rate ve Stripe (ne automatický Stripe Tax) — musí se explicitně
+  // připojit k předplatnému přes default_tax_rates, jinak by se do faktur
+  // vůbec nepropsala. Bez ID radši checkout odmítnout, než tiše poslat
+  // zákazníka na platbu bez správně rozepsaného DPH na dokladu.
+  const taxRateId = process.env.STRIPE_TAX_RATE_ID;
+  if (!taxRateId) {
+    return res.status(503).json({ error: 'STRIPE_TAX_RATE_ID není nastaven v env.' });
+  }
+
   // Bezpečnostní pojistka: ověříme u Stripe, že cena za priceId skutečně
   // odpovídá tarifu, který si zákazník vybral — jinak by špatně nastavená
   // env proměnná (např. STRIPE_PRICE_PLUS ukazující na cenu 299 Kč místo
@@ -271,7 +281,7 @@ async function handleCheckout(req, res, me, sql) {
     metadata: { user_id: String(me.id), plan },
     payment_method_types: ['card'],
     locale: 'cs',
-    subscription_data: { metadata: { user_id: String(me.id), plan } },
+    subscription_data: { metadata: { user_id: String(me.id), plan }, default_tax_rates: [taxRateId] },
   };
 
   if (customerId) {

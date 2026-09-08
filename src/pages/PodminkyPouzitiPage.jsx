@@ -36,8 +36,8 @@ const SECTIONS = [
     n: "5", title: "Tarify",
     intro: "Pro tarify šikulů platí:",
     items: [
-      "Aktivní šikula — 299 Kč / měsíc.",
-      "Aktivní šikula Plus — 399 Kč / měsíc.",
+      "Aktivní šikula — 299 Kč / měsíc (vč. 21% DPH).",
+      "Aktivní šikula Plus — 399 Kč / měsíc (vč. 21% DPH).",
       "Aktivní tarif odemyká odpovídání na poptávky a další funkce podle zvoleného tarifu.",
       "Tarify se automaticky obnovují za zvolené období, dokud je uživatel nezruší.",
       "Zrušení lze provést kdykoliv v uživatelském účtu; zaplacené období zůstává funkční až do svého konce.",

@@ -13,12 +13,12 @@ const VYHODY = [
   'Poptávky z vašeho okolí',
   'Reagování po aktivaci tarifu',
   'Žádné kredity za kontakty',
-  'Základní tarif 299 Kč / měsíc',
+  'Základní tarif 299 Kč / měsíc (vč. 21% DPH)',
 ]
 
 const STEPS = [
   { n: 1, Icon: IcUser,    bg: '#FFF7ED', color: '#F97316', title: 'Zaregistrujete se jako šikula',          desc: 'Vyplníte základní údaje, lokalitu a služby, které nabízíte.' },
-  { n: 2, Icon: IcTag,     bg: '#EFF6FF', color: '#3B82F6', title: 'Vidíte poptávky ve svém okolí',        desc: 'Po registraci uvidíte poptávky ve své lokalitě. Tarif Aktivní šikula za 299 Kč / měsíc si aktivujete až ve chvíli, kdy chcete na poptávku odpovědět.' },
+  { n: 2, Icon: IcTag,     bg: '#EFF6FF', color: '#3B82F6', title: 'Vidíte poptávky ve svém okolí',        desc: 'Po registraci uvidíte poptávky ve své lokalitě. Tarif Aktivní šikula za 299 Kč / měsíc (vč. 21% DPH) si aktivujete až ve chvíli, kdy chcete na poptávku odpovědět.' },
   { n: 3, Icon: IcBell,    bg: '#F0FDF4', color: '#22C55E', title: 'Dostáváte poptávky z okolí',             desc: 'Když zákazník ve vaší lokalitě zadá poptávku, dostanete upozornění.' },
   { n: 4, Icon: IcCheck,   bg: '#FAF5FF', color: '#A855F7', title: 'Reagujete jen na poptávky, které chcete', desc: 'Vy sami si vyberete, na které poptávky odpovíte. Bez kreditů, bez provizí a bez omezení počtu zakázek. Jedna jasná platba, neomezeně příležitostí.' },
   { n: 5, Icon: IcUsers,   bg: '#F0F9FF', color: '#0EA5E9', title: 'Domluvíte se přímo se zákazníkem',      desc: 'Cenu, termín i podrobnosti práce si domluvíte přímo mezi sebou.' },
@@ -185,7 +185,7 @@ export default function ProSikulyPage({ onBack, onReg }) {
               Zaregistrovat se jako šikula <IcArrow />
             </button>
             <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 14, lineHeight: 1.6 }}>
-              Registrace profilu je zdarma. Základní tarif 299 Kč / měsíc. Platba probíhá bezpečně kartou online a tarif lze kdykoliv zrušit.
+              Registrace profilu je zdarma. Základní tarif 299 Kč / měsíc (vč. 21% DPH). Platba probíhá bezpečně kartou online a tarif lze kdykoliv zrušit.
             </p>
           </div>
         </div>

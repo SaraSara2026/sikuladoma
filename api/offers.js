@@ -32,7 +32,7 @@ async function createOffer(req, res) {
   const hasActivePlan = isSikulaPlanActive(me);
   if (!hasActivePlan) {
     return res.status(402).json({
-      error: 'Tarif Aktivní šikula za 299 Kč / měsíc odemyká odesílání nabídek. Neplatíte žádné kredity ani provizi ze zakázky.',
+      error: 'Tarif Aktivní šikula za 299 Kč / měsíc (vč. 21% DPH) odemyká odesílání nabídek. Neplatíte žádné kredity ani provizi ze zakázky.',
       code: 'activate_required',
     });
   }

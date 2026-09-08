@@ -292,7 +292,7 @@ function LockedScreen({ type, feature, onActivate }) {
         </h2>
         <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.7, marginBottom: 24 }}>
           {isPlus
-            ? (PLUS_FEATURE_COPY[feature] || 'Tato funkce je součástí tarifu Aktivní šikula Plus za 399 Kč / měsíc.')
+            ? (PLUS_FEATURE_COPY[feature] || 'Tato funkce je součástí tarifu Aktivní šikula Plus za 399 Kč / měsíc (vč. 21% DPH).')
             : 'Aktivujte tarif a můžete začít reagovat na poptávky.'}
         </p>
         <button onClick={onActivate}
@@ -617,6 +617,7 @@ function VylepseniProfilu({ currentUser, onLogout, onBack }) {
                 <span style={{ fontSize: 'clamp(24px, 6vw, 32px)', fontWeight: 800, color: t.color }}>{price(t).toLocaleString('cs-CZ')}</span>
                 <span style={{ fontSize: 14, color: '#9CA3AF', marginLeft: 4 }}>Kč {unit}</span>
               </div>
+              <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: billing === 'yearly' ? 4 : 12 }}>vč. 21% DPH</div>
 
               {billing === 'yearly' && (
                 <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 12 }}>
@@ -1087,7 +1088,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
               }}>
                 <div>
                   <div style={{ fontWeight: 700, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="star" size={15} /> Aktivní šikula Plus</div>
-                  <div style={{ fontSize: 13, color: 'var(--text2)' }}>S tariferem Aktivní šikula Plus (399 Kč) získáte kalendář, fakturovač a přehled příjmů.</div>
+                  <div style={{ fontSize: 13, color: 'var(--text2)' }}>S tariferem Aktivní šikula Plus (399 Kč, vč. 21% DPH) získáte kalendář, fakturovač a přehled příjmů.</div>
                 </div>
                 <button className="btn btn-primary btn-sm" onClick={() => setActivePage('membership')}>
                   Zobrazit tarify →
