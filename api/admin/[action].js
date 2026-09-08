@@ -85,11 +85,18 @@ async function stats(req, res) {
 
   // Platící šikulové — zrcadlí isSikulaPlanActive() z src/lib/plan.js.
   // 'cancelled_pending' = tarif zrušen, ale zaplacené období ještě neskončilo.
+  // 'unpaid' = zbytek — nikdy neplatili, nebo jim platba/tarif neběží (inactive/payment_failed/expired cancelled).
   const [paying] = await sql`
     SELECT
       COUNT(*) FILTER (WHERE plan = 'aktiv'      AND subscription_status = 'active')::int AS aktiv_active,
       COUNT(*) FILTER (WHERE plan = 'aktiv-plus' AND subscription_status = 'active')::int AS aktiv_plus_active,
-      COUNT(*) FILTER (WHERE subscription_status = 'cancelled' AND plan_expires_at > NOW())::int AS cancelled_pending
+      COUNT(*) FILTER (WHERE subscription_status = 'cancelled' AND plan_expires_at > NOW())::int AS cancelled_pending,
+      COUNT(*) FILTER (WHERE NOT (
+        (plan = 'aktiv' OR plan = 'aktiv-plus') AND (
+          subscription_status = 'active' OR
+          (subscription_status = 'cancelled' AND plan_expires_at > NOW())
+        )
+      ))::int AS unpaid
     FROM users
     WHERE role = 'sikula'
   `;
