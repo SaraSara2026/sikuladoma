@@ -21,6 +21,7 @@ const SECTIONS = [
       "Údaje uvedené v profilu šikuly, včetně IČO u živnostníků a firem.",
       "Fakturační a platební údaje zpracovávané prostřednictvím platební brány Stripe.",
       "Technické údaje o používání platformy (IP adresa, soubory cookies, přihlašovací a bezpečnostní logy).",
+      "Anonymní agregovanou statistiku návštěvnosti (Vercel Web Analytics) — bez cookies, bez uložení IP adresy nebo identifikátoru zařízení, viz stránka Cookies.",
     ],
   },
   {

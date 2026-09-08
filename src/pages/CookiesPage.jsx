@@ -19,19 +19,23 @@ const SECTIONS = [
     text: "Uvedená technická cookies a úložiště jsou nezbytná pro fungování platformy — bez nich by nebylo možné se přihlásit ani používat účet. K jejich použití proto podle zákona nepotřebujeme váš souhlas. I tak vás o nich na této stránce transparentně informujeme.",
   },
   {
-    n: "4", title: "Analytické a marketingové cookies",
-    text: "V současné době nepoužíváme žádné analytické ani marketingové cookies ani podobné sledovací nástroje třetích stran. Pokud je v budoucnu zavedeme, doplníme tuto stránku a požádáme vás o výslovný souhlas ještě předtím, než se taková cookies načtou.",
+    n: "4", title: "Návštěvnost webu (Vercel Web Analytics)",
+    text: "Pro měření návštěvnosti používáme Vercel Web Analytics. Tento nástroj nepoužívá cookies ani žádné jiné úložiště v zařízení uživatele — návštěvníka identifikuje jen dočasně (24 hodin) pomocí hashe vytvořeného z příchozího požadavku, bez propojení na konkrétní osobu. Data jsou anonymní a agregovaná (např. počet zobrazení stránky, země, typ zařízení). Protože tento nástroj nic neukládá do vašeho zařízení, nevyžaduje podle zákona souhlas jako klasické analytické cookies.",
   },
   {
-    n: "5", title: "Nastavení cookies ve vašem prohlížeči",
+    n: "5", title: "Marketingové cookies",
+    text: "V současné době nepoužíváme žádné marketingové cookies ani sledovací nástroje třetích stran pro reklamu. Pokud je v budoucnu zavedeme, doplníme tuto stránku a požádáme vás o výslovný souhlas ještě předtím, než se taková cookies načtou.",
+  },
+  {
+    n: "6", title: "Nastavení cookies ve vašem prohlížeči",
     text: "Používání cookies můžete kdykoliv upravit nebo omezit v nastavení svého internetového prohlížeče.",
   },
   {
-    n: "6", title: "Ochrana osobních údajů",
+    n: "7", title: "Ochrana osobních údajů",
     text: "Používání cookies souvisí také se zpracováním osobních údajů. Více informací najdete na stránce Ochrana osobních údajů.",
   },
   {
-    n: "7", title: "Závěrečná ustanovení",
+    n: "8", title: "Závěrečná ustanovení",
     text: "Tyto informace mohou být průběžně aktualizovány, zejména pokud se změní rozsah používaných cookies.",
   },
 ]

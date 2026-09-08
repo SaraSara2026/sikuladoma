@@ -1,10 +1,11 @@
 import { useState } from 'react'
 
-// ŠikulaDoma aktuálně používá jen technická cookies/úložiště (přihlášení,
-// zapamatování volby) — ty souhlas nevyžadují, jen o nich informujeme.
-// Proto lišta nenabízí volbu "analytické cookies", která by naznačovala
-// sledování, jež ve skutečnosti neexistuje. Až přibude analytika nebo
-// marketing, bude potřeba tuhle lištu vrátit na plnou volbu se souhlasem.
+// ŠikulaDoma používá jen technická cookies/úložiště (přihlášení, zapamatování
+// volby) a bezcookie Vercel Web Analytics (viz CookiesPage.jsx) — ani jedno
+// souhlas nevyžaduje, jen o nich informujeme. Lišta proto nenabízí volbu
+// "analytické cookies", která by naznačovala sledování cookies, jež ve
+// skutečnosti neexistuje. Až přibude marketing nebo cookie-based analytika,
+// bude potřeba tuhle lištu vrátit na plnou volbu se souhlasem.
 const KEY = 'sikuladoma_cookies_ack'
 
 function hasAck() {
@@ -36,7 +37,7 @@ export default function CookieBanner({ onCookiesPage }) {
         <div style={{ flex: 1, minWidth: 220 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: '#1E3A5F', marginBottom: 3 }}>Používáme jen technické cookies</div>
           <p style={{ fontSize: 13, color: '#4B6A8F', lineHeight: 1.55, margin: 0 }}>
-            Jsou nezbytné pro přihlášení a fungování webu. Analytické ani marketingové cookies nepoužíváme.{' '}
+            Jsou nezbytné pro přihlášení a fungování webu. Pro návštěvnost používáme bezcookie Vercel Analytics, marketingová cookies nepoužíváme.{' '}
             {onCookiesPage && <span onClick={onCookiesPage} style={{ color: '#0066CC', cursor: 'pointer', textDecoration: 'underline' }}>Více informací</span>}
           </p>
         </div>

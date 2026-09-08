@@ -20,6 +20,7 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
   });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
+  const [gdprOk, setGdprOk] = useState(false);
   const [emailTaken, setEmailTaken] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   // Po dokončení registrace ukážeme, jestli se ověřovací e-mail opravdu
@@ -240,6 +241,15 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
                 <div style={{ fontWeight: 800, fontSize: 15, color: T.ink, marginBottom: 4 }}>Registrace je zdarma</div>
                 <div style={{ fontSize: 13, color: T.ink3 }}>Po registraci uvidíte poptávky ve svém okolí. Tarif pro reakce na poptávky a kontakt se zákazníky si vyberete později v profilu.</div>
               </div>
+              <label style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 14, padding: "12px 14px", background: T.bg, border: `1px solid ${T.border}`, borderRadius: 10, cursor: "pointer", fontSize: 13, color: T.ink2, lineHeight: 1.55 }}>
+                <input type="checkbox" checked={gdprOk} onChange={e => setGdprOk(e.target.checked)}
+                  style={{ marginTop: 2, flexShrink: 0, width: 16, height: 16, cursor: "pointer" }} />
+                <span>
+                  Souhlasím s <strong>Podmínkami pro šikuly</strong> a se zpracováním osobních údajů pro účely registrace a provozu účtu.{" "}
+                  Podrobnosti v <a href="/?page=ochrana-soukromi" target="_blank" rel="noopener" style={{ color: T.blue, textDecoration: "underline" }}>Ochraně soukromí</a> a{" "}
+                  <a href="/?page=podminky-sikuly" target="_blank" rel="noopener" style={{ color: T.blue, textDecoration: "underline" }}>Podmínkách pro šikuly</a>.
+                </span>
+              </label>
             </div>
           )}
         </div>
@@ -252,11 +262,12 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
 
         <div style={{ padding: "14px 20px", borderTop: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between" }}>
           {step > 0 ? <BtnGhost size="sm" onClick={() => setStep(0)}>Zpět</BtnGhost> : <span />}
-          <BtnBlue size="sm" disabled={busy || checkingEmail} onClick={() => {
+          <BtnBlue size="sm" disabled={busy || checkingEmail || (step === 1 && !gdprOk)} onClick={() => {
             if (step === 0) return continueFromStep0();
             if (step === 1 && !busy) {
               setErr(null);
               if (form.services.length === 0) return setErr("Vyberte alespoň jednu službu, kterou nabízíte.");
+              if (!gdprOk) return setErr("Pro dokončení registrace musíte souhlasit s Podmínkami pro šikuly.");
               submitRegistration();
             }
           }}>

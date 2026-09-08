@@ -159,7 +159,7 @@ export default function KontaktPage({ onBack }) {
                 </div>
                 <span style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.55 }}>
                   Souhlasím se zpracováním zprávy podle{' '}
-                  <span style={{ color: '#3B82F6', textDecoration: 'underline' }}>zásad ochrany soukromí</span>.
+                  <a href="/?page=ochrana-soukromi" target="_blank" rel="noopener" onClick={e => e.stopPropagation()} style={{ color: '#3B82F6', textDecoration: 'underline' }}>zásad ochrany soukromí</a>.
                 </span>
               </div>
 

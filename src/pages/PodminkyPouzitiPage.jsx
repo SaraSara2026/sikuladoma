@@ -92,22 +92,27 @@ const SECTIONS = [
     text: "Reklamace týkající se provedené práce, ceny, termínu nebo kvality služby řeší zákazník přímo se šikulou, který zakázku provedl — ŠikulaDoma není stranou tohoto vztahu. Reklamace týkající se platby tarifu nebo fungování platformy samotné řeší uživatel s provozovatelem na info@sikuladoma.cz.",
   },
   {
+    n: "14", title: "Mimosoudní řešení spotřebitelských sporů",
+    text: "Je-li zákazník nebo šikula v postavení spotřebitele, má právo v případě sporu s provozovatelem týkajícího se vztahu k platformě (např. platby tarifu), který se nepodaří vyřešit vzájemnou dohodou, obrátit se na věcně příslušný subjekt mimosoudního řešení spotřebitelských sporů podle zákona č. 634/1992 Sb., o ochraně spotřebitele, kterým je Česká obchodní inspekce (Gorazdova 1969/24, 120 00 Praha 2, IČO: 00020869, web: coi.gov.cz, e-mail: podatelna@coi.gov.cz).",
+    text2: "Toto právo se týká pouze vztahu mezi spotřebitelem a provozovatelem platformy. Netýká se sporů o samotnou provedenou práci mezi zákazníkem a šikulou, u kterých provozovatel není smluvní stranou (viz Odpovědnost výše).",
+  },
+  {
     // Text níže je opatrně formulovaný návrh, ale klasifikace šikuly jako
     // spotřebitel vs. podnikatel (zejména u příležitostné výpomoci bez IČO)
     // by měla být před ostrým nasazením ještě potvrzena advokátem.
-    n: "14", title: "Odstoupení od předplatného",
+    n: "15", title: "Odstoupení od předplatného",
     text: "Pokud šikula aktivuje tarif v rámci své podnikatelské činnosti (jako OSVČ nebo firma), spotřebitelská ochrana včetně práva na odstoupení od smlouvy dle občanského zákoníku se na tento vztah nevztahuje. Pokud šikula jedná mimo rámec podnikatelské činnosti, aktivací tarifu a okamžitým zpřístupněním jeho funkcí výslovně žádá o zahájení poskytování služby před uplynutím lhůty pro odstoupení a bere na vědomí, že tímto právo na odstoupení od smlouvy v rozsahu již poskytnutého plnění zaniká.",
   },
   {
-    n: "15", title: "Ochrana osobních údajů",
+    n: "16", title: "Ochrana osobních údajů",
     text: "Nakládání s osobními údaji se řídí stránkou Ochrana osobních údajů.",
   },
   {
-    n: "16", title: "Podmínky pro šikuly",
+    n: "17", title: "Podmínky pro šikuly",
     sikulyLink: true,
   },
   {
-    n: "17", title: "Změny podmínek a závěrečná ustanovení",
+    n: "18", title: "Změny podmínek a závěrečná ustanovení",
     items: [
       "Provozovatel si vyhrazuje právo tyto podmínky kdykoliv upravit nebo aktualizovat.",
       "Tyto podmínky se řídí právním řádem České republiky.",
