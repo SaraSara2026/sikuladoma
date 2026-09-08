@@ -170,7 +170,7 @@ async function createOrder(req, res) {
     setSessionCookie(res, token);
     [user] = await sql`
       SELECT id, email, role, name, phone, city, avatar, ico, services, plan,
-             stripe_customer_id, stripe_subscription_id, plan_expires_at,
+             plan_billing, stripe_customer_id, stripe_subscription_id, plan_expires_at,
              verified, email_verified_at, rating, jobs_count, bio,
              hourly_rate, platce_dph, subscription_status, trial_ends_at
       FROM users WHERE id = ${customerId}

@@ -59,7 +59,7 @@ async function doLogin(req, res) {
 
   const [user] = await sql`
     SELECT id, email, password_hash, role, name, phone, city, avatar,
-           ico, services, plan, stripe_customer_id, stripe_subscription_id,
+           ico, services, plan, plan_billing, stripe_customer_id, stripe_subscription_id,
            plan_expires_at, verified, email_verified_at, rating, jobs_count,
            bio, hourly_rate, platce_dph, subscription_status, trial_ends_at,
            worker_type, street, zip, city_area
@@ -167,7 +167,7 @@ async function doRegister(req, res) {
       ${email.toLowerCase()}, ${password_hash}, ${role}, ${name.trim()}, ${phone || null}, ${finalCity}, ${svc},
       ${finalWorkerType}, ${finalStreet}, ${finalZip}, ${finalCityArea}, ${finalIco}
     )
-    RETURNING id, email, role, name, phone, city, avatar, plan, verified, email_verified_at, services,
+    RETURNING id, email, role, name, phone, city, avatar, plan, plan_billing, verified, email_verified_at, services,
               jobs_count, subscription_status, plan_expires_at, stripe_customer_id, stripe_subscription_id,
               worker_type, street, zip, city_area, ico
   `;

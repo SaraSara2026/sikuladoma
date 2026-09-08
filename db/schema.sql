@@ -276,3 +276,13 @@ CREATE TABLE IF NOT EXISTS password_resets (
 
 CREATE INDEX IF NOT EXISTS idx_password_resets_user ON password_resets(user_id);
 CREATE INDEX IF NOT EXISTS idx_password_resets_expires ON password_resets(expires_at);
+
+-- ============================================================
+-- ZÚČTOVACÍ OBDOBÍ TARIFU — odlišuje měsíční a roční variantu stejného
+-- plánu (users.plan sám o sobě 'aktiv'/'aktiv-plus' nerozlišuje období,
+-- oba mají vlastní Stripe Price ID — viz api/stripe.js planFromPriceId /
+-- billingFromPriceId). Bez tohoto sloupce by se "Aktivní" značka v
+-- SikulaDashboard tarifech chybně zobrazila u obou období najednou.
+-- ============================================================
+ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_billing TEXT
+  CHECK (plan_billing IS NULL OR plan_billing IN ('monthly','yearly'));

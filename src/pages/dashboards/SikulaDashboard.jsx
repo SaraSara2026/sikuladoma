@@ -601,7 +601,12 @@ function VylepseniProfilu({ currentUser, onLogout, onBack }) {
       {/* Tarifní boxy */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, marginBottom: 28, alignItems: 'stretch' }}>
         {TARIFY.map(t => {
-          const isCurrentPlan = currentPlan === t.id && isActive
+          // Musí sedět i zúčtovací období, ne jen plán — měsíční a roční
+          // varianta stejného tarifu mají různé Stripe Price ID (viz
+          // users.plan_billing / api/stripe.js billingFromPriceId). Bez
+          // týhle podmínky by se po přepnutí přepínače na druhé období
+          // "Aktivní" značka chybně zobrazila i tam.
+          const isCurrentPlan = currentPlan === t.id && isActive && currentUser?.plan_billing === billing
           return (
             <div key={t.id} style={{ background: '#fff', border: `2px solid ${isCurrentPlan ? t.color : t.border}`, borderRadius: 16, padding: '24px 22px', position: 'relative', display: 'flex', flexDirection: 'column' }}>
               {t.badge && !isCurrentPlan && (

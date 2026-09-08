@@ -102,6 +102,16 @@ function planFromPriceId(priceId) {
   return null;
 }
 
+// Měsíční a roční varianta stejného plánu mají každá vlastní Stripe Price ID
+// — bez tohohle by "Aktivní" značka u tarifů (SikulaDashboard) nešla odlišit
+// podle období, jen podle plánu (viz users.plan_billing).
+function billingFromPriceId(priceId) {
+  if (!priceId) return null;
+  if (priceId === process.env.STRIPE_PRICE_AKTIV_YEARLY || priceId === process.env.STRIPE_PRICE_PLUS_YEARLY) return 'yearly';
+  if (priceId === process.env.STRIPE_PRICE_AKTIV        || priceId === process.env.STRIPE_PRICE_PLUS)        return 'monthly';
+  return null;
+}
+
 const PLAN_NAMES = {
   aktiv:        'Aktivní šikula',
   'aktiv-plus': 'Aktivní šikula Plus',
@@ -403,6 +413,7 @@ async function processEvent(event, sql) {
       const subscriptionId = session.subscription;
 
       let expiresAt = null;
+      let planBilling = null;
 
       if (subscriptionId) {
         try {
@@ -410,6 +421,7 @@ async function processEvent(event, sql) {
           if (sub.current_period_end) {
             expiresAt = new Date(sub.current_period_end * 1000).toISOString();
           }
+          planBilling = billingFromPriceId(sub.items?.data?.[0]?.price?.id);
         } catch (e) {
           console.warn('[stripe/webhook] Could not retrieve subscription:', e.message);
         }
@@ -418,6 +430,7 @@ async function processEvent(event, sql) {
       await sql`
         UPDATE users
         SET plan                   = ${plan},
+            plan_billing           = ${planBilling},
             stripe_customer_id     = ${customerId},
             stripe_subscription_id = ${subscriptionId},
             plan_expires_at        = ${expiresAt},
@@ -436,6 +449,7 @@ async function processEvent(event, sql) {
 
       const priceId = sub.items?.data?.[0]?.price?.id;
       const plan = planFromPriceId(priceId) || 'aktiv';
+      const planBilling = billingFromPriceId(priceId);
 
       const expiresAt = sub.current_period_end
         ? new Date(sub.current_period_end * 1000).toISOString() : null;
@@ -453,6 +467,7 @@ async function processEvent(event, sql) {
       await sql`
         UPDATE users
         SET plan                   = ${plan},
+            plan_billing           = ${planBilling},
             stripe_subscription_id = ${sub.id},
             plan_expires_at        = ${expiresAt},
             subscription_status    = ${subStatus},
