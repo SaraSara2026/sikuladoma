@@ -103,8 +103,8 @@ Dashboard se vybírá výhradně podle role (`admin` → AdminDashboard, `custom
 ## Ceny / tarify (aktuální model, nahradil starý start/plus/profi/top 999 Kč)
 
 - **Registrace zdarma** — šikula i zákazník. Šikula vidí poptávky ve svém okolí hned po registraci.
-- **Aktivní šikula — 199 Kč/měsíc** (2 240 Kč/rok) — odemyká odesílání nabídek/reakce na poptávky, bez omezení počtu
-- **Aktivní šikula Plus — 299 Kč/měsíc** (3 300 Kč/rok) — navíc fakturovač (PDF faktury)
+- **Aktivní šikula — 299 Kč/měsíc** (2 990 Kč/rok) — odemyká odesílání nabídek/reakce na poptávky, bez omezení počtu
+- **Aktivní šikula Plus — 399 Kč/měsíc** (3 990 Kč/rok) — navíc fakturovač (PDF faktury)
 - Plán `'top'` (99 Kč zvýraznění profilu) a `'profi'` jsou od 2026-08 v kódu **vypnuté** (viz komentář v `api/stripe.js`)
 - Zdroj pravdy pro ceny/plan mapping: `api/stripe.js` (`PLAN_PRICES`, `PLAN_ENV_VARS`)
 

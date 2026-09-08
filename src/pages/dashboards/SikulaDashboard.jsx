@@ -251,8 +251,8 @@ function useEarnings(active) {
   return { loading, paid, thisMonth, total, avg, count, byMonth }
 }
 
-// lock: 'plan' = vyžaduje alespoň Aktivní šikula (199 Kč)
-// lock: 'plus'  = vyžaduje Aktivní šikula Plus (299 Kč)
+// lock: 'plan' = vyžaduje alespoň Aktivní šikula (299 Kč)
+// lock: 'plus'  = vyžaduje Aktivní šikula Plus (399 Kč)
 // 'new-jobs' záměrně bez zámku — náhled poptávek je zdarma, platí se až za reakci (viz SendOfferPage).
 // Pořadí odpovídá pracovnímu toku šikuly: Nové zakázky → Odeslané nabídky →
 // Aktivní zakázky → Dokončené zakázky. Faktury a Výdělky patří k sobě, proto
@@ -292,7 +292,7 @@ function LockedScreen({ type, feature, onActivate }) {
         </h2>
         <p style={{ fontSize: 14, color: '#6B7280', lineHeight: 1.7, marginBottom: 24 }}>
           {isPlus
-            ? (PLUS_FEATURE_COPY[feature] || 'Tato funkce je součástí tarifu Aktivní šikula Plus za 299 Kč / měsíc.')
+            ? (PLUS_FEATURE_COPY[feature] || 'Tato funkce je součástí tarifu Aktivní šikula Plus za 399 Kč / měsíc.')
             : 'Aktivujte tarif a můžete začít reagovat na poptávky.'}
         </p>
         <button onClick={onActivate}
@@ -492,9 +492,9 @@ function VylepseniProfilu({ currentUser, onLogout, onBack }) {
     {
       id: 'aktiv',
       name: 'Aktivní šikula',
-      monthlyPrice: 199,
-      yearlyPrice: 2240,
-      yearlyOriginal: 2388,
+      monthlyPrice: 299,
+      yearlyPrice: 2990,
+      yearlyOriginal: 3588,
       color: '#F97316',
       border: '#FED7AA',
       features: [
@@ -513,9 +513,9 @@ function VylepseniProfilu({ currentUser, onLogout, onBack }) {
     {
       id: 'aktiv-plus',
       name: 'Aktivní šikula Plus',
-      monthlyPrice: 299,
-      yearlyPrice: 3300,
-      yearlyOriginal: 3588,
+      monthlyPrice: 399,
+      yearlyPrice: 3990,
+      yearlyOriginal: 4788,
       color: '#7C3AED',
       border: '#C4B5FD',
       badge: 'Více funkcí',
@@ -1075,7 +1075,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                 <div className="stat-label">Odeslané nabídky</div>
               </div>
             </div>
-            {/* Upgrade banner — pro Aktivní šikula (199 Kč), nabízí Plus (299 Kč) */}
+            {/* Upgrade banner — pro Aktivní šikula (299 Kč), nabízí Plus (399 Kč) */}
             {isActivePlan && currentPlanId === 'aktiv' && (
               <div style={{
                 marginBottom: 20,
@@ -1087,7 +1087,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
               }}>
                 <div>
                   <div style={{ fontWeight: 700, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}><Icon name="star" size={15} /> Aktivní šikula Plus</div>
-                  <div style={{ fontSize: 13, color: 'var(--text2)' }}>S tariferem Aktivní šikula Plus (299 Kč) získáte kalendář, fakturovač a přehled příjmů.</div>
+                  <div style={{ fontSize: 13, color: 'var(--text2)' }}>S tariferem Aktivní šikula Plus (399 Kč) získáte kalendář, fakturovač a přehled příjmů.</div>
                 </div>
                 <button className="btn btn-primary btn-sm" onClick={() => setActivePage('membership')}>
                   Zobrazit tarify →

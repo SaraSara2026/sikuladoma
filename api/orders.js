@@ -267,7 +267,7 @@ async function listOrders(req, res) {
     // Bez aktivního tarifu smí šikula vidět jen omezený náhled poptávky —
     // název, kategorii, podslužbu, obecnou lokalitu a že poptávka existuje.
     // Popis práce, termín a urgentnost jsou "detail poptávky" a odemyká je
-    // až aktivní tarif (199/299 Kč). Přesná adresa se navíc odemyká zvlášť
+    // až aktivní tarif (299/399 Kč). Přesná adresa se navíc odemyká zvlášť
     // až u přijaté zakázky (viz api/offers.js) — bez ohledu na tarif.
     //
     // Lokalita se filtruje podle vlastní PSČ/oblasti šikuly (ne podle

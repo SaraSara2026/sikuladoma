@@ -119,8 +119,8 @@ const ACTIVE_PLAN_IDS = new Set(['aktiv', 'aktiv-plus']);
 // Očekávaná cena v Kč pro aktiv/aktiv-plus — použije se jen jako bezpečnostní
 // pojistka (viz handleCheckout), nikde neurčuje/nemění skutečnou cenu ve Stripe.
 const EXPECTED_AMOUNT_CZK = {
-  aktiv:        { monthly: 199, yearly: 2240 },
-  'aktiv-plus': { monthly: 299, yearly: 3300 },
+  aktiv:        { monthly: 299, yearly: 2990 },
+  'aktiv-plus': { monthly: 399, yearly: 3990 },
 };
 
 // ── Raw body ze streamu (pro webhook) ─────────────────────────────────────────
@@ -195,8 +195,8 @@ async function handleCheckout(req, res, me, sql) {
 
   // Bezpečnostní pojistka: ověříme u Stripe, že cena za priceId skutečně
   // odpovídá tarifu, který si zákazník vybral — jinak by špatně nastavená
-  // env proměnná (např. STRIPE_PRICE_PLUS ukazující na cenu 199 Kč místo
-  // 299 Kč) tiše poslala zákazníka na checkout se špatnou částkou.
+  // env proměnná (např. STRIPE_PRICE_PLUS ukazující na cenu 299 Kč místo
+  // 399 Kč) tiše poslala zákazníka na checkout se špatnou částkou.
   const expectedKc = EXPECTED_AMOUNT_CZK[plan]?.[billing];
   if (expectedKc != null) {
     let priceObj;

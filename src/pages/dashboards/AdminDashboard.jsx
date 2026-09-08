@@ -24,7 +24,7 @@ const PLAN_LABELS = {
 
 // Ceny tarifů (měsíčně) — zrcadlí EXPECTED_AMOUNT_CZK v api/stripe.js, jen pro
 // odhad MRR v admin přehledu. Nepočítá s ročním předplatným zvlášť.
-const PLAN_PRICE_CZK = { aktiv: 199, 'aktiv-plus': 299 };
+const PLAN_PRICE_CZK = { aktiv: 299, 'aktiv-plus': 399 };
 
 function StatCard({ label, value, color }) {
   return (
@@ -129,8 +129,8 @@ export default function AdminDashboard({ currentUser, onLogout }) {
 
             <h2 style={{ fontSize: 14, fontWeight: 700, color: '#6B7280', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '.05em' }}>Platící šikulové</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: 12, marginBottom: 28 }}>
-              <StatCard label="Zaplatili 199 Kč"      value={stats.paying?.aktiv_active}      color="#F97316" />
-              <StatCard label="Zaplatili 299 Kč"      value={stats.paying?.aktiv_plus_active} color="#F97316" />
+              <StatCard label="Zaplatili 299 Kč"      value={stats.paying?.aktiv_active}      color="#F97316" />
+              <StatCard label="Zaplatili 399 Kč"      value={stats.paying?.aktiv_plus_active} color="#F97316" />
               <StatCard label="Zrušeno, doběhne"      value={stats.paying?.cancelled_pending} color="#9CA3AF" />
               <StatCard label="Nezaplatili"           value={stats.paying?.unpaid}            color="#EF4444" />
               <StatCard label="Odhad MRR"

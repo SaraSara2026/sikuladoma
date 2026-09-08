@@ -8,8 +8,8 @@ import { sendInvoiceEmail } from './_email.js';
 import { buildInvoicePdf } from './_invoice-pdf.js';
 import { isSikulaPlanActive } from './_plan.js';
 
-// Fakturovač je součástí tarifu Aktivní šikula Plus (299 Kč/měsíc) — obyčejný
-// tarif Aktivní šikula (199 Kč) na něj nestačí. Admin kontrolu obchází vždy.
+// Fakturovač je součástí tarifu Aktivní šikula Plus (399 Kč/měsíc) — obyčejný
+// tarif Aktivní šikula (299 Kč) na něj nestačí. Admin kontrolu obchází vždy.
 function requiresPlusPlan(me) {
   return me.role === 'sikula' && !(me.plan === 'aktiv-plus' && isSikulaPlanActive(me));
 }
@@ -71,7 +71,7 @@ async function createInvoice(req, res) {
   }
   if (requiresPlusPlan(me)) {
     return res.status(402).json({
-      error: 'Fakturovač je součástí tarifu Aktivní šikula Plus za 299 Kč / měsíc.',
+      error: 'Fakturovač je součástí tarifu Aktivní šikula Plus za 399 Kč / měsíc.',
       code: 'plus_required',
     });
   }
@@ -199,7 +199,7 @@ async function sendInvoice(req, res) {
   if (!me) return;
   if (requiresPlusPlan(me)) {
     return res.status(402).json({
-      error: 'Fakturovač je součástí tarifu Aktivní šikula Plus za 299 Kč / měsíc.',
+      error: 'Fakturovač je součástí tarifu Aktivní šikula Plus za 399 Kč / měsíc.',
       code: 'plus_required',
     });
   }
