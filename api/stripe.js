@@ -7,6 +7,7 @@
 
 import crypto from 'node:crypto';
 import { sendPlanCancelledEmail } from './_email.js';
+import { isStatusActiveOrGrace } from './_plan.js';
 
 // ── Stripe REST helpers ────────────────────────────────────────────────────────
 
@@ -110,6 +111,16 @@ function billingFromPriceId(priceId) {
   if (priceId === process.env.STRIPE_PRICE_AKTIV_YEARLY || priceId === process.env.STRIPE_PRICE_PLUS_YEARLY) return 'yearly';
   if (priceId === process.env.STRIPE_PRICE_AKTIV        || priceId === process.env.STRIPE_PRICE_PLUS)        return 'monthly';
   return null;
+}
+
+// Jediné místo, které rozhoduje, co se má zapsat do users.plan_billing —
+// použité shodně ve všech třech webhook větvích, co ten sloupec píšou
+// (checkout.session.completed, customer.subscription.updated/.deleted).
+// Nesmí se zapsat období u účtu, který právě není opravdu aktivní ani v
+// doběhu (viz isStatusActiveOrGrace) — jinak by sloupec tvrdil "má měsíční
+// tarif" i u dávno zrušeného předplatného bez nároku na cokoliv.
+export function resolvePlanBilling(subscriptionStatus, planExpiresAt, priceId) {
+  return isStatusActiveOrGrace(subscriptionStatus, planExpiresAt) ? billingFromPriceId(priceId) : null;
 }
 
 const PLAN_NAMES = {
@@ -421,7 +432,10 @@ async function processEvent(event, sql) {
           if (sub.current_period_end) {
             expiresAt = new Date(sub.current_period_end * 1000).toISOString();
           }
-          planBilling = billingFromPriceId(sub.items?.data?.[0]?.price?.id);
+          // subscription_status se tady vždy zapisuje jako 'active' (viz UPDATE
+          // níže) — resolvePlanBilling to dostává explicitně, ať se řídí stejným
+          // pravidlem jako ostatní dva webhooky, ne natvrdo billingFromPriceId.
+          planBilling = resolvePlanBilling('active', expiresAt, sub.items?.data?.[0]?.price?.id);
         } catch (e) {
           console.warn('[stripe/webhook] Could not retrieve subscription:', e.message);
         }
@@ -449,7 +463,6 @@ async function processEvent(event, sql) {
 
       const priceId = sub.items?.data?.[0]?.price?.id;
       const plan = planFromPriceId(priceId) || 'aktiv';
-      const planBilling = billingFromPriceId(priceId);
 
       const expiresAt = sub.current_period_end
         ? new Date(sub.current_period_end * 1000).toISOString() : null;
@@ -461,6 +474,11 @@ async function processEvent(event, sql) {
                        : ['active', 'trialing'].includes(sub.status) ? 'active'
                        : sub.status === 'past_due' ? 'payment_failed'
                        : 'inactive';
+
+      // plan_billing se smí zapsat jen u opravdu aktivního/v doběhu účtu —
+      // jinak by u zrušeného předplatného bez doběhu zůstala zavádějící
+      // "poslední známá" hodnota, jako by pořád něco platil (viz resolvePlanBilling).
+      const planBilling = resolvePlanBilling(subStatus, expiresAt, priceId);
 
       const [prev] = await sql`SELECT subscription_status FROM users WHERE id = ${userId}`;
 
@@ -501,9 +519,16 @@ async function processEvent(event, sql) {
 
       const [prev] = await sql`SELECT subscription_status, plan_expires_at FROM users WHERE id = ${userId}`;
 
+      // Gate na plan_billing musí použít stejnou expiraci, co skutečně skončí
+      // v DB po COALESCE níže (nová hodnota, nebo když ta chybí, ta stará) —
+      // jinak by se mohlo omylem vynulovat i u účtu, co má doběh z dřívějška.
+      const finalExpiresAt = expiresAt || prev?.plan_expires_at || null;
+      const planBilling = resolvePlanBilling('cancelled', finalExpiresAt, sub.items?.data?.[0]?.price?.id);
+
       await sql`
         UPDATE users
         SET stripe_subscription_id = NULL,
+            plan_billing           = ${planBilling},
             plan_expires_at        = COALESCE(${expiresAt}, plan_expires_at),
             subscription_status    = 'cancelled',
             updated_at             = NOW()
