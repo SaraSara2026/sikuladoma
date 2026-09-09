@@ -148,12 +148,16 @@ export function resolvePlanBilling(subscriptionStatus, planExpiresAt, interval) 
   return isStatusActiveOrGrace(subscriptionStatus, planExpiresAt) ? billingFromInterval(interval) : null;
 }
 
-// Kdo už má TENTO tarif aktivní (nebo v doběhu), nesmí si založit druhé
-// souběžné předplatné za stejný tarif — bez ohledu na to, jestli známe
-// přesné zúčtovací období (users.plan_billing může být null u starších
-// účtů). Přechod na JINÝ tarif (upgrade/downgrade) zůstává povolený.
-export function wouldDuplicateSubscription(userPlan, requestedPlan, subscriptionStatus, planExpiresAt) {
-  return userPlan === requestedPlan && isStatusActiveOrGrace(subscriptionStatus, planExpiresAt);
+// Blokuje jen PŘESNĚ tu samou variantu, kterou uživatel už aktivně platí
+// (stejný tarif A stejné zúčtovací období) — ne jen stejný tarif. Přepnutí
+// měsíc↔rok u stejného tarifu, upgrade/downgrade na jiný tarif nebo aktivace
+// s neznámým (null) plan_billing musí jít vždycky rovnou koupit; případné
+// staré souběžné předplatné se řeší až při dokončení checkoutu (viz
+// checkout.session.completed — zruší se tam, ne tady blokováním).
+export function wouldDuplicateSubscription(userPlan, userPlanBilling, requestedPlan, requestedBilling, subscriptionStatus, planExpiresAt) {
+  return userPlan === requestedPlan
+    && userPlanBilling === requestedBilling
+    && isStatusActiveOrGrace(subscriptionStatus, planExpiresAt);
 }
 
 const PLAN_NAMES = {
@@ -243,14 +247,15 @@ async function handleCheckout(req, res, me, sql) {
     return res.status(400).json({ error: 'Neplatné zúčtovací období.' });
   }
 
-  // Bezpečnostní pojistka nezávislá na frontendu: kdo už má TENTO tarif
-  // aktivní (nebo v doběhu), nesmí si založit druhé souběžné předplatné za
-  // stejný tarif — bez ohledu na to, jestli známe přesné zúčtovací období
-  // (users.plan_billing). Přechod na JINÝ tarif (upgrade/downgrade) zůstává
-  // povolený, tahle kontrola se týká jen shody `plan`.
-  if (wouldDuplicateSubscription(me.plan, plan, me.subscription_status, me.plan_expires_at)) {
+  // Bezpečnostní pojistka nezávislá na frontendu: blokuje jen přesně tu
+  // samou variantu (stejný tarif A stejné období), kterou uživatel už
+  // aktivně platí. Přepnutí měsíc↔rok, upgrade/downgrade na jiný tarif,
+  // nebo aktivace u účtu s neznámým plan_billing (starší data) se vždycky
+  // pustí dál — případné staré souběžné předplatné se ukončí až po úspěšném
+  // dokončení tohohle checkoutu (viz checkout.session.completed).
+  if (wouldDuplicateSubscription(me.plan, me.plan_billing, plan, billing, me.subscription_status, me.plan_expires_at)) {
     return res.status(409).json({
-      error: 'Tenhle tarif už máte aktivní. Správu nebo zrušení najdete v zákaznickém portálu.',
+      error: 'Tuhle variantu tarifu už máte aktivní. Správu nebo zrušení najdete v zákaznickém portálu.',
       code: 'already_subscribed',
     });
   }
@@ -487,6 +492,14 @@ async function processEvent(event, sql) {
         }
       }
 
+      // Přečíst PŘED update — potřeba znát staré předplatné (jiná varianta
+      // stejného nebo jiného tarifu), abychom ho po úspěšném přechodu na
+      // tohle nové mohli zrušit. wouldDuplicateSubscription v handleCheckout
+      // propouští přepnutí tarifu/období dál právě proto, že souběžnost se
+      // řeší až tady, ne blokováním na vstupu.
+      const [existingUser] = await sql`SELECT stripe_subscription_id FROM users WHERE id = ${userId}`;
+      const oldSubscriptionId = existingUser?.stripe_subscription_id;
+
       await sql`
         UPDATE users
         SET plan                   = ${plan},
@@ -499,6 +512,18 @@ async function processEvent(event, sql) {
         WHERE id = ${userId}
       `;
       console.log(`[stripe] User ${userId} aktivován: ${plan}`);
+
+      if (oldSubscriptionId && oldSubscriptionId !== subscriptionId) {
+        try {
+          await stripeRequest('DELETE', `/subscriptions/${oldSubscriptionId}`);
+          console.log(`[stripe/webhook] User ${userId}: staré předplatné ${oldSubscriptionId} zrušeno (nahrazeno ${subscriptionId})`);
+        } catch (e) {
+          // Nejde jen tiše přejít — bez zrušení tady hrozí, že uživatel platí
+          // dvě předplatná souběžně. Log je záměrně výrazný, ať se to dá
+          // dohledat i bez podrobného procházení běžných [stripe] logů.
+          console.error(`[stripe/webhook] KRITICKÉ — nepodařilo se zrušit staré předplatné ${oldSubscriptionId} pro user ${userId} po přechodu na ${subscriptionId}, možná souběžná platba:`, e.message);
+        }
+      }
       break;
     }
 

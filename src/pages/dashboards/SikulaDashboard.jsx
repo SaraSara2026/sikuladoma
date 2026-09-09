@@ -604,18 +604,13 @@ function VylepseniProfilu({ currentUser, onLogout, onBack }) {
       {/* Tarifní boxy */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, marginBottom: 28, alignItems: 'stretch' }}>
         {TARIFY.map(t => {
-          // isSamePlan = tenhle tarif už má aktivní (nebo v doběhu), bez
-          // ohledu na období — používá se jako bezpečnostní pojistka proti
-          // druhému souběžnému předplatnému za stejný tarif (viz tlačítko
-          // níže). isCurrentPlan navíc vyžaduje přesnou shodu období — jen
-          // pro vizuální "✓ Aktivní" značku, ať se nezobrazí na obou kartách
-          // (měsíční i roční) najednou, ani na špatné z nich. U starších
-          // účtů bez plan_billing (dobíhá backfill po webhooku) nebo když
-          // uživatel prohlíží druhé období, isCurrentPlan je false na obou
-          // kartách, ale isSamePlan zůstává true — tlačítko dole se pak
-          // NIKDY nezmění na "Aktivovat", i když neznáme přesné období.
-          const isSamePlan = currentPlan === t.id && isActive
-          const isCurrentPlan = isSamePlan && currentUser?.plan_billing === billing
+          // "Aktivní" je jen PŘESNĚ ta varianta (tarif i období), kterou
+          // uživatel skutečně platí — ne jen stejný tarif. Přepnutí na druhé
+          // období nebo jiný tarif musí vždycky nabídnout normální koupi;
+          // případné staré souběžné předplatné se řeší až na backendu při
+          // dokončení checkoutu (viz api/stripe.js checkout.session.completed),
+          // ne blokováním tlačítka tady.
+          const isCurrentPlan = currentPlan === t.id && isActive && currentUser?.plan_billing === billing
           return (
             <div key={t.id} style={{ background: '#fff', border: `2px solid ${isCurrentPlan ? t.color : t.border}`, borderRadius: 16, padding: '24px 22px', position: 'relative', display: 'flex', flexDirection: 'column' }}>
               {t.badge && !isCurrentPlan && (
@@ -655,16 +650,6 @@ function VylepseniProfilu({ currentUser, onLogout, onBack }) {
                   <div style={{ height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F0FDF4', borderRadius: 10, fontSize: 14, fontWeight: 600, color: '#16A34A' }}>
                     ✓ Váš aktuální tarif
                   </div>
-                ) : isSamePlan ? (
-                  // Tenhle tarif už má aktivní, jen mu neznáme (nebo se
-                  // neshoduje) přesné zúčtovací období — v žádném případě
-                  // nenabízet nový checkout, založilo by to druhé souběžné
-                  // předplatné za stejný tarif. Bezpečný odkaz do portálu
-                  // místo toho.
-                  <button onClick={goPortal}
-                    style={{ width: '100%', height: 44, borderRadius: 10, border: '1.5px solid #BBF7D0', background: '#F0FDF4', color: '#166534', fontWeight: 600, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
-                    ✓ Již aktivní — spravovat v portálu
-                  </button>
                 ) : (
                   <>
                     <button onClick={() => goCheckout(t.id)}

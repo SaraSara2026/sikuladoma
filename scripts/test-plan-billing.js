@@ -107,30 +107,44 @@ test('isStatusActiveOrGrace: inactive → vždy false', () => {
   assert(isStatusActiveOrGrace('inactive', future) === false);
 });
 
-// ── wouldDuplicateSubscription (backendová pojistka proti druhému předplatnému) ──
+// ── wouldDuplicateSubscription (blokuje jen PŘESNĚ tu samou aktivní variantu) ──
+// Signatura: (userPlan, userPlanBilling, requestedPlan, requestedBilling, subscriptionStatus, planExpiresAt)
 
-test('aktivní na aktiv, žádá znovu aktiv (plan_billing neznámé/jedno) → zablokovat', () => {
-  assert(wouldDuplicateSubscription('aktiv', 'aktiv', 'active', null) === true);
+test('přesně stejná varianta aktivní (aktiv+monthly), žádá znovu aktiv+monthly → zablokovat', () => {
+  assert(wouldDuplicateSubscription('aktiv', 'monthly', 'aktiv', 'monthly', 'active', null) === true);
 });
 
-test('Davidův přesný případ: aktiv aktivní, plan_billing null, žádá znovu aktiv → zablokovat', () => {
-  assert(wouldDuplicateSubscription('aktiv', 'aktiv', 'active', future) === true);
+test('aktiv+monthly aktivní, žádá aktiv+yearly (stejný tarif, jiné období) → povolit', () => {
+  // Klíčový požadavek: přepnutí měsíc→rok u stejného tarifu nesmí appka
+  // blokovat jako "už aktivní" — musí jít rovnou koupit.
+  assert(wouldDuplicateSubscription('aktiv', 'monthly', 'aktiv', 'yearly', 'active', null) === false);
 });
 
-test('aktiv aktivní, žádá upgrade na aktiv-plus → povolit (jiný tarif)', () => {
-  assert(wouldDuplicateSubscription('aktiv', 'aktiv-plus', 'active', null) === false);
+test('Davidův přesný případ: aktiv aktivní, plan_billing null, žádá aktiv+monthly → povolit', () => {
+  // Neznáme přesnou variantu, kterou už platí, takže se nedá tvrdit, že je
+  // to přesně ta samá — nechá se to projít; souběžnost řeší backend při
+  // dokončení checkoutu (zruší staré předplatné), ne blokování tady.
+  assert(wouldDuplicateSubscription('aktiv', null, 'aktiv', 'monthly', 'active', future) === false);
 });
 
-test('zrušeno bez doběhu, žádá znovu stejný tarif → povolit (reálně nic neplatí)', () => {
-  assert(wouldDuplicateSubscription('aktiv', 'aktiv', 'cancelled', null) === false);
+test('aktiv+monthly aktivní, žádá upgrade na aktiv-plus+monthly → povolit (jiný tarif)', () => {
+  assert(wouldDuplicateSubscription('aktiv', 'monthly', 'aktiv-plus', 'monthly', 'active', null) === false);
 });
 
-test('zrušeno s budoucím doběhem, žádá znovu stejný tarif → zablokovat (pořád platí)', () => {
-  assert(wouldDuplicateSubscription('aktiv', 'aktiv', 'cancelled', future) === true);
+test('zrušeno bez doběhu, žádá znovu přesně stejnou variantu → povolit (reálně nic neplatí)', () => {
+  assert(wouldDuplicateSubscription('aktiv', 'monthly', 'aktiv', 'monthly', 'cancelled', null) === false);
 });
 
-test('žádný tarif (start), žádá aktiv → povolit', () => {
-  assert(wouldDuplicateSubscription('start', 'aktiv', 'inactive', null) === false);
+test('zrušeno s budoucím doběhem, žádá znovu přesně stejnou variantu → zablokovat (pořád platí)', () => {
+  assert(wouldDuplicateSubscription('aktiv', 'monthly', 'aktiv', 'monthly', 'cancelled', future) === true);
+});
+
+test('zrušeno s budoucím doběhem, žádá jiné období stejného tarifu → povolit', () => {
+  assert(wouldDuplicateSubscription('aktiv', 'monthly', 'aktiv', 'yearly', 'cancelled', future) === false);
+});
+
+test('žádný tarif (start), žádá aktiv+monthly → povolit', () => {
+  assert(wouldDuplicateSubscription('start', null, 'aktiv', 'monthly', 'inactive', null) === false);
 });
 
 // ── planFromSubscription (tarif podle metadata.plan / stabilního Product ID) ──
