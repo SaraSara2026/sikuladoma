@@ -12,7 +12,7 @@ process.env.STRIPE_PRICE_AKTIV_YEARLY = 'price_aktiv_yearly_test';
 process.env.STRIPE_PRICE_PLUS         = 'price_plus_monthly_test';
 process.env.STRIPE_PRICE_PLUS_YEARLY  = 'price_plus_yearly_test';
 
-const { resolvePlanBilling } = await import('../api/stripe.js');
+const { resolvePlanBilling, wouldDuplicateSubscription } = await import('../api/stripe.js');
 const { isStatusActiveOrGrace } = await import('../api/_plan.js');
 
 let passed = 0, failed = 0;
@@ -85,6 +85,32 @@ test('isStatusActiveOrGrace: cancelled + expirace v minulosti → false', () => 
 
 test('isStatusActiveOrGrace: inactive → vždy false', () => {
   assert(isStatusActiveOrGrace('inactive', future) === false);
+});
+
+// ── wouldDuplicateSubscription (backendová pojistka proti druhému předplatnému) ──
+
+test('aktivní na aktiv, žádá znovu aktiv (plan_billing neznámé/jedno) → zablokovat', () => {
+  assert(wouldDuplicateSubscription('aktiv', 'aktiv', 'active', null) === true);
+});
+
+test('Davidův přesný případ: aktiv aktivní, plan_billing null, žádá znovu aktiv → zablokovat', () => {
+  assert(wouldDuplicateSubscription('aktiv', 'aktiv', 'active', future) === true);
+});
+
+test('aktiv aktivní, žádá upgrade na aktiv-plus → povolit (jiný tarif)', () => {
+  assert(wouldDuplicateSubscription('aktiv', 'aktiv-plus', 'active', null) === false);
+});
+
+test('zrušeno bez doběhu, žádá znovu stejný tarif → povolit (reálně nic neplatí)', () => {
+  assert(wouldDuplicateSubscription('aktiv', 'aktiv', 'cancelled', null) === false);
+});
+
+test('zrušeno s budoucím doběhem, žádá znovu stejný tarif → zablokovat (pořád platí)', () => {
+  assert(wouldDuplicateSubscription('aktiv', 'aktiv', 'cancelled', future) === true);
+});
+
+test('žádný tarif (start), žádá aktiv → povolit', () => {
+  assert(wouldDuplicateSubscription('start', 'aktiv', 'inactive', null) === false);
 });
 
 console.log(`\n${passed} passed, ${failed} failed\n`);

@@ -123,6 +123,14 @@ export function resolvePlanBilling(subscriptionStatus, planExpiresAt, priceId) {
   return isStatusActiveOrGrace(subscriptionStatus, planExpiresAt) ? billingFromPriceId(priceId) : null;
 }
 
+// Kdo už má TENTO tarif aktivní (nebo v doběhu), nesmí si založit druhé
+// souběžné předplatné za stejný tarif — bez ohledu na to, jestli známe
+// přesné zúčtovací období (users.plan_billing může být null u starších
+// účtů). Přechod na JINÝ tarif (upgrade/downgrade) zůstává povolený.
+export function wouldDuplicateSubscription(userPlan, requestedPlan, subscriptionStatus, planExpiresAt) {
+  return userPlan === requestedPlan && isStatusActiveOrGrace(subscriptionStatus, planExpiresAt);
+}
+
 const PLAN_NAMES = {
   aktiv:        'Aktivní šikula',
   'aktiv-plus': 'Aktivní šikula Plus',
@@ -209,6 +217,19 @@ async function handleCheckout(req, res, me, sql) {
   if (billing !== 'monthly' && billing !== 'yearly') {
     return res.status(400).json({ error: 'Neplatné zúčtovací období.' });
   }
+
+  // Bezpečnostní pojistka nezávislá na frontendu: kdo už má TENTO tarif
+  // aktivní (nebo v doběhu), nesmí si založit druhé souběžné předplatné za
+  // stejný tarif — bez ohledu na to, jestli známe přesné zúčtovací období
+  // (users.plan_billing). Přechod na JINÝ tarif (upgrade/downgrade) zůstává
+  // povolený, tahle kontrola se týká jen shody `plan`.
+  if (wouldDuplicateSubscription(me.plan, plan, me.subscription_status, me.plan_expires_at)) {
+    return res.status(409).json({
+      error: 'Tenhle tarif už máte aktivní. Správu nebo zrušení najdete v zákaznickém portálu.',
+      code: 'already_subscribed',
+    });
+  }
+
   const priceId = PRICE_IDS[plan](billing);
   if (!priceId) {
     return res.status(503).json({ error: `${ENV_NAMES[plan]?.(billing) || 'STRIPE_PRICE_?'} není nastaven v env.` });
