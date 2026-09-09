@@ -103,13 +103,19 @@ function planFromPriceId(priceId) {
   return null;
 }
 
-// Měsíční a roční varianta stejného plánu mají každá vlastní Stripe Price ID
-// — bez tohohle by "Aktivní" značka u tarifů (SikulaDashboard) nešla odlišit
-// podle období, jen podle plánu (viz users.plan_billing).
-function billingFromPriceId(priceId) {
-  if (!priceId) return null;
-  if (priceId === process.env.STRIPE_PRICE_AKTIV_YEARLY || priceId === process.env.STRIPE_PRICE_PLUS_YEARLY) return 'yearly';
-  if (priceId === process.env.STRIPE_PRICE_AKTIV        || priceId === process.env.STRIPE_PRICE_PLUS)        return 'monthly';
+// Měsíční/roční se odvozuje ze SKUTEČNÉHO recurring.interval dané položky
+// předplatného ('month'/'year'), ne porovnáním s aktuálními STRIPE_PRICE_*
+// env proměnnými. Ty se můžou kdykoliv změnit (jako 2026-09-08, kdy vznikly
+// nové ceny/Price ID) — starší předplatné na dřívějším Price ID by pak touhle
+// metodou přestalo jít rozpoznat, i když je pořád validní a platí se. Stripe
+// vrací interval přímo na price objektu bez ohledu na to, jestli je Price ID
+// pořád "aktuální", takže tohle funguje pro libovolně staré i budoucí ceny.
+// Pozor: tohle se týká jen ČTENÍ/zobrazení existujícího předplatného — pro
+// ZALOŽENÍ nového checkoutu se pořád smí použít jen dnešní STRIPE_PRICE_*
+// (viz PRICE_IDS / ACTIVE_PLAN_IDS / EXPECTED_AMOUNT_CZK výše).
+function billingFromInterval(interval) {
+  if (interval === 'year') return 'yearly';
+  if (interval === 'month') return 'monthly';
   return null;
 }
 
@@ -119,8 +125,8 @@ function billingFromPriceId(priceId) {
 // Nesmí se zapsat období u účtu, který právě není opravdu aktivní ani v
 // doběhu (viz isStatusActiveOrGrace) — jinak by sloupec tvrdil "má měsíční
 // tarif" i u dávno zrušeného předplatného bez nároku na cokoliv.
-export function resolvePlanBilling(subscriptionStatus, planExpiresAt, priceId) {
-  return isStatusActiveOrGrace(subscriptionStatus, planExpiresAt) ? billingFromPriceId(priceId) : null;
+export function resolvePlanBilling(subscriptionStatus, planExpiresAt, interval) {
+  return isStatusActiveOrGrace(subscriptionStatus, planExpiresAt) ? billingFromInterval(interval) : null;
 }
 
 // Kdo už má TENTO tarif aktivní (nebo v doběhu), nesmí si založit druhé
@@ -455,8 +461,8 @@ async function processEvent(event, sql) {
           }
           // subscription_status se tady vždy zapisuje jako 'active' (viz UPDATE
           // níže) — resolvePlanBilling to dostává explicitně, ať se řídí stejným
-          // pravidlem jako ostatní dva webhooky, ne natvrdo billingFromPriceId.
-          planBilling = resolvePlanBilling('active', expiresAt, sub.items?.data?.[0]?.price?.id);
+          // pravidlem jako ostatní dva webhooky, ne natvrdo billingFromInterval.
+          planBilling = resolvePlanBilling('active', expiresAt, sub.items?.data?.[0]?.price?.recurring?.interval);
         } catch (e) {
           console.warn('[stripe/webhook] Could not retrieve subscription:', e.message);
         }
@@ -499,7 +505,9 @@ async function processEvent(event, sql) {
       // plan_billing se smí zapsat jen u opravdu aktivního/v doběhu účtu —
       // jinak by u zrušeného předplatného bez doběhu zůstala zavádějící
       // "poslední známá" hodnota, jako by pořád něco platil (viz resolvePlanBilling).
-      const planBilling = resolvePlanBilling(subStatus, expiresAt, priceId);
+      // Interval bereme přímo z ceny na položce předplatného, ne z priceId
+      // (ten se používá jen pro určení TARIFU/plan, viz planFromPriceId výše).
+      const planBilling = resolvePlanBilling(subStatus, expiresAt, sub.items?.data?.[0]?.price?.recurring?.interval);
 
       const [prev] = await sql`SELECT subscription_status FROM users WHERE id = ${userId}`;
 
@@ -544,7 +552,7 @@ async function processEvent(event, sql) {
       // v DB po COALESCE níže (nová hodnota, nebo když ta chybí, ta stará) —
       // jinak by se mohlo omylem vynulovat i u účtu, co má doběh z dřívějška.
       const finalExpiresAt = expiresAt || prev?.plan_expires_at || null;
-      const planBilling = resolvePlanBilling('cancelled', finalExpiresAt, sub.items?.data?.[0]?.price?.id);
+      const planBilling = resolvePlanBilling('cancelled', finalExpiresAt, sub.items?.data?.[0]?.price?.recurring?.interval);
 
       await sql`
         UPDATE users

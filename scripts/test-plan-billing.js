@@ -3,14 +3,11 @@
 // čistě v paměti — žádná DB, žádné volání Stripe API. Pokrývá scénáře ze zadání:
 // aktivní měsíční, aktivní roční, zrušený s budoucím doběhem, zrušený bez doběhu
 // (přesně stav účtu, který nahlásila Sara: subscription_status='cancelled',
-// plan_expires_at=null).
+// plan_expires_at=null), a odolnost vůči změně STRIPE_PRICE_* env proměnných
+// (2026-09-09: billing se odvozuje z recurring.interval, ne z porovnání s
+// aktuálními Price ID).
 //
 // Spuštění: node scripts/test-plan-billing.js
-
-process.env.STRIPE_PRICE_AKTIV        = 'price_aktiv_monthly_test';
-process.env.STRIPE_PRICE_AKTIV_YEARLY = 'price_aktiv_yearly_test';
-process.env.STRIPE_PRICE_PLUS         = 'price_plus_monthly_test';
-process.env.STRIPE_PRICE_PLUS_YEARLY  = 'price_plus_yearly_test';
 
 const { resolvePlanBilling, wouldDuplicateSubscription } = await import('../api/stripe.js');
 const { isStatusActiveOrGrace } = await import('../api/_plan.js');
@@ -28,41 +25,53 @@ const past   = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString(); // -3
 console.log('\n🔍 plan_billing test suite\n');
 
 // ── resolvePlanBilling (rozhoduje, co se zapíše do users.plan_billing) ───────
+// Třetí parametr je teď skutečný Stripe `recurring.interval` ('month'/'year'),
+// ne Price ID — funguje i pro dávno rotované ceny, které dnešní STRIPE_PRICE_*
+// env proměnné už neznají.
 
-test('aktivní měsíční tarif (Aktivní šikula) → monthly', () => {
-  const r = resolvePlanBilling('active', null, process.env.STRIPE_PRICE_AKTIV);
+test('aktivní měsíční tarif (interval=month) → monthly', () => {
+  const r = resolvePlanBilling('active', null, 'month');
   assert(r === 'monthly', `expected 'monthly', got ${r}`);
 });
 
-test('aktivní roční tarif (Aktivní šikula Plus) → yearly', () => {
-  const r = resolvePlanBilling('active', future, process.env.STRIPE_PRICE_PLUS_YEARLY);
+test('aktivní roční tarif (interval=year) → yearly', () => {
+  const r = resolvePlanBilling('active', future, 'year');
   assert(r === 'yearly', `expected 'yearly', got ${r}`);
 });
 
 test('zrušený tarif s budoucím doběhem (grace) → zachová období', () => {
-  const r = resolvePlanBilling('cancelled', future, process.env.STRIPE_PRICE_AKTIV_YEARLY);
+  const r = resolvePlanBilling('cancelled', future, 'year');
   assert(r === 'yearly', `expected 'yearly' (v doběhu = pořád platí), got ${r}`);
 });
 
 test('zrušený tarif BEZ doběhu (plan_expires_at = null) → null', () => {
   // Přesně stav Sařina účtu: subscription_status='cancelled', plan_expires_at=null.
-  const r = resolvePlanBilling('cancelled', null, process.env.STRIPE_PRICE_PLUS);
+  const r = resolvePlanBilling('cancelled', null, 'month');
   assert(r === null, `expected null, got ${r}`);
 });
 
 test('zrušený tarif s doběhem v minulosti (už uplynul) → null', () => {
-  const r = resolvePlanBilling('cancelled', past, process.env.STRIPE_PRICE_AKTIV);
+  const r = resolvePlanBilling('cancelled', past, 'month');
   assert(r === null, `expected null, got ${r}`);
 });
 
-test('platba selhala (payment_failed) → null i s platným price ID', () => {
-  const r = resolvePlanBilling('payment_failed', future, process.env.STRIPE_PRICE_AKTIV);
+test('platba selhala (payment_failed) → null i se známým intervalem', () => {
+  const r = resolvePlanBilling('payment_failed', future, 'month');
   assert(r === null, `expected null, got ${r}`);
 });
 
-test('neznámé/chybějící price ID u aktivního účtu → null (nic se nehádá)', () => {
-  const r = resolvePlanBilling('active', null, 'price_neexistujici');
+test('neznámý/chybějící interval u aktivního účtu → null (nic se nehádá)', () => {
+  const r = resolvePlanBilling('active', null, undefined);
   assert(r === null, `expected null, got ${r}`);
+});
+
+test('stará/rotovaná cena (dnešní env proměnné ji už neznají) → i tak správně podle interval', () => {
+  // Simuluje přesně situaci z 2026-09-08: STRIPE_PRICE_AKTIV se přepnulo na
+  // nové Price ID, staré předplatné pořád běží na starém. Stripe ale u
+  // KAŽDÉ ceny (staré i nové) vrací recurring.interval spolehlivě, takže
+  // klasifikace funguje bez ohledu na to, jestli je Price ID "aktuální".
+  const r = resolvePlanBilling('active', future, 'year');
+  assert(r === 'yearly', `expected 'yearly' i pro starou cenu, got ${r}`);
 });
 
 // ── isStatusActiveOrGrace (sdílené s isSikulaPlanActive) ─────────────────────
