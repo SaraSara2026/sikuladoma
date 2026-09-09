@@ -9,8 +9,19 @@
 //
 // Spuštění: node scripts/test-plan-billing.js
 
-const { resolvePlanBilling, wouldDuplicateSubscription } = await import('../api/stripe.js');
+process.env.STRIPE_PRODUCT_AKTIV = 'prod_aktiv_test';
+process.env.STRIPE_PRODUCT_PLUS  = 'prod_plus_test';
+
+const { resolvePlanBilling, wouldDuplicateSubscription, planFromSubscription } = await import('../api/stripe.js');
 const { isStatusActiveOrGrace } = await import('../api/_plan.js');
+
+// Minimální fake Stripe subscription objekt — jen pole, která planFromSubscription čte.
+function fakeSub({ metaPlan, productId } = {}) {
+  return {
+    metadata: metaPlan != null ? { plan: metaPlan } : {},
+    items: { data: [{ price: { product: productId ?? null } }] },
+  };
+}
 
 let passed = 0, failed = 0;
 function test(label, fn) {
@@ -120,6 +131,42 @@ test('zrušeno s budoucím doběhem, žádá znovu stejný tarif → zablokovat 
 
 test('žádný tarif (start), žádá aktiv → povolit', () => {
   assert(wouldDuplicateSubscription('start', 'aktiv', 'inactive', null) === false);
+});
+
+// ── planFromSubscription (tarif podle metadata.plan / stabilního Product ID) ──
+
+test('metadata.plan je zdroj pravdy — nová subscripce z checkoutu', () => {
+  const r = planFromSubscription(fakeSub({ metaPlan: 'aktiv-plus' }));
+  assert(r === 'aktiv-plus', `expected 'aktiv-plus', got ${r}`);
+});
+
+test('metadata.plan neplatná hodnota → spadne na Product ID', () => {
+  const r = planFromSubscription(fakeSub({ metaPlan: 'neco-neplatneho', productId: process.env.STRIPE_PRODUCT_PLUS }));
+  assert(r === 'aktiv-plus', `expected fallback na product 'aktiv-plus', got ${r}`);
+});
+
+test('stará cena produktu Plus (bez metadata.plan) → zůstane aktiv-plus, ne aktiv', () => {
+  // Přesně požadovaný test: staré Price ID zmizelo z env, ale Product ID
+  // produktu Plus je pořád stejné, takže tarif se pozná správně.
+  const r = planFromSubscription(fakeSub({ productId: process.env.STRIPE_PRODUCT_PLUS }));
+  assert(r === 'aktiv-plus', `expected 'aktiv-plus', got ${r}`);
+});
+
+test('stará cena produktu Aktiv (bez metadata.plan) → zůstane aktiv', () => {
+  const r = planFromSubscription(fakeSub({ productId: process.env.STRIPE_PRODUCT_AKTIV }));
+  assert(r === 'aktiv', `expected 'aktiv', got ${r}`);
+});
+
+test('skutečně neznámý produkt (bez metadata, product nikam nesedí) → null, NE automatický aktiv', () => {
+  // Přesně požadovaný test: dřív by fallback `|| 'aktiv'` tohle tiše
+  // prohlásil za tarif Aktiv. Teď se nesmí hádat vůbec nic.
+  const r = planFromSubscription(fakeSub({ productId: 'prod_uplne_neznamy' }));
+  assert(r === null, `expected null (nehádat), got ${r}`);
+});
+
+test('žádná metadata, žádný product (prázdný/poškozený objekt) → null', () => {
+  const r = planFromSubscription(fakeSub({}));
+  assert(r === null, `expected null, got ${r}`);
 });
 
 console.log(`\n${passed} passed, ${failed} failed\n`);

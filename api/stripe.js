@@ -96,10 +96,29 @@ const ENV_NAMES = {
 // a záměrně tu chybí — jejich staré price ID se už na žádný plan nemapuje,
 // ať by ani starý/replayovaný webhook event nemohl zapsat neplatnou hodnotu
 // do users.plan (viz ACTIVE_PLAN_IDS).
-function planFromPriceId(priceId) {
-  if (!priceId) return null;
-  if (priceId === process.env.STRIPE_PRICE_AKTIV || priceId === process.env.STRIPE_PRICE_AKTIV_YEARLY) return 'aktiv';
-  if (priceId === process.env.STRIPE_PRICE_PLUS  || priceId === process.env.STRIPE_PRICE_PLUS_YEARLY)  return 'aktiv-plus';
+// Který TARIF (aktiv/aktiv-plus) předplatné patří — NIKDY hádáním přes
+// aktuální STRIPE_PRICE_* (ty rotují, viz 2026-09-08). V pořadí spolehlivosti:
+//
+// 1) sub.metadata.plan — appka ho ukládá sama při založení checkoutu
+//    (handleCheckout → subscription_data.metadata.plan), takže je to přesně
+//    to, co si zákazník koupil, bez ohledu na jakoukoliv pozdější změnu cen.
+// 2) Stripe Product ID položky předplatného (sub.items[0].price.product) —
+//    na rozdíl od Price ID je STABILNÍ i když pod stejným produktem vznikne
+//    nová cena. STRIPE_PRODUCT_AKTIV/STRIPE_PRODUCT_PLUS jsou produkty, ne
+//    ceny, takže se nemění při každé úpravě ceníku.
+// 3) Nejde-li určit ani jedno (starý/testovací/neznámý subscription bez
+//    metadat i bez rozpoznaného produktu) — vrátí se null. Volající NESMÍ
+//    v tom případě dosadit žádný default (zejména ne 'aktiv') — u staré
+//    Plus ceny nebo skutečně neznámého produktu by to byl tichý downgrade
+//    tarifu. Musí se místo toho nechat stávající users.plan beze změny.
+export function planFromSubscription(sub) {
+  const metaPlan = sub?.metadata?.plan;
+  if (ACTIVE_PLAN_IDS.has(metaPlan)) return metaPlan;
+
+  const productId = sub?.items?.data?.[0]?.price?.product;
+  if (productId && productId === process.env.STRIPE_PRODUCT_AKTIV) return 'aktiv';
+  if (productId && productId === process.env.STRIPE_PRODUCT_PLUS)  return 'aktiv-plus';
+
   return null;
 }
 
@@ -488,8 +507,12 @@ async function processEvent(event, sql) {
       const userId = Number(sub.metadata?.user_id);
       if (!userId) break;
 
-      const priceId = sub.items?.data?.[0]?.price?.id;
-      const plan = planFromPriceId(priceId) || 'aktiv';
+      const plan = planFromSubscription(sub);
+      if (plan === null) {
+        console.warn('[stripe/webhook] customer.subscription.updated: tarif se nedal určit (bez metadata.plan i bez rozpoznaného produktu) — users.plan se nemění', {
+          userId, subscriptionId: sub.id, priceId: sub.items?.data?.[0]?.price?.id,
+        });
+      }
 
       const expiresAt = sub.current_period_end
         ? new Date(sub.current_period_end * 1000).toISOString() : null;
@@ -506,14 +529,14 @@ async function processEvent(event, sql) {
       // jinak by u zrušeného předplatného bez doběhu zůstala zavádějící
       // "poslední známá" hodnota, jako by pořád něco platil (viz resolvePlanBilling).
       // Interval bereme přímo z ceny na položce předplatného, ne z priceId
-      // (ten se používá jen pro určení TARIFU/plan, viz planFromPriceId výše).
+      // (ten se používá jen pro určení TARIFU/plan, viz planFromSubscription výše).
       const planBilling = resolvePlanBilling(subStatus, expiresAt, sub.items?.data?.[0]?.price?.recurring?.interval);
 
       const [prev] = await sql`SELECT subscription_status FROM users WHERE id = ${userId}`;
 
       await sql`
         UPDATE users
-        SET plan                   = ${plan},
+        SET plan                   = COALESCE(${plan}, plan),
             plan_billing           = ${planBilling},
             stripe_subscription_id = ${sub.id},
             plan_expires_at        = ${expiresAt},
@@ -588,8 +611,7 @@ async function processEvent(event, sql) {
           if (sub.current_period_end) {
             expiresAt = new Date(sub.current_period_end * 1000).toISOString();
           }
-          const priceId = sub.items?.data?.[0]?.price?.id;
-          plan = planFromPriceId(priceId);
+          plan = planFromSubscription(sub);
         } catch (e) {
           console.warn('[stripe/webhook] Could not retrieve subscription for invoice:', e.message);
         }
