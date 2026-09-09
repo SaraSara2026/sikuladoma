@@ -605,6 +605,7 @@ async function processEvent(event, sql) {
 
       let expiresAt = null;
       let plan = null;
+      let planBilling = null;
       if (invoice.subscription) {
         try {
           const sub = await stripeRequest('GET', `/subscriptions/${invoice.subscription}`);
@@ -612,6 +613,12 @@ async function processEvent(event, sql) {
             expiresAt = new Date(sub.current_period_end * 1000).toISOString();
           }
           plan = planFromSubscription(sub);
+          // Úspěšná platba = subscription_status tady vždy 'active', takže
+          // resolvePlanBilling prakticky vždy vrátí období podle interval —
+          // tohle je zároveň přirozený samoopravný bod pro starší účty, co
+          // ještě plan_billing nemají (doplní se při nejbližší další platbě,
+          // ne až za cenu ruční zásahu/backfillu).
+          planBilling = resolvePlanBilling('active', expiresAt, sub.items?.data?.[0]?.price?.recurring?.interval);
         } catch (e) {
           console.warn('[stripe/webhook] Could not retrieve subscription for invoice:', e.message);
         }
@@ -622,6 +629,7 @@ async function processEvent(event, sql) {
         SET subscription_status = 'active',
             plan_expires_at      = COALESCE(${expiresAt}, plan_expires_at),
             plan                 = COALESCE(${plan}, plan),
+            plan_billing         = COALESCE(${planBilling}, plan_billing),
             updated_at           = NOW()
         WHERE id = ${user.id}
       `;
