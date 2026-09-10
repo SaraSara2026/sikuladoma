@@ -33,7 +33,12 @@ function flattenParams(obj, prefix = '') {
   return out;
 }
 
-async function stripeRequest(method, path, data) {
+// idempotencyKey je volitelný — používá se výhradně pro operace, kde by
+// zopakování stejného požadavku (ztracená odpověď, retry po timeoutu) mohlo
+// jinak vytvořit druhý vedlejší efekt (viz POST /refunds v
+// refundSubscriptionLatestInvoice). Stripe s ním vrátí přesně stejnou
+// odpověď jako napoprvé, aniž by akci provedl znovu.
+async function stripeRequest(method, path, data, idempotencyKey) {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) throw new Error('STRIPE_SECRET_KEY není nastaven.');
   const opts = {
@@ -43,6 +48,9 @@ async function stripeRequest(method, path, data) {
       'Stripe-Version': '2024-11-20.acacia',
     },
   };
+  if (idempotencyKey) {
+    opts.headers['Idempotency-Key'] = idempotencyKey;
+  }
   if (data) {
     opts.headers['Content-Type'] = 'application/x-www-form-urlencoded';
     opts.body = new URLSearchParams(flattenParams(data)).toString();
@@ -158,6 +166,53 @@ export function wouldDuplicateSubscription(userPlan, userPlanBilling, requestedP
   return userPlan === requestedPlan
     && userPlanBilling === requestedBilling
     && isStatusActiveOrGrace(subscriptionStatus, planExpiresAt);
+}
+
+// ── Ochrana proti opožděným/přeslechnutým webhookům (2026-09-09) ──────────────
+// Webhooky od Stripe nejsou garantovaně doručené v pořadí a mohou přijít i
+// opakovaně. Když uživatel přejde z předplatného A na B, dřívější kód
+// dopočítával "co zapsat" ze SELECTu a pak zapsal UPDATEm — mezi tím se ale
+// mohl stihnout zpracovat jiný event (typicky deleted/updated/invoice pro A,
+// vyvolaný naším vlastním zrušením A), a nevědomky přepsat B zpátky na
+// zrušené. Řešení: každý zápis v processEvent níže musí mít v samotném SQL
+// WHERE podmínku na stripe_subscription_id, aby se UPDATE aplikoval jen
+// tehdy, když se opravdu týká předplatného, které je PRÁVĚ TEĎ (atomicky, v
+// okamžiku zápisu) uložené jako uživatelovo. Funkce níže jsou čisté zrcadlo
+// těch SQL podmínek — testovatelné bez DB — ale o samotnou atomicitu se za
+// běhu stará vždy přímo Postgres WHERE, ne tahle JS funkce (ta by se dala
+// obejít souběžností stejně jako původní SELECT-then-UPDATE).
+
+// checkout.session.completed: zápis smí projít, jen když je uživatelovo
+// AKTUÁLNÍ stripe_subscription_id pořád stejné, jako bylo v okamžiku
+// VYTVOŘENÍ tohohle checkoutu (běžný případ, včetně null→null u úplně
+// prvního předplatného), NEBO už je rovnou rovné tomuhle novému předplatnému
+// (opakované/duplicitní doručení stejného eventu — bezpečné zapsat znovu).
+// Cokoliv jiného znamená, že mezitím proběhl JINÝ, novější checkout.
+export function checkoutCompletionShouldApply(currentSubscriptionId, previousSubscriptionId, incomingSubscriptionId) {
+  return currentSubscriptionId === previousSubscriptionId || currentSubscriptionId === incomingSubscriptionId;
+}
+
+// updated/deleted/invoice.*: zápis smí projít, jen když je událost o
+// předplatném, které je aktuálně uložené jako uživatelovo.
+export function subscriptionEventShouldApply(currentSubscriptionId, eventSubscriptionId) {
+  return currentSubscriptionId === eventSubscriptionId;
+}
+
+// Zrušení předplatného u Stripe musí jít bezpečně zopakovat. Pokud je
+// předplatné už zrušené (ať už naším dřívějším úspěšným pokusem, nebo
+// jakoukoliv jinou cestou) nebo už vůbec neexistuje, Stripe na DELETE
+// odpoví chybou — to se ale musí počítat jako ÚSPĚCH (cílový stav "staré
+// předplatné neběží" je splněný), jinak by retry nikdy neskončil úspěchem.
+export function isAlreadyCanceledError(message) {
+  return /already.*cancel/i.test(message || '') || /no such subscription/i.test(message || '');
+}
+
+// Stejná logika pro refundaci (2026-09-10) — Stripe odmítne vrátit platbu,
+// která je už celá vrácená, chybou obsahující "already ... refunded" — i to
+// je nutné brát jako ÚSPĚCH (cílový stav "zákazník peníze dostal zpátky" je
+// splněný), jinak by se retry nikdy nezastavil.
+export function isAlreadyRefundedError(message) {
+  return /already.*refund/i.test(message || '');
 }
 
 const PLAN_NAMES = {
@@ -321,7 +376,13 @@ async function handleCheckout(req, res, me, sql) {
   }
 
   const origin = req.headers.origin || req.headers.referer?.replace(/\/$/, '') || 'https://sikuladoma.vercel.app';
-  const [user] = await sql`SELECT stripe_customer_id FROM users WHERE id = ${me.id}`;
+  const [user] = await sql`SELECT stripe_customer_id, stripe_subscription_id FROM users WHERE id = ${me.id}`;
+  // Snímek uživatelova AKTUÁLNÍHO předplatného v okamžiku vytvoření tohohle
+  // checkoutu — uloží se do metadat checkoutu i nového předplatného, aby ho
+  // webhook (checkout.session.completed) mohl bezpečně zrušit po úspěšném
+  // přechodu, a aby šlo poznat opožděný/duplicitní event ze STARŠÍHO checkoutu
+  // (viz checkoutCompletionShouldApply výše).
+  const previousSubscriptionId = user?.stripe_subscription_id || null;
 
   // Zajistíme Stripe Customera s preferred_locales=['cs'] — session `locale` (níže)
   // ovlivňuje jen platební stránku, ale e-maily s fakturou/účtenkou od Stripe
@@ -350,10 +411,13 @@ async function handleCheckout(req, res, me, sql) {
     // by to poslalo na homepage místo zpět do jeho dashboardu.
     success_url: `${origin}/?page=dashboard&stripe=success&plan=${plan}&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/?page=dashboard&stripe=cancel`,
-    metadata: { user_id: String(me.id), plan },
+    metadata: { user_id: String(me.id), plan, previous_subscription_id: previousSubscriptionId || undefined },
     payment_method_types: ['card'],
     locale: 'cs',
-    subscription_data: { metadata: { user_id: String(me.id), plan }, default_tax_rates: [taxRateId] },
+    subscription_data: {
+      metadata: { user_id: String(me.id), plan, previous_subscription_id: previousSubscriptionId || undefined },
+      default_tax_rates: [taxRateId],
+    },
   };
 
   if (customerId) {
@@ -447,15 +511,140 @@ async function notifyPlanCancelled(sql, userId, expiresAt) {
   }
 }
 
-// ── Zpracování Stripe eventů ───────────────────────────────────────────────────
+// ── Bezpečně opakovatelné rušení starého předplatného ─────────────────────────
+//
+// stripeRequestFn je vždy injektovaný parametr (výchozí = skutečný
+// stripeRequest) — testy v scripts/test-plan-billing.js si sem dosadí fake
+// implementaci a ověří chování bez skutečného volání Stripe API.
 
-async function processEvent(event, sql) {
+export async function cancelSubscriptionSafely(subscriptionId, stripeRequestFn) {
+  try {
+    await stripeRequestFn('DELETE', `/subscriptions/${subscriptionId}`);
+    return { ok: true };
+  } catch (e) {
+    if (isAlreadyCanceledError(e.message)) {
+      return { ok: true, alreadyCanceled: true };
+    }
+    return { ok: false, error: e.message };
+  }
+}
+
+// Rušení STARÉHO předplatného v rámci ZÁMĚRNÉHO, potvrzeného přepnutí tarifu
+// (uživatel si vědomě koupil jiný/jiné období, staré se ihned ruší BEZ
+// refundace nevyužitého zbytku — potvrzeno 2026-09-09) se od zrušení
+// SKUTEČNĚ duplicitního/odmítnutého předplatného (viz refundSubscriptionLatestInvoice
+// níže) liší v tom, že se tady navíc na staré předplatné natrvalo poznačí
+// superseded_by. Tenhle marker je nezávislý na live stavu (`status`), který
+// naše vlastní zrušení stejně změní — díky tomu jde spolehlivě odlišit
+// "tohle bylo záměrně nahrazeno, refundace se NESMÍ dít" i při opožděném/
+// opakovaném doručení STARÉHO checkoutu dlouho po přepnutí (viz nález
+// 2026-09-10: bez tohohle markeru by orphan-větev níže mohla omylem
+// refundovat dávno vyřešený, záměrně zrušený přechod).
+async function cancelSupersededSubscription(oldSubscriptionId, newSubscriptionId, stripeRequestFn) {
+  const result = await cancelSubscriptionSafely(oldSubscriptionId, stripeRequestFn);
+  if (result.ok) {
+    try {
+      await stripeRequestFn('POST', `/subscriptions/${oldSubscriptionId}`, {
+        metadata: { superseded_by: newSubscriptionId },
+      });
+    } catch (e) {
+      console.warn(`[stripe/webhook] nepodařilo se označit ${oldSubscriptionId} jako superseded_by ${newSubscriptionId} (nekritické, jen diagnostický marker):`, e.message);
+    }
+  }
+  return result;
+}
+
+// Vrátí platbu za poslední fakturu SKUTEČNĚ duplicitního/odmítnutého
+// předplatného — na rozdíl od záměrného přepnutí tarifu (viz
+// cancelSupersededSubscription výše) tady zákazník za tohle předplatné
+// nedostal a nikdy nedostane žádnou službu, takže "bez refundace nevyužitého
+// zbytku" pravidlo (potvrzeno 2026-09-09) se sem NEVZTAHUJE — muselo by jít
+// jen o skutečně nevyužitý ZBYTEK PLATNÉHO tarifu, ne o celou zaplacenou,
+// ale nikdy neposkytnutou službu.
+export async function refundSubscriptionLatestInvoice(subscriptionId, stripeRequestFn) {
+  try {
+    const sub = await stripeRequestFn('GET', `/subscriptions/${subscriptionId}`);
+    const invoiceId = sub.latest_invoice;
+    if (!invoiceId) return { ok: true, skipped: true };
+
+    const invoice = await stripeRequestFn('GET', `/invoices/${invoiceId}`);
+    const paymentIntentId = invoice.payment_intent;
+    if (!paymentIntentId || !invoice.amount_paid) return { ok: true, skipped: true };
+
+    // Stabilní Idempotency Key odvozený jen z ID duplicitního předplatného —
+    // žádný e-mail ani jiný osobní údaj. I kdyby Stripe refundaci provedl, ale
+    // odpověď se ztratila (timeout, výpadek sítě) a webhook se kvůli tomu
+    // zopakoval, druhé volání se STEJNÝM klíčem u Stripe nezaloží druhou
+    // refundaci — vrátí se přesně stejná odpověď jako napoprvé.
+    // isAlreadyRefundedError níže zůstává jako druhá pojistka (např. pro
+    // případ, kdy by z nějakého důvodu klíč chyběl nebo se nepoužil).
+    const idempotencyKey = `duplicate-subscription-refund:${subscriptionId}`;
+    await stripeRequestFn('POST', '/refunds', { payment_intent: paymentIntentId }, idempotencyKey);
+    return { ok: true };
+  } catch (e) {
+    if (isAlreadyRefundedError(e.message)) {
+      return { ok: true, alreadyRefunded: true };
+    }
+    return { ok: false, error: e.message };
+  }
+}
+
+// Vyčistí marker previous_subscription_id z metadat NOVÉHO předplatného,
+// jakmile se staré úspěšně zrušilo — prázdný string ve Stripe metadatech
+// znamená "smaž tenhle klíč". Bez tohohle by retryPendingCancellation
+// zkoušel rušit už zrušené předplatné při každé další události donekonečna
+// (neškodilo by to — viz isAlreadyCanceledError — ale zbytečně by to plnilo
+// logy).
+async function clearPreviousSubscriptionMarker(subscriptionId, stripeRequestFn) {
+  try {
+    await stripeRequestFn('POST', `/subscriptions/${subscriptionId}`, {
+      metadata: { previous_subscription_id: '' },
+    });
+  } catch (e) {
+    console.warn(`[stripe/webhook] nepodařilo se vyčistit previous_subscription_id metadata u ${subscriptionId}:`, e.message);
+  }
+}
+
+// Voláno z updated/invoice handlerů PO úspěšném zápisu do DB (tedy jen když
+// se událost prokazatelně týká uživatelova aktuálního předplatného) — pokud
+// tohle předplatné pořád nese metadata.previous_subscription_id (znamená to,
+// že dřívější pokus o zrušení starého předplatného v checkout.session.completed
+// selhal a ID se schválně nezahodilo, viz handleCheckout), zkusí se zrušení
+// zopakovat. Každá další Stripe událost pro tohle předplatné (invoice každý
+// měsíc, updated při jakékoliv změně) je tak přirozenou příležitostí k retry,
+// aniž by bylo potřeba vlastní cron/frontu.
+async function retryPendingCancellation(sub, stripeRequestFn) {
+  const prevId = sub.metadata?.previous_subscription_id;
+  if (!prevId || prevId === sub.id) return;
+
+  const result = await cancelSupersededSubscription(prevId, sub.id, stripeRequestFn);
+  if (result.ok) {
+    console.log(`[stripe/webhook] staré předplatné ${prevId} doklizeno (retry) při zpracování ${sub.id}${result.alreadyCanceled ? ' — už bylo zrušené' : ''}`);
+    await clearPreviousSubscriptionMarker(sub.id, stripeRequestFn);
+  } else {
+    console.error(`[stripe/webhook] KRITICKÉ — opakovaný pokus zrušit staré předplatné ${prevId} pro aktuální ${sub.id} stále selhává, zkusí se znovu při příští události:`, result.error);
+  }
+}
+
+// ── Zpracování Stripe eventů ───────────────────────────────────────────────────
+//
+// stripeRequestFn injektovaný stejně jako u helperů výše — v produkci vždy
+// skutečný stripeRequest (výchozí hodnota), v testech fake bez síťového volání.
+
+export async function processEvent(event, sql, stripeRequestFn = stripeRequest) {
   switch (event.type) {
 
     case 'checkout.session.completed': {
       const session = event.data.object;
       const userId = Number(session.metadata?.user_id);
       const plan   = session.metadata?.plan || 'aktiv';
+      // Snímek uživatelova stripe_subscription_id z OKAMŽIKU VYTVOŘENÍ
+      // tohohle checkoutu (viz handleCheckout) — ne jeho aktuální hodnota.
+      // Díky tomu níže atomická podmínka v UPDATE pozná, jestli mezitím
+      // (typicky souběžným novějším checkoutem) nedošlo k přechodu na jiné
+      // předplatné, a tenhle opožděný/duplicitní event ho nepřepíše.
+      const previousSubscriptionId = session.metadata?.previous_subscription_id || null;
+
       if (!userId) {
         console.warn('[stripe/webhook] checkout.session.completed bez metadata.user_id — přeskočeno', session.id);
         break;
@@ -473,34 +662,34 @@ async function processEvent(event, sql) {
 
       const customerId     = session.customer;
       const subscriptionId = session.subscription;
+      if (!subscriptionId) {
+        console.warn('[stripe/webhook] checkout.session.completed bez subscription id — přeskočeno', session.id);
+        break;
+      }
 
       let expiresAt = null;
       let planBilling = null;
-
-      if (subscriptionId) {
-        try {
-          const sub = await stripeRequest('GET', `/subscriptions/${subscriptionId}`);
-          if (sub.current_period_end) {
-            expiresAt = new Date(sub.current_period_end * 1000).toISOString();
-          }
-          // subscription_status se tady vždy zapisuje jako 'active' (viz UPDATE
-          // níže) — resolvePlanBilling to dostává explicitně, ať se řídí stejným
-          // pravidlem jako ostatní dva webhooky, ne natvrdo billingFromInterval.
-          planBilling = resolvePlanBilling('active', expiresAt, sub.items?.data?.[0]?.price?.recurring?.interval);
-        } catch (e) {
-          console.warn('[stripe/webhook] Could not retrieve subscription:', e.message);
+      let sub = null;
+      try {
+        sub = await stripeRequestFn('GET', `/subscriptions/${subscriptionId}`);
+        if (sub.current_period_end) {
+          expiresAt = new Date(sub.current_period_end * 1000).toISOString();
         }
+        // subscription_status se tady vždy zapisuje jako 'active' (viz UPDATE
+        // níže) — resolvePlanBilling to dostává explicitně, ať se řídí stejným
+        // pravidlem jako ostatní webhooky, ne natvrdo billingFromInterval.
+        planBilling = resolvePlanBilling('active', expiresAt, sub.items?.data?.[0]?.price?.recurring?.interval);
+      } catch (e) {
+        console.warn('[stripe/webhook] Could not retrieve subscription:', e.message);
       }
 
-      // Přečíst PŘED update — potřeba znát staré předplatné (jiná varianta
-      // stejného nebo jiného tarifu), abychom ho po úspěšném přechodu na
-      // tohle nové mohli zrušit. wouldDuplicateSubscription v handleCheckout
-      // propouští přepnutí tarifu/období dál právě proto, že souběžnost se
-      // řeší až tady, ne blokováním na vstupu.
-      const [existingUser] = await sql`SELECT stripe_subscription_id FROM users WHERE id = ${userId}`;
-      const oldSubscriptionId = existingUser?.stripe_subscription_id;
-
-      await sql`
+      // Atomická podmínka nahrazuje dřívější SELECT-then-UPDATE (race
+      // condition, viz nález 2026-09-09). Zapíše se jen tehdy, když
+      // checkoutCompletionShouldApply platí — viz definice výše. IS NOT
+      // DISTINCT FROM (místo obyčejného =) je nutné, aby se správně
+      // porovnávalo i null (úplně první předplatné uživatele).
+      const rows = await sql`
+        -- webhook: checkout.session.completed
         UPDATE users
         SET plan                   = ${plan},
             plan_billing           = ${planBilling},
@@ -510,18 +699,66 @@ async function processEvent(event, sql) {
             subscription_status    = 'active',
             updated_at             = NOW()
         WHERE id = ${userId}
+          AND (
+            stripe_subscription_id IS NOT DISTINCT FROM ${previousSubscriptionId}
+            OR stripe_subscription_id = ${subscriptionId}
+          )
+        RETURNING id
       `;
+
+      if (rows.length === 0) {
+        // Uživatel má v DB uložené jiné (novější) předplatné, než jaké bylo
+        // aktuální v okamžiku vytvoření tohohle checkoutu — tohle je
+        // opožděný nebo duplicitní checkout.session.completed ze staršího
+        // checkoutu. Nesmí přepsat aktuální stav; místo toho se zruší TOHLE
+        // (teď osiřelé) předplatné, aby uživateli nezůstala dvě souběžně placená.
+        console.warn(`[stripe/webhook] checkout.session.completed pro user ${userId}: DB má jiné aktuální stripe_subscription_id, než odpovídá tomuto checkoutu (očekáváno ${previousSubscriptionId ?? 'null'}) — nepřepisuji, ruším osiřelé duplicitní předplatné ${subscriptionId}`);
+        const cancelResult = await cancelSubscriptionSafely(subscriptionId, stripeRequestFn);
+        if (!cancelResult.ok) {
+          console.error(`[stripe/webhook] KRITICKÉ — nepodařilo se zrušit osiřelé duplicitní předplatné ${subscriptionId} pro user ${userId}:`, cancelResult.error);
+          // Selhání nesmí čekat na náhodnou další událost — nahlásit webhook
+          // jako neúspěšný, ať ho Stripe brzy (řádově minuty, ne dny) doručí
+          // znovu. Atomický guard výše zaručuje, že je opakování bezpečné.
+          throw new Error(`Cancellation of orphaned duplicate subscription ${subscriptionId} failed, will retry on webhook redelivery: ${cancelResult.error}`);
+        }
+
+        // superseded_by je natrvalo poznačené markerem u předplatných, která
+        // byla ZÁMĚRNĚ nahrazená v rámci potvrzeného přepnutí tarifu (viz
+        // cancelSupersededSubscription) — u takových se refundace NESMÍ dít,
+        // protože zákazník je za dobu, kdy platila, reálně využíval (jen se
+        // nevrací nevyužitý zbytek, potvrzeno 2026-09-09). Bez markeru jde o
+        // opravdovou, nikdy neposkytnutou duplicitu — zaplaceno, ale
+        // uživatel z toho nic nemá, takže se to musí vrátit, ne jen zrušit.
+        if (sub?.metadata?.superseded_by) {
+          console.log(`[stripe/webhook] checkout.session.completed pro user ${userId}: osiřelé předplatné ${subscriptionId} bylo dřív záměrně nahrazeno (superseded_by=${sub.metadata.superseded_by}) — beze refundace, jde o starý/vyřešený přechod, ne o novou duplicitu`);
+        } else {
+          const refundResult = await refundSubscriptionLatestInvoice(subscriptionId, stripeRequestFn);
+          if (!refundResult.ok) {
+            console.error(`[stripe/webhook] KRITICKÉ — uživatel ${userId} zaplatil duplicitní předplatné ${subscriptionId}, které bylo zrušeno, ale platbu se nepodařilo vrátit:`, refundResult.error);
+            throw new Error(`Refund of orphaned duplicate subscription ${subscriptionId} failed, will retry on webhook redelivery: ${refundResult.error}`);
+          } else if (!refundResult.skipped) {
+            console.log(`[stripe/webhook] User ${userId}: platba za duplicitní předplatné ${subscriptionId} byla vrácena (${refundResult.alreadyRefunded ? 'už byla vrácená dřív' : 'nová refundace'})`);
+          }
+        }
+        break;
+      }
+
       console.log(`[stripe] User ${userId} aktivován: ${plan}`);
 
-      if (oldSubscriptionId && oldSubscriptionId !== subscriptionId) {
-        try {
-          await stripeRequest('DELETE', `/subscriptions/${oldSubscriptionId}`);
-          console.log(`[stripe/webhook] User ${userId}: staré předplatné ${oldSubscriptionId} zrušeno (nahrazeno ${subscriptionId})`);
-        } catch (e) {
-          // Nejde jen tiše přejít — bez zrušení tady hrozí, že uživatel platí
-          // dvě předplatná souběžně. Log je záměrně výrazný, ať se to dá
-          // dohledat i bez podrobného procházení běžných [stripe] logů.
-          console.error(`[stripe/webhook] KRITICKÉ — nepodařilo se zrušit staré předplatné ${oldSubscriptionId} pro user ${userId} po přechodu na ${subscriptionId}, možná souběžná platba:`, e.message);
+      if (previousSubscriptionId && previousSubscriptionId !== subscriptionId) {
+        const cancelResult = await cancelSupersededSubscription(previousSubscriptionId, subscriptionId, stripeRequestFn);
+        if (cancelResult.ok) {
+          console.log(`[stripe/webhook] User ${userId}: staré předplatné ${previousSubscriptionId} zrušeno (nahrazeno ${subscriptionId})`);
+        } else {
+          // previous_subscription_id zůstává uložené v metadatech NOVÉHO
+          // předplatného (nastaveno v handleCheckout) — staré ID se tedy
+          // neztrácí. Selhání navíc nesmí čekat na náhodnou další (třeba i
+          // za měsíc splatnou) událost — vrácením chyby webhook odpoví
+          // neúspěchem a Stripe stejný checkout.session.completed brzy
+          // (řádově minuty) doručí znovu; atomický guard výše zaručuje, že
+          // je opakované zpracování bezpečné (idempotentní).
+          console.error(`[stripe/webhook] KRITICKÉ — nepodařilo se zrušit staré předplatné ${previousSubscriptionId} pro user ${userId} po přechodu na ${subscriptionId}, zkusí se znovu při rychlém opakovaném doručení webhooku:`, cancelResult.error);
+          throw new Error(`Cancellation of superseded subscription ${previousSubscriptionId} failed, will retry on webhook redelivery: ${cancelResult.error}`);
         }
       }
       break;
@@ -557,18 +794,35 @@ async function processEvent(event, sql) {
       // (ten se používá jen pro určení TARIFU/plan, viz planFromSubscription výše).
       const planBilling = resolvePlanBilling(subStatus, expiresAt, sub.items?.data?.[0]?.price?.recurring?.interval);
 
+      // Čistě informativní SELECT pro dedup e-mailu o zrušení (viz níže) —
+      // na rozdíl od dřívějšího SELECT-then-UPDATE tady stará hodnota
+      // NEROZHODUJE, jestli/co se zapíše (to hlídá výhradně WHERE v UPDATu
+      // pod tím), takže i kdyby byla mezitím zastaralá, nejhorší důsledek je
+      // chybějící/duplicitní e-mail, ne poškozený stav předplatného.
       const [prev] = await sql`SELECT subscription_status FROM users WHERE id = ${userId}`;
 
-      await sql`
+      // Atomická podmínka (subscriptionEventShouldApply výše): zapsat smí,
+      // jen když je tahle událost o předplatném, které je PRÁVĚ TEĎ uložené
+      // jako uživatelovo aktuální — jinak by opožděná událost o STARÉM, už
+      // nahrazeném předplatném mohla přepsat čerstvě aktivní nové (přesně
+      // nález z 2026-09-09).
+      const rows = await sql`
+        -- webhook: customer.subscription.updated
         UPDATE users
         SET plan                   = COALESCE(${plan}, plan),
             plan_billing           = ${planBilling},
-            stripe_subscription_id = ${sub.id},
             plan_expires_at        = ${expiresAt},
             subscription_status    = ${subStatus},
             updated_at             = NOW()
-        WHERE id = ${userId}
+        WHERE id = ${userId} AND stripe_subscription_id = ${sub.id}
+        RETURNING id
       `;
+
+      if (rows.length === 0) {
+        console.warn(`[stripe/webhook] customer.subscription.updated pro ${sub.id} (user ${userId}): neshoduje se s aktuálním stripe_subscription_id v DB — přeskočeno (staré/nahrazené předplatné)`);
+        break;
+      }
+
       console.log(`[stripe] User ${userId} subscription updated: ${subStatus}`);
 
       // E-mail + zdroj pro "Oznámení" jen při skutečném přechodu do
@@ -577,6 +831,11 @@ async function processEvent(event, sql) {
       if (subStatus === 'cancelled' && prev?.subscription_status !== 'cancelled') {
         await notifyPlanCancelled(sql, userId, expiresAt);
       }
+
+      // Self-healing retry dřívějšího neúspěšného zrušení STARÉHO předplatného
+      // (viz retryPendingCancellation) — bezpečné volat při každé aktualizaci
+      // tohohle (aktuálního) předplatného.
+      await retryPendingCancellation(sub, stripeRequestFn);
       break;
     }
 
@@ -594,6 +853,8 @@ async function processEvent(event, sql) {
       const expiresAt = sub.current_period_end
         ? new Date(sub.current_period_end * 1000).toISOString() : null;
 
+      // Stejně jako u updated — čistě informativní SELECT, atomicitu zápisu
+      // hlídá výhradně WHERE v UPDATu pod tím.
       const [prev] = await sql`SELECT subscription_status, plan_expires_at FROM users WHERE id = ${userId}`;
 
       // Gate na plan_billing musí použít stejnou expiraci, co skutečně skončí
@@ -602,15 +863,29 @@ async function processEvent(event, sql) {
       const finalExpiresAt = expiresAt || prev?.plan_expires_at || null;
       const planBilling = resolvePlanBilling('cancelled', finalExpiresAt, sub.items?.data?.[0]?.price?.recurring?.interval);
 
-      await sql`
+      // NEJDŮLEŽITĚJŠÍ místo z celého nálezu 2026-09-09: naše vlastní
+      // DELETE /subscriptions/:oldId (checkout.session.completed výše /
+      // cancelSubscriptionSafely) vyvolá u Stripe přesně tenhle event pro
+      // STARÉ předplatné. Bez podmínky na stripe_subscription_id by přepsal
+      // čerstvě aktivní NOVÉ předplatné na 'cancelled', jen proto, že přišel
+      // o pár vteřin později.
+      const rows = await sql`
+        -- webhook: customer.subscription.deleted
         UPDATE users
         SET stripe_subscription_id = NULL,
             plan_billing           = ${planBilling},
             plan_expires_at        = COALESCE(${expiresAt}, plan_expires_at),
             subscription_status    = 'cancelled',
             updated_at             = NOW()
-        WHERE id = ${userId}
+        WHERE id = ${userId} AND stripe_subscription_id = ${sub.id}
+        RETURNING id
       `;
+
+      if (rows.length === 0) {
+        console.warn(`[stripe/webhook] customer.subscription.deleted pro ${sub.id} (user ${userId}): neshoduje se s aktuálním stripe_subscription_id v DB — přeskočeno (uživatel má už novější předplatné)`);
+        break;
+      }
+
       console.log(`[stripe] User ${userId} subscription deleted -> cancelled`);
 
       if (prev?.subscription_status !== 'cancelled') {
@@ -622,7 +897,7 @@ async function processEvent(event, sql) {
     case 'invoice.paid':
     case 'invoice.payment_succeeded': {
       const invoice = event.data.object;
-      const [user] = await sql`SELECT id FROM users WHERE stripe_customer_id = ${invoice.customer}`;
+      const [user] = await sql`SELECT id, stripe_subscription_id FROM users WHERE stripe_customer_id = ${invoice.customer}`;
       if (!user) {
         console.warn(`[stripe/webhook] ${event.type}: uživatel pro customer ${invoice.customer} nenalezen`);
         break;
@@ -631,9 +906,10 @@ async function processEvent(event, sql) {
       let expiresAt = null;
       let plan = null;
       let planBilling = null;
+      let sub = null;
       if (invoice.subscription) {
         try {
-          const sub = await stripeRequest('GET', `/subscriptions/${invoice.subscription}`);
+          sub = await stripeRequestFn('GET', `/subscriptions/${invoice.subscription}`);
           if (sub.current_period_end) {
             expiresAt = new Date(sub.current_period_end * 1000).toISOString();
           }
@@ -649,16 +925,43 @@ async function processEvent(event, sql) {
         }
       }
 
-      await sql`
-        UPDATE users
-        SET subscription_status = 'active',
-            plan_expires_at      = COALESCE(${expiresAt}, plan_expires_at),
-            plan                 = COALESCE(${plan}, plan),
-            plan_billing         = COALESCE(${planBilling}, plan_billing),
-            updated_at           = NOW()
-        WHERE id = ${user.id}
-      `;
+      // Faktura se vždycky váže ke KONKRÉTNÍMU předplatnému (invoice.subscription).
+      // Pokud se neshoduje s aktuálně uloženým stripe_subscription_id
+      // uživatele, jde o opožděnou fakturu ze STARÉHO, už nahrazeného
+      // předplatného (typicky poslední fakturovaný cyklus těsně před
+      // přechodem na nové) — nesmí přepsat aktuální/novější stav. Chybí-li
+      // invoice.subscription úplně (mimo-subscripční faktura), guard na
+      // stripe_subscription_id se nepoužije, jen se potvrdí status 'active'.
+      const rows = invoice.subscription
+        ? await sql`
+            -- webhook: invoice.paid (subscription)
+            UPDATE users
+            SET subscription_status = 'active',
+                plan_expires_at      = COALESCE(${expiresAt}, plan_expires_at),
+                plan                 = COALESCE(${plan}, plan),
+                plan_billing         = COALESCE(${planBilling}, plan_billing),
+                updated_at           = NOW()
+            WHERE id = ${user.id} AND stripe_subscription_id = ${invoice.subscription}
+            RETURNING id
+          `
+        : await sql`
+            -- webhook: invoice.paid (no subscription)
+            UPDATE users
+            SET subscription_status = 'active', updated_at = NOW()
+            WHERE id = ${user.id}
+            RETURNING id
+          `;
+
+      if (rows.length === 0) {
+        console.warn(`[stripe/webhook] ${event.type} pro subscription ${invoice.subscription} (user ${user.id}): neshoduje se s aktuálním stripe_subscription_id — přeskočeno (opožděná faktura ze starého předplatného)`);
+        break;
+      }
+
       console.log(`[stripe] User ${user.id} invoice paid (${event.type}) — subscription_status active`);
+
+      if (sub) {
+        await retryPendingCancellation(sub, stripeRequestFn);
+      }
       break;
     }
 
@@ -666,7 +969,25 @@ async function processEvent(event, sql) {
       const invoice = event.data.object;
       const [user] = await sql`SELECT id FROM users WHERE stripe_customer_id = ${invoice.customer}`;
       if (user) {
-        await sql`UPDATE users SET subscription_status = 'payment_failed', updated_at = NOW() WHERE id = ${user.id}`;
+        // Stejný guard jako u invoice.paid výše — opožděné payment_failed ze
+        // STARÉHO, už nahrazeného předplatného nesmí označit aktuální,
+        // mezitím úspěšně aktivované předplatné jako "platba selhala".
+        const rows = invoice.subscription
+          ? await sql`
+              -- webhook: invoice.payment_failed (subscription)
+              UPDATE users SET subscription_status = 'payment_failed', updated_at = NOW()
+              WHERE id = ${user.id} AND stripe_subscription_id = ${invoice.subscription}
+              RETURNING id
+            `
+          : await sql`
+              -- webhook: invoice.payment_failed (no subscription)
+              UPDATE users SET subscription_status = 'payment_failed', updated_at = NOW()
+              WHERE id = ${user.id}
+              RETURNING id
+            `;
+        if (rows.length === 0) {
+          console.warn(`[stripe/webhook] invoice.payment_failed pro subscription ${invoice.subscription} (user ${user.id}): neshoduje se s aktuálním stripe_subscription_id — přeskočeno (stará/nahrazená)`);
+        }
       }
       console.warn(`[stripe] Payment failed pro customer ${invoice.customer}`);
       break;
