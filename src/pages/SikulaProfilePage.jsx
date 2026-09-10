@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { usersApi } from '../lib/api';
 import { CATEGORIES } from '../lib/categories';
 import PageMeta from '../components/PageMeta';
+import InsuranceBadge from '../components/InsuranceBadge';
 
 const SVC_LABEL = Object.fromEntries(CATEGORIES.map(c => [c.id, c.label]));
 
@@ -98,6 +99,7 @@ export default function SikulaProfilePage({ id, onBack, onOrder }) {
                     používání dashboardu), veřejně se nezobrazuje jako samostatný
                     benefit — jen souhrnný odznak "Ověřený šikula". */}
                 {user.verified && <span style={{ background: '#F0FDF4', color: '#16A34A', padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>✓ Ověřený šikula</span>}
+                {user.has_liability_insurance && <InsuranceBadge style={{ fontSize: 12, padding: '4px 10px' }} />}
                 {/* Tarif/plán je interní údaj — nezobrazuje se veřejně. */}
                 {summary?.total > 0 && (
                   <span style={{ background: '#FFF7ED', color: '#C2410C', padding: '4px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>

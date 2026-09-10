@@ -62,7 +62,7 @@ async function doLogin(req, res) {
            ico, services, plan, plan_billing, stripe_customer_id, stripe_subscription_id,
            plan_expires_at, verified, email_verified_at, rating, jobs_count,
            bio, hourly_rate, platce_dph, subscription_status, trial_ends_at,
-           worker_type, street, zip, city_area
+           worker_type, street, zip, city_area, has_liability_insurance
     FROM users WHERE email = ${String(email).toLowerCase()}
   `;
   if (!user) return res.status(401).json({ error: 'Nesprávný e-mail nebo heslo.' });
@@ -104,7 +104,7 @@ async function doRegister(req, res) {
 
   const {
     email, password, name, role = 'customer', phone, city, services,
-    worker_type, street, zip, city_area, ico,
+    worker_type, street, zip, city_area, ico, has_liability_insurance,
   } = req.body ?? {};
 
   if (!email || !EMAIL_RE.test(email))         return res.status(400).json({ error: 'Neplatný e-mail.' });
@@ -141,6 +141,12 @@ async function doRegister(req, res) {
       return res.status(400).json({ error: 'Zadejte IČO.' });
     }
     if (svc.length === 0) return res.status(400).json({ error: 'Vyberte alespoň jednu službu, kterou nabízíte.' });
+    // Povinná otázka na pojištění odpovědnosti — musí přijít jako explicitní
+    // true/false (frontend RegForm.jsx to vynucuje výběrem jedné ze dvou
+    // možností), ne jen "chybí = false", ať se nedá obejít vynecháním pole.
+    if (typeof has_liability_insurance !== 'boolean') {
+      return res.status(400).json({ error: 'Odpovězte, zda máte pojištění odpovědnosti.' });
+    }
   }
 
   const [existing] = await sql`SELECT id FROM users WHERE email = ${email.toLowerCase()}`;
@@ -152,6 +158,7 @@ async function doRegister(req, res) {
   const finalZip        = isSikula ? String(zip || '').trim() : null;
   const finalCityArea   = isSikula ? String(city_area || '').trim() : null;
   const finalIco        = isSikula && worker_type === 'zivnostnik_firma' ? String(ico || '').trim() : null;
+  const finalHasInsurance = isSikula ? Boolean(has_liability_insurance) : false;
   // `city` (legacy) necháváme dál naplněné — jen veřejně bezpečnou hodnotou
   // (city_area), ne celou adresou. Používá ho např. dohledání poptávek v
   // okolí a admin přehled; veřejné profily už ho nečtou vůbec.
@@ -161,15 +168,15 @@ async function doRegister(req, res) {
   const [user] = await sql`
     INSERT INTO users (
       email, password_hash, role, name, phone, city, services,
-      worker_type, street, zip, city_area, ico
+      worker_type, street, zip, city_area, ico, has_liability_insurance
     )
     VALUES (
       ${email.toLowerCase()}, ${password_hash}, ${role}, ${name.trim()}, ${phone || null}, ${finalCity}, ${svc},
-      ${finalWorkerType}, ${finalStreet}, ${finalZip}, ${finalCityArea}, ${finalIco}
+      ${finalWorkerType}, ${finalStreet}, ${finalZip}, ${finalCityArea}, ${finalIco}, ${finalHasInsurance}
     )
     RETURNING id, email, role, name, phone, city, avatar, plan, plan_billing, verified, email_verified_at, services,
               jobs_count, subscription_status, plan_expires_at, stripe_customer_id, stripe_subscription_id,
-              worker_type, street, zip, city_area, ico
+              worker_type, street, zip, city_area, ico, has_liability_insurance
   `;
 
   // Nový účet dostane odpovídající profil rovnou při vzniku, ať profilové

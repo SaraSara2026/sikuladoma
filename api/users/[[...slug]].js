@@ -56,6 +56,7 @@ async function updateMe(req, res) {
   const services = Array.isArray(b.services) ? b.services.filter(s => typeof s === 'string').slice(0, 30) : null;
   const avatar = b.avatar != null ? String(b.avatar).slice(0, 500000) : null;  // base64 do ~500KB
   const platce_dph = b.platce_dph != null ? Boolean(b.platce_dph) : null;
+  const has_liability_insurance = b.has_liability_insurance != null ? Boolean(b.has_liability_insurance) : null;
   const worker_type = b.worker_type != null ? String(b.worker_type).trim() : null;
   const street       = b.street    != null ? String(b.street).trim().slice(0, 150) : null;
   const zip          = b.zip       != null ? String(b.zip).trim().slice(0, 10)     : null;
@@ -96,6 +97,7 @@ async function updateMe(req, res) {
       services     = COALESCE(${services}, services),
       avatar       = COALESCE(${avatar}, avatar),
       platce_dph   = COALESCE(${platce_dph}, platce_dph),
+      has_liability_insurance = COALESCE(${has_liability_insurance}, has_liability_insurance),
       worker_type  = COALESCE(${worker_type}, worker_type),
       street       = COALESCE(${street}, street),
       zip          = COALESCE(${zip}, zip),
@@ -106,7 +108,7 @@ async function updateMe(req, res) {
               plan_billing, stripe_customer_id, stripe_subscription_id, plan_expires_at,
               verified, email_verified_at, rating, jobs_count, bio,
               hourly_rate, platce_dph, subscription_status, trial_ends_at,
-              worker_type, street, zip, city_area
+              worker_type, street, zip, city_area, has_liability_insurance
   `;
   return res.status(200).json({ user: row });
 }
@@ -124,7 +126,7 @@ async function getList(req, res) {
   // se ani nefiltruje, ani neprojektuje (viz "verified" = interní ruční
   // ověření šikuly, to jediné se veřejně zobrazuje jako "Ověřený šikula").
   const rows = await sql`
-    SELECT id, name, avatar, city_area, verified, rating, jobs_count, bio, services, worker_type
+    SELECT id, name, avatar, city_area, verified, rating, jobs_count, bio, services, worker_type, has_liability_insurance
     FROM users
     WHERE role = 'sikula'
       AND (${category ?? null}::text IS NULL OR ${category ?? null} = ANY(services))
@@ -151,7 +153,7 @@ async function getList(req, res) {
 // ─── Single šikula + recenze + summary ──────────────────────────────────────
 async function getSingle(id, res) {
   const [user] = await sql`
-    SELECT id, name, role, avatar, city_area, verified, rating, jobs_count, bio, services, worker_type
+    SELECT id, name, role, avatar, city_area, verified, rating, jobs_count, bio, services, worker_type, has_liability_insurance
     FROM users WHERE id = ${id} AND role = 'sikula'
   `;
   if (!user) return res.status(404).json({ error: 'Šikula nenalezen.' });

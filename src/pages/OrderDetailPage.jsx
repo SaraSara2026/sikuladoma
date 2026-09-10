@@ -6,6 +6,7 @@ import { formatCurrencyCz, formatDateCz, getOrderTiming } from '../lib/format.js
 import { isSikulaPlanActive } from '../lib/plan.js'
 import ChatPage from './ChatPage.jsx'
 import LinkAccountMismatch from '../components/LinkAccountMismatch.jsx'
+import InsuranceBadge from '../components/InsuranceBadge.jsx'
 
 const TIMING_COLOR = { urgent: '#B91C1C', soon: '#C2410C', flexible: 'var(--text2)' }
 const TIMING_ICON  = { urgent: '🚨', soon: '⚡', flexible: '🕊️' }
@@ -195,6 +196,7 @@ export default function OrderDetailPage({ order: orderProp, onNav, currentUser, 
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontWeight: 700, fontSize: 16 }}>{offer.sikula_name}</span>
                         {offer.sikula_verified && <span className="badge badge-green" style={{ fontSize: 11 }}>✓ Ověřen</span>}
+                        {offer.sikula_has_liability_insurance && <InsuranceBadge style={{ fontSize: 11 }} />}
                       </div>
                       <div style={{ fontSize: 13, color: 'var(--text2)', display: 'flex', gap: 10, marginTop: 2 }}>
                         {offer.sikula_rating && <>

@@ -6,6 +6,7 @@ import { T } from '../ui/theme';
 import { CATEGORIES } from '../lib/categories';
 import { usersApi } from '../lib/api';
 import { BtnPrimary } from '../ui/Button';
+import InsuranceBadge from '../components/InsuranceBadge';
 
 // Tarif/plán je interní údaj (viz api/users/[[...slug]].js) — veřejný katalog
 // místo něj ukazuje typ šikuly.
@@ -181,6 +182,7 @@ function SikulaCard({ s, onClick }) {
             ✓ Ověřený šikula
           </span>
         )}
+        {s.has_liability_insurance && <InsuranceBadge />}
         {s.rating && (
           <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: '#FEF3C7', color: '#92400E' }}>
             ⭐ {Number(s.rating).toFixed(1)}

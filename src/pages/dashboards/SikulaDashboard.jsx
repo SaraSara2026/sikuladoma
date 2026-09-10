@@ -12,6 +12,12 @@ import { formatPhoneCZ, isValidPhoneCZ } from '../../lib/phone'
 import { formatCurrencyCz, formatDateCz, getOrderTiming } from '../../lib/format.js'
 import { isSikulaPlanActive } from '../../lib/plan.js'
 
+// Cíl affiliate/kontaktního odkazu na pojištění odpovědnosti — nastavuje se
+// přes Vercel env proměnnou VITE_INSURANCE_OFFER_URL (Vite ji zavede do
+// buildu jen s prefixem VITE_). Dokud není nastavená, karta níže zobrazí
+// needitovatelné tlačítko "Připravujeme" místo nefunkčního odkazu.
+const INSURANCE_OFFER_URL = import.meta.env.VITE_INSURANCE_OFFER_URL || null;
+
 // Po návratu ze Stripe checkoutu webhook aktivuje tarif v DB až s malým zpožděním.
 // currentUser v appce žije v localStorage a sám se neobnoví, tak ho tu pár vteřin
 // dotahujeme přes /api/auth/me, dokud se tarif neprojeví (nebo dokud to nevzdáme).
@@ -696,7 +702,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
   // Profil edit state
   const [profileForm, setProfileForm] = useState({
     name: '', bio: '', ico: '', phone: '', hourly_rate: '', services: [], avatar: '', platce_dph: false,
-    worker_type: '', street: '', zip: '', city_area: '',
+    worker_type: '', street: '', zip: '', city_area: '', has_liability_insurance: false,
   })
   const [profileSaving, setProfileSaving] = useState(false)
   const [profileMsg, setProfileMsg] = useState(null)
@@ -716,6 +722,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
       street: currentUser.street || '',
       zip: currentUser.zip || '',
       city_area: currentUser.city_area || '',
+      has_liability_insurance: currentUser.has_liability_insurance || false,
     })
   }, [currentUser?.id])
 
@@ -779,6 +786,7 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
         services: profileForm.services,
         avatar: profileForm.avatar,
         platce_dph: profileForm.platce_dph,
+        has_liability_insurance: profileForm.has_liability_insurance,
         worker_type: profileForm.worker_type,
         street: profileForm.street,
         zip: profileForm.zip,
@@ -1102,6 +1110,40 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                 <button className="btn btn-primary btn-sm" onClick={() => setActivePage('membership')}>
                   Zobrazit tarify →
                 </button>
+              </div>
+            )}
+
+            {/* Nabídka pojištění odpovědnosti — jen pro šikuly, kteří sami
+                uvedli, že pojištění nemají. Cílový odkaz se nastavuje přes
+                env proměnnou VITE_INSURANCE_OFFER_URL (affiliate/kontakt na
+                makléřku) — dokud není nastavená, tlačítko je needitovatelné
+                a jasně řekne "Připravujeme", ať nikde nepůsobí jako funkční
+                odkaz, který nikam nevede. */}
+            {!currentUser?.has_liability_insurance && (
+              <div style={{
+                marginBottom: 20,
+                padding: '16px 20px',
+                background: '#F9FAFB',
+                border: '1px solid #E5E7EB',
+                borderRadius: 'var(--radius)',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap',
+              }}>
+                <div>
+                  <div style={{ fontWeight: 700, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>🛡️ Pojištění odpovědnosti</div>
+                  <div style={{ fontSize: 13, color: 'var(--text2)' }}>Nemáte uvedené pojištění odpovědnosti. Pojištěným šikulům důvěřují zákazníci víc.</div>
+                </div>
+                {INSURANCE_OFFER_URL ? (
+                  <a href={INSURANCE_OFFER_URL} target="_blank" rel="sponsored noopener noreferrer"
+                    className="btn btn-primary btn-sm" style={{ textDecoration: 'none' }}>
+                    Chci pojištění odpovědnosti →
+                  </a>
+                ) : (
+                  <button className="btn btn-sm" disabled
+                    style={{ background: '#E5E7EB', color: '#9CA3AF', cursor: 'not-allowed', border: 'none' }}
+                    title="Nabídka se připravuje">
+                    Připravujeme
+                  </button>
+                )}
               </div>
             )}
 
@@ -1593,6 +1635,33 @@ export default function SikulaDashboard({ currentUser, onNav, onLogout, onUpdate
                   <div>
                     <div style={{ fontWeight:600, fontSize:14 }}>Jsem plátce DPH</div>
                     <div style={{ fontSize:12, color:'#6B7280' }}>Fakturám přidáš sazbu DPH 12 % nebo 21 %</div>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Máte pojištění odpovědnosti vztahující se na práce a služby, které nabízíte?</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    {[
+                      { id: true, label: 'Ano, jsem pojištěn/a' },
+                      { id: false, label: 'Ne, nejsem pojištěn/a' },
+                    ].map(o => {
+                      const sel = profileForm.has_liability_insurance === o.id
+                      return (
+                        <button key={String(o.id)} type="button"
+                          onClick={() => setProfileForm(p => ({ ...p, has_liability_insurance: o.id }))}
+                          style={{
+                            textAlign: 'left', padding: '10px 14px', borderRadius: 10,
+                            border: `1.5px solid ${sel ? '#F07800' : '#D1D5DB'}`,
+                            background: sel ? '#FFF7ED' : '#fff', cursor: 'pointer',
+                            fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
+                            color: sel ? '#F07800' : '#1A1F2E', transition: 'all .14s',
+                          }}>
+                          {o.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
+                    Tento údaj uvádíte sami — ŠikulaDoma jeho platnost ani rozsah neověřuje. Kdykoli ho tu můžete změnit.
                   </div>
                 </div>
                 <div className="form-group">

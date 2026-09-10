@@ -68,16 +68,18 @@ export function BtnGhost({ children, onClick, size = "md", style: sx = {} }) {
   );
 }
 
-export function BtnBlue({ children, onClick, size = "md", style: sx = {} }) {
+export function BtnBlue({ children, onClick, size = "md", style: sx = {}, disabled = false }) {
   const { h, fs } = sizes(size);
   const px = size === "lg" ? 28 : size === "sm" ? 16 : 22;
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
       style={{ ...base, height: h, padding: `0 ${px}px`, border: "none",
         background: T.blue, color: "#fff", fontSize: fs,
-        transition: "background .15s, box-shadow .15s", ...sx }}
-      onMouseEnter={e => { e.currentTarget.style.background = T.blueDark; e.currentTarget.style.boxShadow = "0 4px 14px rgba(0,102,204,.22)"; }}
+        transition: "background .15s, box-shadow .15s",
+        ...(disabled ? { opacity: .55, cursor: "not-allowed" } : {}), ...sx }}
+      onMouseEnter={e => { if (!disabled) { e.currentTarget.style.background = T.blueDark; e.currentTarget.style.boxShadow = "0 4px 14px rgba(0,102,204,.22)"; } }}
       onMouseLeave={e => { e.currentTarget.style.background = T.blue; e.currentTarget.style.boxShadow = "none"; }}
     >
       {children}

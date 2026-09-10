@@ -130,7 +130,7 @@ async function listUsers(req, res) {
 
   const role = req.query?.role || null;
   const rows = await sql`
-    SELECT id, email, name, role, city, plan, verified, rating, jobs_count, created_at
+    SELECT id, email, name, role, city, plan, verified, rating, jobs_count, created_at, has_liability_insurance
     FROM users
     WHERE (${role}::text IS NULL OR role = ${role})
     ORDER BY created_at DESC LIMIT 200

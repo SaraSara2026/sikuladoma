@@ -160,7 +160,7 @@ async function listOffers(req, res) {
     : await sql`
         SELECT o.*, u.name AS sikula_name, u.avatar AS sikula_avatar,
                u.verified AS sikula_verified, u.rating AS sikula_rating,
-               u.jobs_count AS sikula_jobs,
+               u.jobs_count AS sikula_jobs, u.has_liability_insurance AS sikula_has_liability_insurance,
                CASE WHEN o.status = 'accepted' THEN u.phone ELSE NULL END AS sikula_phone
         FROM offers o JOIN users u ON u.id = o.sikula_id
         WHERE o.order_id = ${orderId}

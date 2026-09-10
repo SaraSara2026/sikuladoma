@@ -17,6 +17,7 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
     name: "", ico: "", email: "", password: "", phone: "",
     street: "", zip: "", cityArea: "",
     services: [], plan: plan?.id || "start",
+    hasLiabilityInsurance: null, // null = zatím nezodpovězeno (povinná otázka)
   });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
@@ -80,6 +81,7 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
         city_area:  form.cityArea,
         ico:        form.workerType === "zivnostnik_firma" ? form.ico : undefined,
         services:   form.services,
+        has_liability_insurance: form.hasLiabilityInsurance,
       });
       setRegResult({ user, verificationEmailSent: !!verificationEmailSent });
     } catch (e) {
@@ -237,6 +239,28 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
                   );
                 })}
               </div>
+              <div style={{ marginBottom: 20 }}>
+                <label style={lbl}>Máte pojištění odpovědnosti vztahující se na práce a služby, které nabízíte? *</label>
+                <div className="rgrid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  {[
+                    { id: true, label: "Ano, jsem pojištěn/a" },
+                    { id: false, label: "Ne, nejsem pojištěn/a" },
+                  ].map(o => {
+                    const sel = form.hasLiabilityInsurance === o.id;
+                    return (
+                      <button key={String(o.id)} type="button" onClick={() => upd("hasLiabilityInsurance", o.id)} style={{
+                        textAlign: "left", padding: "12px 14px", borderRadius: 10,
+                        border: `1.5px solid ${sel ? T.blue : T.border}`,
+                        background: sel ? T.blueLight : "#fff", cursor: "pointer",
+                        fontFamily: "inherit", fontSize: 13, fontWeight: 700,
+                        color: sel ? T.blue : T.ink, transition: "all .14s",
+                      }}>
+                        {o.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               <div style={{ padding: "16px 13px", borderRadius: 12, border: `1.5px solid ${T.border}`, background: T.blueLight, textAlign: "center" }}>
                 <div style={{ fontWeight: 800, fontSize: 15, color: T.ink, marginBottom: 4 }}>Registrace je zdarma</div>
                 <div style={{ fontSize: 13, color: T.ink3 }}>Po registraci uvidíte poptávky ve svém okolí. Tarif pro reakce na poptávky a kontakt se zákazníky si vyberete později v profilu.</div>
@@ -262,11 +286,12 @@ export default function RegForm({ plan, onClose, onRegistered, onLogin, onForgot
 
         <div style={{ padding: "14px 20px", borderTop: `1px solid ${T.border}`, display: "flex", justifyContent: "space-between" }}>
           {step > 0 ? <BtnGhost size="sm" onClick={() => setStep(0)}>Zpět</BtnGhost> : <span />}
-          <BtnBlue size="sm" disabled={busy || checkingEmail || (step === 1 && !gdprOk)} onClick={() => {
+          <BtnBlue size="sm" disabled={busy || checkingEmail || (step === 1 && (!gdprOk || form.hasLiabilityInsurance === null))} onClick={() => {
             if (step === 0) return continueFromStep0();
             if (step === 1 && !busy) {
               setErr(null);
               if (form.services.length === 0) return setErr("Vyberte alespoň jednu službu, kterou nabízíte.");
+              if (form.hasLiabilityInsurance === null) return setErr("Odpovězte, zda máte pojištění odpovědnosti.");
               if (!gdprOk) return setErr("Pro dokončení registrace musíte souhlasit s Podmínkami pro šikuly.");
               submitRegistration();
             }

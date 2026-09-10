@@ -6,6 +6,7 @@ import { adminApi } from '../../lib/api';
 import { ORDER_STATUS_MAP } from '../../data';
 import VerificationBanner from '../../components/VerificationBanner';
 import Icon from '../../components/Icon';
+import InsuranceBadge from '../../components/InsuranceBadge';
 
 const TABS = [
   { id: 'stats',    icon: 'chart', label: 'Přehled' },
@@ -181,7 +182,12 @@ export default function AdminDashboard({ currentUser, onLogout }) {
               <tbody>
                 {users.map(u => (
                   <tr key={u.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
-                    <td style={{ padding: '10px 16px', fontWeight: 600 }} data-label="Jméno">{u.name}</td>
+                    <td style={{ padding: '10px 16px', fontWeight: 600 }} data-label="Jméno">
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        {u.name}
+                        {u.role === 'sikula' && u.has_liability_insurance && <InsuranceBadge style={{ fontSize: 10, padding: '2px 8px' }} />}
+                      </span>
+                    </td>
                     <td style={{ padding: '10px 16px', color: '#6B7280' }} data-label="E-mail">{u.email}</td>
                     <td style={{ padding: '10px 16px' }} data-label="Role">
                       <span style={{ padding: '2px 8px', borderRadius: 999, background: u.role === 'admin' ? '#FAF5FF' : u.role === 'sikula' ? '#FFF7ED' : '#EFF6FF', color: u.role === 'admin' ? '#A855F7' : u.role === 'sikula' ? '#C2410C' : '#1D4ED8', fontSize: 11, fontWeight: 600 }}>

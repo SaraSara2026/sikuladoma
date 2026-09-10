@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS users (
   bio             TEXT,
   hourly_rate     INTEGER,
   platce_dph      BOOLEAN DEFAULT FALSE,
+  has_liability_insurance BOOLEAN NOT NULL DEFAULT FALSE,
   created_at      TIMESTAMPTZ DEFAULT NOW(),
   updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
@@ -286,3 +287,11 @@ CREATE INDEX IF NOT EXISTS idx_password_resets_expires ON password_resets(expire
 -- ============================================================
 ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_billing TEXT
   CHECK (plan_billing IS NULL OR plan_billing IN ('monthly','yearly'));
+
+-- ============================================================
+-- POJIŠTĚNÍ ODPOVĚDNOSTI — čistě sebedeklarovaný údaj šikuly (stejný princip
+-- jako platce_dph výše). ŠikulaDoma platnost ani rozsah pojištění nijak
+-- neověřuje — to musí zůstat i v každém místě, kde se hodnota zobrazuje
+-- (viz src/components/InsuranceBadge.jsx). Starým účtům DEFAULT FALSE.
+-- ============================================================
+ALTER TABLE users ADD COLUMN IF NOT EXISTS has_liability_insurance BOOLEAN NOT NULL DEFAULT FALSE;
